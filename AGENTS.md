@@ -340,6 +340,26 @@ This project uses an automated versioning and release process based on PR titles
 - `[minor]`: Minor version update (e.g., `1.2.3` -> `1.3.0`)
 - `[patch]` or no prefix: Patch version update (e.g., `1.2.3` -> `1.2.4`)
 
+### 8.6. Pull Request Requirements
+
+> ⚠️ **CRITICAL:** All quality checks must pass before submitting a PR, **even if the failures were not introduced by your changes**.
+
+The CI/CD pipeline runs all quality checks on every PR. If any check fails, the PR cannot be merged. This means:
+
+1. **Fix pre-existing issues** - If you encounter linting, type errors, or test failures that existed before your changes, you must fix them as part of your PR.
+2. **Run all checks locally first** - Before pushing, run:
+   ```bash
+   uv run ruff check --fix .
+   uv run ruff format .
+   uv run mypy custom_components/meraki_ha/ tests/
+   uv run bandit -c pyproject.toml -r custom_components/meraki_ha/
+   uv run pytest
+   ```
+3. **All tests must pass** - Not just the tests for your feature, but the entire test suite.
+4. **No new linting errors** - The codebase must remain clean.
+
+If you find that fixing pre-existing issues is too large a scope, discuss with the maintainers before proceeding.
+
 ---
 
 ## 9. Home Assistant Integration Quality Scale
@@ -396,6 +416,8 @@ Track compliance in `quality_scale.yaml`. Reference the [full rules documentatio
 ## 10. Testing Requirements
 
 - **Unit tests are mandatory** for new features and bug fixes.
+- **New features** need tests proving they work.
+- **Bug fixes** need tests proving the bug is fixed.
 - Tests should be placed in the `tests/` directory, mirroring the source structure.
 - Use `pytest-asyncio` for async tests (configured with `asyncio_mode = "auto"`).
 - Mock external API calls; never make real Meraki API calls in tests.

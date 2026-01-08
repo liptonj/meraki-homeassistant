@@ -76,6 +76,8 @@ All commands should be run through `uv run` to ensure the correct virtual enviro
 ./run_checks.sh
 ```
 
+> ⚠️ **IMPORTANT:** All quality checks must pass before submitting a PR, **even if the failures were not introduced by your changes**. The CI/CD pipeline will reject PRs with any failing checks. If you encounter pre-existing issues, you must fix them as part of your PR or discuss with maintainers.
+
 ## 3. Frontend Development
 
 The Meraki side panel is a modern web application built with React, Vite, and TypeScript.
@@ -143,7 +145,23 @@ This is the **most critical pattern** in this codebase for all entities that mod
 - **Configuration Validation:**
   - All configuration data must be validated using `voluptuous` schemas.
 
-## 6. Versioning and Releases
+## 6. Git Branching Strategy
+
+- **Always create new branches FROM the `beta` branch**, never from `main`.
+- When work is complete and all checks pass, create a PR to merge INTO `beta`.
+- The `main` branch is for **production releases only** and requires a separate PR process from `beta` to `main`.
+
+```bash
+# Create a new feature branch
+git checkout beta
+git pull origin beta
+git checkout -b feat/my-new-feature
+
+# When complete, push and create PR to merge into beta
+git push -u origin feat/my-new-feature
+```
+
+## 7. Versioning and Releases
 
 This project uses an automated versioning and release process based on PR titles:
 
