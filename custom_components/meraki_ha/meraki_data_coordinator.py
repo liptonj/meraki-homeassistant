@@ -10,7 +10,10 @@ from homeassistant.helpers import device_registry as dr
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import (
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
 
 from .const import (
     CONF_ENABLED_NETWORKS,
@@ -30,7 +33,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def __init__(
         self,
-        hass: "HomeAssistant",
+        hass: HomeAssistant,
         api_client: ApiClient,
         entry: ConfigEntry,
     ) -> None:

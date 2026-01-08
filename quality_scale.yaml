@@ -60,4 +60,4 @@ rules:
   # Platinum
   async-dependency: pass
   inject-websession: pass
-  strict-typing: pass
+  strict-typing: todo

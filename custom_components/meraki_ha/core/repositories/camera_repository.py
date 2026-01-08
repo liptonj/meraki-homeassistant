@@ -83,11 +83,11 @@ class CameraRepository:
 
             # Return any valid HTTPS URL (cloud video links)
             if url and url.startswith("https://"):
-                return url
+                return str(url)
 
             # Also accept HTTP URLs (less common but possible)
             if url and url.startswith("http://"):
-                return url
+                return str(url)
 
             return None
         except MerakiInformationalError as e:
@@ -134,7 +134,7 @@ class CameraRepository:
 
             # Validate that we received a valid RTSP URL
             if url and url.startswith("rtsp://"):
-                return url
+                return str(url)
 
             # If we get a non-RTSP URL, log it and return None
             if url:

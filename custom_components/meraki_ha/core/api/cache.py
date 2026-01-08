@@ -1,9 +1,11 @@
 """A custom caching decorator for async methods."""
 
+from __future__ import annotations
+
 import time
 from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import Any, Concatenate, ParamSpec, TypeVar
+from typing import Any, Concatenate, ParamSpec, TypeVar, cast
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -62,6 +64,6 @@ def async_timed_cache(
             self._cache_last_update[cache_key] = time.time()
             return result
 
-        return wrapper
+        return cast(Callable[Concatenate[Any, P], Awaitable[T]], wrapper)
 
     return decorator

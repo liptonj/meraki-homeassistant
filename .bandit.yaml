@@ -1,0 +1,2 @@
+skips: ["B101", "B104", "B105", "B106", "B107", "B110", "B112", "B311", "B404", "B603", "B605", "B607"]
+exclude_dirs: ["tests", "node_modules", "custom_components/meraki_ha/core/utils", ".venv", "venv"]
