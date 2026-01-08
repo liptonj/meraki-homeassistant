@@ -64,9 +64,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
         network_options: list[selector.SelectOptionDict] = []
         if coordinator.data and coordinator.data.get("networks"):
             network_options = [
-                selector.SelectOptionDict(
-                    label=network["name"], value=network["id"]
-                )
+                selector.SelectOptionDict(label=network["name"], value=network["id"])
                 for network in coordinator.data["networks"]
             ]
 
