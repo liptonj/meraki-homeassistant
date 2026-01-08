@@ -304,14 +304,35 @@ Use **Conventional Commits** format:
 
 ```
 type(scope): description
+```
 
+**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`
+
+**Examples:**
+```
 feat(camera): add configurable snapshot refresh interval
 fix(api): filter networks before making API calls
 docs(readme): update installation instructions
 refactor(sensor): consolidate MT sensor base class
+test(mqtt): add unit tests for relay service
 ```
 
-### 8.4. Versioning
+### 8.4. Git Branching Strategy
+
+- **Always create new branches FROM the `beta` branch**, never from `main`.
+- When work is complete and all checks pass, merge back INTO `beta`.
+- The `main` branch is for **production releases only** and requires a separate PR process from `beta` to `main`.
+
+```bash
+# Create a new feature branch
+git checkout beta
+git pull origin beta
+git checkout -b feat/my-new-feature
+
+# When complete, create PR to merge into beta
+```
+
+### 8.5. Versioning
 
 This project uses an automated versioning and release process based on PR titles:
 
@@ -327,12 +348,31 @@ This integration follows the [Home Assistant Integration Quality Scale](https://
 
 ### Quality Scale Tiers
 
-| Tier        | Requirements                                                                |
-| ----------- | --------------------------------------------------------------------------- |
-| 🥉 Bronze   | UI config flow, unique entity IDs, basic tests, documentation               |
-| 🥈 Silver   | Error handling, reauthentication, 95%+ test coverage, code owners           |
-| 🥇 Gold     | Discovery, diagnostics, translations, entity categories, comprehensive docs |
-| 🏆 Platinum | Async dependencies, websession injection, strict typing                     |
+| Tier        | Requirements                                                                        |
+| ----------- | ----------------------------------------------------------------------------------- |
+| 🥉 Bronze   | UI config flow, unique entity IDs, basic tests, documentation                       |
+| 🥈 Silver   | Error handling, reauthentication, 95%+ test coverage, code owners, auto-recovery    |
+| 🥇 Gold     | Discovery, diagnostics, translations, entity categories, firmware updates, full docs |
+| 🏆 Platinum | Async dependencies, websession injection, strict typing, optimized performance     |
+
+**Platinum tier** represents technical excellence with:
+- All dependencies are async (`async-dependency`)
+- Dependencies support passing websession (`inject-websession`)
+- Full type annotations throughout (`strict-typing`)
+- Optimized performance and complete type safety
+
+### HA Integration Patterns (MUST FOLLOW)
+
+When working on this integration, always follow these Home Assistant patterns:
+
+1. **Use config entries (not YAML)** - All configuration through the UI
+2. **Implement proper async code** - All I/O operations must be async
+3. **Handle device offline states gracefully** - Mark entities unavailable, don't raise errors
+4. **Use `CoordinatorEntity`** for data updates - Centralized polling via `MerakiDataCoordinator`
+5. **Implement reauthentication** - When credentials fail, trigger reauth flow
+6. **Provide `DeviceInfo`** - All entities must register with the device registry
+7. **Use entity naming conventions** - Follow `_attr_has_entity_name = True` pattern
+8. **Ensure entities recover automatically** - Don't fill logs with repeated errors
 
 ### Key Rules to Maintain
 
