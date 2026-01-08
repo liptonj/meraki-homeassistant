@@ -3,13 +3,13 @@ Name: meraki-homeassistant
 Version: 0.0.0
 Summary: Meraki integration for Home Assistant
 Requires-Python: >=3.12
+Requires-Dist: aiomqtt>=2.0.0
 Provides-Extra: dev
 Requires-Dist: homeassistant==2025.11.0; extra == "dev"
 Requires-Dist: uv>=0.9.6; extra == "dev"
 Requires-Dist: urllib3>=2.6.0; extra == "dev"
 Requires-Dist: aiofiles==23.2.1; extra == "dev"
 Requires-Dist: types-aiofiles==25.1.0.20251011; extra == "dev"
-Requires-Dist: aiomqtt>=2.0.0; extra == "dev"
 Requires-Dist: meraki==1.40.1; extra == "dev"
 Requires-Dist: PyTurboJPEG==1.7.2; extra == "dev"
 Requires-Dist: ruff>=0.8.0; extra == "dev"

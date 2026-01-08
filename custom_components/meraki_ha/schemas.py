@@ -12,7 +12,6 @@ from .const import (
     CONF_DASHBOARD_STATUS_FILTER,
     CONF_DASHBOARD_VIEW_MODE,
     CONF_ENABLE_DEVICE_TRACKER,
-    CONF_ENABLE_MQTT,
     CONF_ENABLE_VLAN_MANAGEMENT,
     CONF_ENABLED_NETWORKS,
     CONF_MERAKI_API_KEY,
@@ -26,7 +25,6 @@ from .const import (
     DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER,
     DEFAULT_DASHBOARD_STATUS_FILTER,
     DEFAULT_DASHBOARD_VIEW_MODE,
-    DEFAULT_ENABLE_MQTT,
     DEFAULT_ENABLE_VLAN_MANAGEMENT,
     DEFAULT_ENABLED_NETWORKS,
     DEFAULT_MQTT_PORT,
@@ -189,18 +187,6 @@ OPTIONS_SCHEMA_CAMERA = vol.Schema(
                 custom_value=True,
             )
         ),
-    }
-)
-
-# Step 4: MQTT Settings
-OPTIONS_SCHEMA_MQTT = vol.Schema(
-    {
-        vol.Required(
-            CONF_ENABLE_MQTT, default=DEFAULT_ENABLE_MQTT
-        ): selector.BooleanSelector(),
-        vol.Optional(
-            "add_relay_destination", default=False
-        ): selector.BooleanSelector(),
     }
 )
 

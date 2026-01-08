@@ -89,7 +89,7 @@ DASHBOARD_VIEW_MODE_TYPE: Final = "type"
 DEFAULT_DASHBOARD_VIEW_MODE: Final = "network"
 """Default dashboard view mode."""
 
-DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER: Final = "all"
+DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER: Final[list[str]] = ["all"]
 """Default device type filter (all = no filter)."""
 
 DEFAULT_DASHBOARD_STATUS_FILTER: Final = "all"

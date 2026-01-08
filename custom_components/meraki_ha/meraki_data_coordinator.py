@@ -771,39 +771,9 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             CONF_DASHBOARD_DEVICE_TYPE_FILTER
         )
 
-        if not selected_types or "all" in selected_types:
-            return
-
-        if "devices" in data:
-            type_map = {
-                "switch": "MS",
-                "camera": "MV",
-                "wireless": "MR",
-                "sensor": "MT",
-                "appliance": "MX",
-            }
-            prefixes_to_keep = tuple(
-                type_map[type_] for type_ in selected_types if type_ in type_map
-            )
-
-            if prefixes_to_keep:
-                data["devices"] = [
-                    d
-                    for d in data["devices"]
-                    if d.get("model", "").startswith(prefixes_to_keep)
-                ]
-
-    def _filter_device_types(self, data: dict[str, Any]) -> None:
-        """Filter out devices by type based on user's selection."""
-        if not self.config_entry or not hasattr(self.config_entry, "options"):
-            _LOGGER.debug(
-                "Config entry or options not available, cannot filter device types.",
-            )
-            return
-
-        selected_types = self.config_entry.options.get(
-            CONF_DASHBOARD_DEVICE_TYPE_FILTER
-        )
+        # Handle migration from string to list format
+        if isinstance(selected_types, str):
+            selected_types = [selected_types]
 
         if not selected_types or "all" in selected_types:
             return

@@ -117,16 +117,52 @@
       },
       "mqtt": {
         "title": "Meraki Options - MQTT Settings",
-        "description": "Step 4 of 4: Configure MQTT for MT sensor real-time updates.\n\n**Configured Relay Destinations ({destination_count}):** {relay_destinations}\n\nTo add or manage relay servers, check the appropriate option below and submit.",
+        "description": "Step 4 of 4: Configure MQTT relay destinations.",
+        "menu_options": {
+          "mqtt_done": "✅ Save and Exit",
+          "mqtt_add_destination": "➕ Add Relay Destination",
+          "mqtt_edit_destination": "✏️ Edit Destination",
+          "mqtt_delete_destination": "🗑️ Delete Destination"
+        }
+      },
+      "mqtt_add_destination": {
+        "title": "Add MQTT Relay Destination",
+        "description": "Configure a new external MQTT broker to relay Meraki sensor data to.",
         "data": {
-          "enable_mqtt": "Enable MQTT for MT Sensors",
-          "add_relay_destination": "➕ Add New Relay Destination",
-          "manage_relay_destinations": "✏️ Edit/Delete Existing Destinations"
+          "server_ip": "Broker IP Address",
+          "port": "Broker Port",
+          "topic": "Topic"
         },
         "data_description": {
-          "enable_mqtt": "Enable MQTT to receive real-time updates from MT sensors via Home Assistant's Mosquitto broker. When enabled, API polling for sensor readings is disabled.",
-          "add_relay_destination": "Check this box, then click Submit to add a new external MQTT broker.",
-          "manage_relay_destinations": "Check this box, then click Submit to edit or delete existing relay destinations."
+          "server_ip": "The IP address or hostname of the external MQTT broker.",
+          "port": "The port of the MQTT broker (default: 1883).",
+          "topic": "The MQTT topic to publish messages to (e.g., 'meraki/sensors')."
+        }
+      },
+      "mqtt_edit_destination": {
+        "title": "Edit MQTT Relay Destination",
+        "description": "Select a destination to edit, or modify the selected destination's settings.",
+        "data": {
+          "destination_index": "Select Destination",
+          "server_ip": "Broker IP Address",
+          "port": "Broker Port",
+          "topic": "Topic"
+        },
+        "data_description": {
+          "destination_index": "Choose a relay destination from the list.",
+          "server_ip": "The IP address or hostname of the external MQTT broker.",
+          "port": "The port of the MQTT broker.",
+          "topic": "The MQTT topic to publish messages to."
+        }
+      },
+      "mqtt_delete_destination": {
+        "title": "Delete MQTT Relay Destinations",
+        "description": "Select one or more destinations to delete.",
+        "data": {
+          "destinations_to_delete": "Select Destinations to Delete"
+        },
+        "data_description": {
+          "destinations_to_delete": "Select one or more relay destinations to remove."
         }
       },
       "mqtt_manage_relays": {
@@ -199,6 +235,9 @@
           "ignored_networks": "A comma-separated list of network IDs to ignore."
         }
       }
+    },
+    "abort": {
+      "no_destinations": "No MQTT relay destinations configured. Add a destination first."
     }
   },
   "entity": {

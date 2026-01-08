@@ -264,6 +264,23 @@ def test_populate_schema_defaults_with_networks() -> None:
 
 
 @pytest.mark.asyncio
+async def test_mqtt_done_creates_entry(
+    mock_options_config_entry: MagicMock,
+) -> None:
+    """Test that mqtt_done saves options and exits."""
+    mock_options_config_entry.options = {
+        "scan_interval": 60,
+        "enable_device_tracker": True,
+    }
+    handler = MerakiOptionsFlowHandler(mock_options_config_entry)
+
+    result = await handler.async_step_mqtt_done()
+
+    assert result["type"].value == "create_entry"
+    assert result["data"]["scan_interval"] == 60
+
+
+@pytest.mark.asyncio
 async def test_full_options_flow_creates_entry(
     mock_options_config_entry: MagicMock,
 ) -> None:
@@ -285,7 +302,12 @@ async def test_full_options_flow_creates_entry(
     result = await handler.async_step_dashboard({})
     assert result["step_id"] == "camera"
 
-    # Step 3: camera -> goes to mqtt
+    # Step 3: camera -> goes to mqtt menu
     result = await handler.async_step_camera({})
     assert result["type"].value == "menu"
     assert result["step_id"] == "mqtt"
+
+    # Step 4: mqtt_done -> creates entry
+    result = await handler.async_step_mqtt_done()
+    assert result["type"].value == "create_entry"
+    assert result["data"]["scan_interval"] == 120

@@ -149,11 +149,18 @@ class MerakiOptionsFlowHandler(OptionsFlow):
         return self.async_show_menu(
             step_id="mqtt",
             menu_options=[
+                "mqtt_done",
                 "mqtt_add_destination",
                 "mqtt_edit_destination",
                 "mqtt_delete_destination",
             ],
         )
+
+    async def async_step_mqtt_done(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Save options and exit the flow."""
+        return self.async_create_entry(title="", data=self.options)
 
     async def async_step_mqtt_add_destination(
         self, user_input: dict[str, Any] | None = None
@@ -181,7 +188,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         if user_input is not None:
             if "destination_index" in user_input:
-                self._destination_index_to_edit = user_input["destination_index"]
+                self._destination_index_to_edit = int(user_input["destination_index"])
                 destination_to_edit = destinations[self._destination_index_to_edit]
                 return self.async_show_form(
                     step_id="mqtt_edit_destination",
