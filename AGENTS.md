@@ -193,7 +193,21 @@ Each relay destination can be configured with:
 
 ## 6. Development Workflow
 
-### 6.1. Running Quality Checks
+### 6.1. Package Management with uv
+
+This project uses **uv** for Python package management. The `uv.lock` file ensures reproducible builds.
+
+```bash
+# Install dependencies
+uv sync
+
+# Run commands through uv
+uv run pytest
+uv run ruff check .
+uv run mypy custom_components/meraki_ha/
+```
+
+### 6.2. Running Quality Checks
 
 Before submitting changes, you **must** run all quality checks. Use the helper script or individual commands:
 
@@ -201,26 +215,28 @@ Before submitting changes, you **must** run all quality checks. Use the helper s
 # All-in-one check script
 ./run_checks.sh
 
-# Or run individually:
+# Or run individually (via uv or directly if tools are installed):
 
 # Linting & Formatting
-ruff check --fix .
-ruff format .
+uv run ruff check --fix .
+uv run ruff format .
 
 # Type Checking
-mypy custom_components/meraki_ha/ tests/
+uv run mypy custom_components/meraki_ha/ tests/
 
-# Security Analysis
-bandit -c .bandit.yaml -r .
+# Security Analysis (configuration is in pyproject.toml)
+uv run bandit -c pyproject.toml -r custom_components/meraki_ha/
 
 # Run Tests
-pytest
+uv run pytest
 
 # Home Assistant Validation
 docker run --rm -v "$(pwd)":/github/workspace ghcr.io/home-assistant/hassfest
 ```
 
-### 6.2. Frontend Development
+**Note:** All tool configurations (ruff, mypy, bandit, pytest) are centralized in `pyproject.toml`. There is no separate `.bandit.yaml` file.
+
+### 6.3. Frontend Development
 
 The Meraki side panel is a React application in `custom_components/meraki_ha/www/`.
 
@@ -238,7 +254,7 @@ npm run dev
 
 **Important:** After any frontend changes, you must run `npm run build` and commit the built assets (`meraki-panel.js`, `style.css`).
 
-### 6.3. Docker Test Environment
+### 6.4. Docker Test Environment
 
 For isolated testing with a real Home Assistant instance:
 
@@ -468,6 +484,9 @@ logger:
 | Frontend build output   | `custom_components/meraki_ha/www/meraki-panel.js`        |
 | Test configuration      | `pyproject.toml` → `[tool.pytest.ini_options]`           |
 | Ruff configuration      | `pyproject.toml` → `[tool.ruff]`                         |
+| Mypy configuration      | `pyproject.toml` → `[tool.mypy]`                         |
+| Bandit configuration    | `pyproject.toml` → `[tool.bandit]`                       |
+| Package management      | `uv.lock` (use `uv sync` to install)                     |
 | CI workflows            | `.github/workflows/`                                     |
 
 ---
