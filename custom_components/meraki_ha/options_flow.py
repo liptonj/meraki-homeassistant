@@ -24,8 +24,6 @@ from .schemas import (
 class MerakiOptionsFlowHandler(OptionsFlow):
     """Handle an options flow for the Meraki integration."""
 
-    _destination_index_to_edit: int | None = None
-
     def __init__(self, config_entry: ConfigEntry) -> None:
         """
         Initialize options flow.
@@ -36,6 +34,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         """
         self.options = dict(config_entry.options)
+        self._editing_destination_index: int | None = None
 
     async def async_step_init(
         self,

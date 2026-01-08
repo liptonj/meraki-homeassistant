@@ -27,12 +27,6 @@ CONF_MERAKI_ORG_ID: Final = "meraki_org_id"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 """Configuration key for the scan interval in seconds."""
 
-CONF_SCAN_INTERVAL_DEVICE_STATUS: Final = "scan_interval_device_status"
-"""Configuration key for the device status scan interval in seconds."""
-
-CONF_SCAN_INTERVAL_CLIENTS: Final = "scan_interval_clients"
-"""Configuration key for the clients scan interval in seconds."""
-
 DATA_CLIENT: Final = "client"
 """Key for storing the Meraki API client in Home Assistant's data."""
 
@@ -71,9 +65,6 @@ DEFAULT_CAMERA_SNAPSHOT_INTERVAL: Final = 0
 
 CONF_CAMERA_ENTITY_MAPPINGS: Final = "camera_entity_mappings"
 """Configuration key for camera entity mappings (Meraki serial -> HA entity_id)."""
-
-CONF_MQTT_RELAY_DESTINATIONS: Final = "mqtt_relay_destinations"
-"""Configuration key for MQTT relay destinations."""
 
 # Dashboard display settings
 CONF_DASHBOARD_VIEW_MODE: Final = "dashboard_view_mode"
@@ -159,13 +150,6 @@ MERAKI_API_CLIENT: Final = "meraki_api_client"
 DEFAULT_SCAN_INTERVAL: Final = 90
 """Default scan interval in seconds for the Meraki API data."""
 
-DEFAULT_SCAN_INTERVAL_DEVICE_STATUS: Final = 60
-"""Default scan interval in seconds for device status."""
-
-DEFAULT_SCAN_INTERVAL_CLIENTS: Final = 120
-"""Default scan interval in seconds for clients."""
-
-
 # Defaults for new options
 DEFAULT_ENABLE_DEVICE_STATUS: Final = True
 DEFAULT_ENABLE_ORG_SENSORS: Final = True
@@ -180,6 +164,57 @@ CONF_ENABLE_WEB_UI: Final = "enable_web_ui"
 DEFAULT_ENABLE_WEB_UI: Final = False
 CONF_WEB_UI_PORT: Final = "web_ui_port"
 DEFAULT_WEB_UI_PORT: Final = 9000
+
+# MQTT Configuration
+CONF_ENABLE_MQTT: Final = "enable_mqtt"
+"""Configuration key for enabling MQTT functionality."""
+
+DEFAULT_ENABLE_MQTT: Final = False
+"""Default value for MQTT enable toggle."""
+
+CONF_MQTT_RELAY_DESTINATIONS: Final = "mqtt_relay_destinations"
+"""Configuration key for list of MQTT relay destinations."""
+
+DEFAULT_MQTT_RELAY_DESTINATIONS: Final[list[dict]] = []
+"""Default empty list of relay destinations."""
+
+# MQTT Relay Destination Keys
+MQTT_DEST_NAME: Final = "name"
+"""Friendly name for the relay destination."""
+
+MQTT_DEST_HOST: Final = "host"
+"""Hostname of the external MQTT broker."""
+
+MQTT_DEST_PORT: Final = "port"
+"""Port of the external MQTT broker."""
+
+MQTT_DEST_USERNAME: Final = "username"
+"""Username for MQTT broker authentication."""
+
+MQTT_DEST_PASSWORD: Final = "password"
+"""Password for MQTT broker authentication."""
+
+MQTT_DEST_USE_TLS: Final = "use_tls"
+"""Enable TLS for the relay connection."""
+
+MQTT_DEST_TOPIC_FILTER: Final = "topic_filter"
+"""Topic pattern to match for routing (e.g., meraki/v1/mt/#)."""
+
+MQTT_DEST_DEVICE_TYPES: Final = "device_types"
+"""Optional list of device types to relay."""
+
+DEFAULT_MQTT_PORT: Final = 1883
+"""Default MQTT broker port."""
+
+DEFAULT_MQTT_TLS_PORT: Final = 8883
+"""Default MQTT broker TLS port."""
+
+# Meraki MQTT Topic Patterns
+MERAKI_MQTT_TOPIC_PREFIX: Final = "meraki/v1"
+"""Base prefix for all Meraki MQTT topics."""
+
+MERAKI_MQTT_MT_TOPIC_PATTERN: Final = "meraki/v1/mt/#"
+"""Topic pattern for MT sensor data."""
 
 # Platform types
 PLATFORM_BINARY_SENSOR: Final = "binary_sensor"

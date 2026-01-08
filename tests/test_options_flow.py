@@ -89,62 +89,6 @@ async def test_async_step_dashboard_with_user_input_moves_to_camera(
     assert result["step_id"] == "camera"
 
 
-def test_populate_schema_defaults() -> None:
-    """Test _populate_schema_defaults populates existing values."""
-    mock_entry = MagicMock()
-    mock_entry.options = {"scan_interval": 45}
-
-    handler = MerakiOptionsFlowHandler(mock_entry)
-
-    # Create a simple schema
-    schema = vol.Schema(
-        {
-            vol.Required("scan_interval"): int,
-            vol.Optional("other_option"): str,
-        }
-    )
-
-    defaults = {"scan_interval": 45}
-    network_options: list[dict[str, str]] = []
-
-    result_schema = handler._populate_schema_defaults(schema, defaults, network_options)
-
-    # Verify the schema was processed (returned as a Schema object)
-    assert isinstance(result_schema, vol.Schema)
-
-
-def test_populate_schema_defaults_with_networks() -> None:
-    """Test _populate_schema_defaults includes network options."""
-    mock_entry = MagicMock()
-    mock_entry.options = {}
-
-    handler = MerakiOptionsFlowHandler(mock_entry)
-
-    # Create schema with network selector
-    network_selector = selector.SelectSelector(
-        selector.SelectSelectorConfig(
-            options=[],
-            multiple=True,
-        )
-    )
-
-    schema = vol.Schema(
-        {
-            vol.Optional(CONF_ENABLED_NETWORKS): network_selector,
-        }
-    )
-
-    defaults: dict[str, object] = {}
-    network_options = [
-        {"label": "Main Office", "value": "N_123"},
-        {"label": "Branch Office", "value": "N_456"},
-    ]
-
-    result_schema = handler._populate_schema_defaults(schema, defaults, network_options)
-
-    assert isinstance(result_schema, vol.Schema)
-
-
 @pytest.mark.asyncio
 async def test_async_step_camera_with_user_input_moves_to_mqtt(
     mock_options_config_entry: MagicMock,
@@ -261,6 +205,62 @@ async def test_mqtt_delete_no_destinations_aborts(
     result = await handler.async_step_mqtt_delete_destination()
     assert result["type"].value == "abort"
     assert result["reason"] == "no_destinations"
+
+
+def test_populate_schema_defaults() -> None:
+    """Test _populate_schema_defaults populates existing values."""
+    mock_entry = MagicMock()
+    mock_entry.options = {"scan_interval": 45}
+
+    handler = MerakiOptionsFlowHandler(mock_entry)
+
+    # Create a simple schema
+    schema = vol.Schema(
+        {
+            vol.Required("scan_interval"): int,
+            vol.Optional("other_option"): str,
+        }
+    )
+
+    defaults = {"scan_interval": 45}
+    network_options: list[dict[str, str]] = []
+
+    result_schema = handler._populate_schema_defaults(schema, defaults, network_options)
+
+    # Verify the schema was processed (returned as a Schema object)
+    assert isinstance(result_schema, vol.Schema)
+
+
+def test_populate_schema_defaults_with_networks() -> None:
+    """Test _populate_schema_defaults includes network options."""
+    mock_entry = MagicMock()
+    mock_entry.options = {}
+
+    handler = MerakiOptionsFlowHandler(mock_entry)
+
+    # Create schema with network selector
+    network_selector = selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=[],
+            multiple=True,
+        )
+    )
+
+    schema = vol.Schema(
+        {
+            vol.Optional(CONF_ENABLED_NETWORKS): network_selector,
+        }
+    )
+
+    defaults: dict[str, object] = {}
+    network_options = [
+        {"label": "Main Office", "value": "N_123"},
+        {"label": "Branch Office", "value": "N_456"},
+    ]
+
+    result_schema = handler._populate_schema_defaults(schema, defaults, network_options)
+
+    assert isinstance(result_schema, vol.Schema)
 
 
 @pytest.mark.asyncio

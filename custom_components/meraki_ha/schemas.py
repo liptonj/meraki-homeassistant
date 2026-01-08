@@ -12,13 +12,12 @@ from .const import (
     CONF_DASHBOARD_STATUS_FILTER,
     CONF_DASHBOARD_VIEW_MODE,
     CONF_ENABLE_DEVICE_TRACKER,
+    CONF_ENABLE_MQTT,
     CONF_ENABLE_VLAN_MANAGEMENT,
     CONF_ENABLED_NETWORKS,
     CONF_MERAKI_API_KEY,
     CONF_MERAKI_ORG_ID,
     CONF_SCAN_INTERVAL,
-    CONF_SCAN_INTERVAL_CLIENTS,
-    CONF_SCAN_INTERVAL_DEVICE_STATUS,
     CONF_TEMPERATURE_UNIT,
     DASHBOARD_VIEW_MODE_NETWORK,
     DASHBOARD_VIEW_MODE_TYPE,
@@ -27,12 +26,20 @@ from .const import (
     DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER,
     DEFAULT_DASHBOARD_STATUS_FILTER,
     DEFAULT_DASHBOARD_VIEW_MODE,
+    DEFAULT_ENABLE_MQTT,
     DEFAULT_ENABLE_VLAN_MANAGEMENT,
     DEFAULT_ENABLED_NETWORKS,
+    DEFAULT_MQTT_PORT,
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_SCAN_INTERVAL_CLIENTS,
-    DEFAULT_SCAN_INTERVAL_DEVICE_STATUS,
     DEFAULT_TEMPERATURE_UNIT,
+    MQTT_DEST_DEVICE_TYPES,
+    MQTT_DEST_HOST,
+    MQTT_DEST_NAME,
+    MQTT_DEST_PASSWORD,
+    MQTT_DEST_PORT,
+    MQTT_DEST_TOPIC_FILTER,
+    MQTT_DEST_USE_TLS,
+    MQTT_DEST_USERNAME,
     TEMPERATURE_UNIT_CELSIUS,
     TEMPERATURE_UNIT_FAHRENHEIT,
 )
@@ -51,29 +58,6 @@ OPTIONS_SCHEMA_BASIC = vol.Schema(
     {
         vol.Required(
             CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL
-        ): selector.NumberSelector(
-            selector.NumberSelectorConfig(
-                min=30,
-                max=300,
-                step=5,
-                unit_of_measurement="seconds",
-                mode=selector.NumberSelectorMode.SLIDER,
-            )
-        ),
-        vol.Required(
-            CONF_SCAN_INTERVAL_DEVICE_STATUS,
-            default=DEFAULT_SCAN_INTERVAL_DEVICE_STATUS,
-        ): selector.NumberSelector(
-            selector.NumberSelectorConfig(
-                min=30,
-                max=300,
-                step=5,
-                unit_of_measurement="seconds",
-                mode=selector.NumberSelectorMode.SLIDER,
-            )
-        ),
-        vol.Required(
-            CONF_SCAN_INTERVAL_CLIENTS, default=DEFAULT_SCAN_INTERVAL_CLIENTS
         ): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=30,
@@ -122,7 +106,7 @@ OPTIONS_SCHEMA_DASHBOARD = vol.Schema(
         ),
         vol.Required(
             CONF_DASHBOARD_DEVICE_TYPE_FILTER,
-            default=[DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER],
+            default=DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER,
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=[
@@ -207,15 +191,71 @@ OPTIONS_SCHEMA_CAMERA = vol.Schema(
         ),
     }
 )
-MQTT_DESTINATION_SCHEMA = vol.Schema(
+
+# Step 4: MQTT Settings
+OPTIONS_SCHEMA_MQTT = vol.Schema(
     {
-        vol.Required("server_ip"): selector.TextSelector(),
-        vol.Required("port"): selector.NumberSelector(
+        vol.Required(
+            CONF_ENABLE_MQTT, default=DEFAULT_ENABLE_MQTT
+        ): selector.BooleanSelector(),
+        vol.Optional(
+            "add_relay_destination", default=False
+        ): selector.BooleanSelector(),
+    }
+)
+
+# MQTT Relay Destination Schema (used for add/edit destination sub-flow)
+MQTT_RELAY_DESTINATION_SCHEMA = vol.Schema(
+    {
+        vol.Required(MQTT_DEST_NAME): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)
+        ),
+        vol.Required(MQTT_DEST_HOST): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)
+        ),
+        vol.Required(
+            MQTT_DEST_PORT, default=DEFAULT_MQTT_PORT
+        ): selector.NumberSelector(
             selector.NumberSelectorConfig(
-                min=1, max=65535, mode=selector.NumberSelectorMode.BOX
+                min=1,
+                max=65535,
+                step=1,
+                mode=selector.NumberSelectorMode.BOX,
             )
         ),
-        vol.Required("topic"): selector.TextSelector(),
+        vol.Optional(MQTT_DEST_USERNAME): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)
+        ),
+        vol.Optional(MQTT_DEST_PASSWORD): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+        ),
+        vol.Required(MQTT_DEST_USE_TLS, default=False): selector.BooleanSelector(),
+        vol.Required(
+            MQTT_DEST_TOPIC_FILTER, default="meraki/v1/mt/#"
+        ): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)
+        ),
+        vol.Optional(MQTT_DEST_DEVICE_TYPES): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(
+                        value="MT10", label="MT10 (Temp/Humidity)"
+                    ),
+                    selector.SelectOptionDict(value="MT11", label="MT11 (Temp Probe)"),
+                    selector.SelectOptionDict(value="MT12", label="MT12 (Water Leak)"),
+                    selector.SelectOptionDict(value="MT14", label="MT14 (Air Quality)"),
+                    selector.SelectOptionDict(value="MT15", label="MT15 (Air Quality)"),
+                    selector.SelectOptionDict(value="MT20", label="MT20 (Door Sensor)"),
+                    selector.SelectOptionDict(value="MT30", label="MT30 (Button)"),
+                    selector.SelectOptionDict(
+                        value="MT40", label="MT40 (Power Monitor)"
+                    ),
+                    selector.SelectOptionDict(value="MV", label="MV (Cameras)"),
+                ],
+                multiple=True,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
     }
 )
 
@@ -225,5 +265,17 @@ OPTIONS_SCHEMA = vol.Schema(
         **OPTIONS_SCHEMA_BASIC.schema,
         **OPTIONS_SCHEMA_DASHBOARD.schema,
         **OPTIONS_SCHEMA_CAMERA.schema,
+    }
+)
+
+MQTT_DESTINATION_SCHEMA = vol.Schema(
+    {
+        vol.Required("server_ip"): selector.TextSelector(),
+        vol.Required("port"): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=1, max=65535, mode=selector.NumberSelectorMode.BOX
+            )
+        ),
+        vol.Required("topic"): selector.TextSelector(),
     }
 )
