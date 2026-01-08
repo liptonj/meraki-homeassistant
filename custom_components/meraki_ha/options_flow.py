@@ -188,8 +188,8 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         if user_input is not None:
             if "destination_index" in user_input:
-                self._destination_index_to_edit = int(user_input["destination_index"])
-                destination_to_edit = destinations[self._destination_index_to_edit]
+                self._editing_destination_index = int(user_input["destination_index"])
+                destination_to_edit = destinations[self._editing_destination_index]
                 return self.async_show_form(
                     step_id="mqtt_edit_destination",
                     data_schema=vol.Schema(
@@ -219,10 +219,10 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                     },
                 )
             else:
-                if self._destination_index_to_edit is not None:
-                    destinations[self._destination_index_to_edit] = user_input
+                if self._editing_destination_index is not None:
+                    destinations[self._editing_destination_index] = user_input
                     self.options[CONF_MQTT_RELAY_DESTINATIONS] = destinations
-                    self._destination_index_to_edit = None
+                    self._editing_destination_index = None
                     return self.async_create_entry(title="", data=self.options)
 
         destination_options = [
