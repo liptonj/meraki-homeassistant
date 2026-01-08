@@ -61,10 +61,12 @@ class MerakiOptionsFlowHandler(OptionsFlow):
         coordinator: MerakiDataCoordinator = self.hass.data[DOMAIN][
             self.config_entry.entry_id
         ]["coordinator"]
-        network_options = []
+        network_options: list[selector.SelectOptionDict] = []
         if coordinator.data and coordinator.data.get("networks"):
             network_options = [
-                {"label": network["name"], "value": network["id"]}
+                selector.SelectOptionDict(
+                    label=network["name"], value=network["id"]
+                )
                 for network in coordinator.data["networks"]
             ]
 
@@ -288,7 +290,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
         self,
         schema: vol.Schema,
         defaults: dict[str, Any],
-        network_options: list[dict[str, str]],
+        network_options: list[selector.SelectOptionDict],
     ) -> vol.Schema:
         """
         Populate a schema with default values.

@@ -253,9 +253,9 @@ def test_populate_schema_defaults_with_networks() -> None:
     )
 
     defaults: dict[str, object] = {}
-    network_options = [
-        {"label": "Main Office", "value": "N_123"},
-        {"label": "Branch Office", "value": "N_456"},
+    network_options: list[selector.SelectOptionDict] = [
+        selector.SelectOptionDict(label="Main Office", value="N_123"),
+        selector.SelectOptionDict(label="Branch Office", value="N_456"),
     ]
 
     result_schema = handler._populate_schema_defaults(schema, defaults, network_options)

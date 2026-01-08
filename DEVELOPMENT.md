@@ -6,12 +6,19 @@ This document provides a comprehensive guide for developers who want to contribu
 
 ### 1.1. Local Development Environment
 
-This project uses standard `pip` for dependency management.
+This project uses **uv** for Python package management. All tool configurations (ruff, mypy, bandit, pytest) are centralized in `pyproject.toml`.
 
-1.  **Install dependencies:**
+1.  **Install uv** (if not already installed):
     ```bash
-    pip install -r requirements_dev.txt
+    curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
+
+2.  **Install dependencies:**
+    ```bash
+    uv sync
+    ```
+
+    This will create a virtual environment and install all dependencies from `uv.lock`.
 
 ### 1.2. Docker Test Environment
 
@@ -31,35 +38,43 @@ For a more isolated and consistent testing environment, you can use the provided
 
 Before submitting, you **must** run all quality checks. These are also enforced by pre-commit hooks.
 
+All commands should be run through `uv run` to ensure the correct virtual environment is used:
+
 1.  **Linting & Formatting (Ruff):**
 
     ```bash
-    ruff check --fix .
-    ruff format .
+    uv run ruff check --fix .
+    uv run ruff format .
     ```
 
 2.  **Type Checking (mypy):**
 
     ```bash
-    mypy custom_components/meraki_ha/ tests/
+    uv run mypy custom_components/meraki_ha/ tests/
     ```
 
 3.  **Security Analysis (bandit):**
 
     ```bash
-    bandit -c .bandit.yaml -r .
+    # Note: Configuration is in pyproject.toml (not .bandit.yaml)
+    uv run bandit -c pyproject.toml -r custom_components/meraki_ha/
     ```
 
 4.  **Run Tests (pytest):**
 
     ```bash
-    pytest
+    uv run pytest
     ```
 
 5.  **Home Assistant Validation (hassfest):**
     ```bash
     docker run --rm -v "$(pwd)":/github/workspace ghcr.io/home-assistant/hassfest
     ```
+
+**Tip:** You can also run the all-in-one check script:
+```bash
+./run_checks.sh
+```
 
 ## 3. Frontend Development
 
