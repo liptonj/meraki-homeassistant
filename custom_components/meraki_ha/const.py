@@ -27,6 +27,18 @@ CONF_MERAKI_ORG_ID: Final = "meraki_org_id"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 """Configuration key for the scan interval in seconds."""
 
+CONF_NETWORK_SCAN_INTERVAL: Final = "network_scan_interval"
+"""Configuration key for the network scan interval in seconds."""
+
+CONF_DEVICE_SCAN_INTERVAL: Final = "device_scan_interval"
+"""Configuration key for the device scan interval in seconds."""
+
+CONF_CLIENT_SCAN_INTERVAL: Final = "client_scan_interval"
+"""Configuration key for the client scan interval in seconds."""
+
+CONF_SSID_SCAN_INTERVAL: Final = "ssid_scan_interval"
+"""Configuration key for the SSID scan interval in seconds."""
+
 DATA_CLIENT: Final = "client"
 """Key for storing the Meraki API client in Home Assistant's data."""
 
@@ -149,6 +161,18 @@ MERAKI_API_CLIENT: Final = "meraki_api_client"
 
 DEFAULT_SCAN_INTERVAL: Final = 90
 """Default scan interval in seconds for the Meraki API data."""
+
+DEFAULT_NETWORK_SCAN_INTERVAL: Final = 1800
+"""Default network scan interval in seconds (30 minutes)."""
+
+DEFAULT_DEVICE_SCAN_INTERVAL: Final = 600
+"""Default device scan interval in seconds (10 minutes)."""
+
+DEFAULT_CLIENT_SCAN_INTERVAL: Final = 90
+"""Default client scan interval in seconds (90 seconds)."""
+
+DEFAULT_SSID_SCAN_INTERVAL: Final = 600
+"""Default SSID scan interval in seconds (10 minutes)."""
 
 # Defaults for new options
 DEFAULT_ENABLE_DEVICE_STATUS: Final = True

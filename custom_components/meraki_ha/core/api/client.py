@@ -141,22 +141,16 @@ class MerakiAPIClient:
         async with self._semaphore:
             return await coro
 
-    async def _async_fetch_initial_data(self) -> dict[str, Any]:
+    async def _async_fetch_initial_data(self, fetch_networks: bool, fetch_devices: bool) -> dict[str, Any]:
         """
         Fetch the initial batch of data from the Meraki API.
-
-        Returns
-        -------
+        Args:
+            fetch_networks: Whether to fetch the list of networks.
+            fetch_devices: Whether to fetch the list of devices.
+        Returns:
             A dictionary of initial data.
-
         """
         tasks = {
-            "networks": self._run_with_semaphore(
-                self.organization.get_organization_networks(),
-            ),
-            "devices": self._run_with_semaphore(
-                self.organization.get_organization_devices(),
-            ),
             "devices_availabilities": self._run_with_semaphore(
                 self.organization.get_organization_devices_availabilities(),
             ),
@@ -170,38 +164,57 @@ class MerakiAPIClient:
                 self.sensor.get_organization_sensor_readings_latest(),
             ),
         }
+        if fetch_networks:
+            tasks["networks"] = self._run_with_semaphore(
+                self.organization.get_organization_networks()
+            )
+        if fetch_devices:
+            tasks["devices"] = self._run_with_semaphore(
+                self.organization.get_organization_devices()
+            )
+
         results = await asyncio.gather(*tasks.values(), return_exceptions=True)
         return dict(zip(tasks.keys(), results, strict=True))
 
-    def _process_initial_data(self, results: dict[str, Any]) -> dict[str, Any]:
+    def _process_initial_data(
+        self,
+        results: dict[str, Any],
+        previous_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
-        Process the initial data, handling errors and merging.
-
+        Process initial data, merging with previous data if fetches were skipped.
         Args:
             results: The raw initial data from the API.
-
-        Returns
-        -------
+            previous_data: The previous data from the coordinator.
+        Returns:
             The processed initial data.
-
         """
+        if previous_data is None:
+            previous_data = {}
+
         networks_res = results.get("networks")
         devices_res = results.get("devices")
         devices_availabilities_res = results.get("devices_availabilities")
         appliance_uplink_statuses_res = results.get("appliance_uplink_statuses")
         sensor_readings_res = results.get("sensor_readings")
 
-        networks: list[MerakiNetwork] = (
-            networks_res if isinstance(networks_res, list) else []
-        )
-        if not isinstance(networks_res, list):
-            _LOGGER.warning("Could not fetch Meraki networks: %s", networks_res)
+        if networks_res:
+            networks: list[MerakiNetwork] = (
+                networks_res if isinstance(networks_res, list) else []
+            )
+            if not isinstance(networks_res, list):
+                _LOGGER.warning("Could not fetch Meraki networks: %s", networks_res)
+        else:
+            networks = previous_data.get("networks", [])
 
-        devices: list[MerakiDevice] = (
-            devices_res if isinstance(devices_res, list) else []
-        )
-        if not isinstance(devices_res, list):
-            _LOGGER.warning("Could not fetch Meraki devices: %s", devices_res)
+        if devices_res:
+            devices: list[MerakiDevice] = (
+                devices_res if isinstance(devices_res, list) else []
+            )
+            if not isinstance(devices_res, list):
+                _LOGGER.warning("Could not fetch Meraki devices: %s", devices_res)
+        else:
+            devices = previous_data.get("devices", [])
 
         devices_availabilities: list[dict[str, Any]] = (
             devices_availabilities_res
@@ -347,26 +360,25 @@ class MerakiAPIClient:
         self,
         networks: list[MerakiNetwork],
         devices: list[MerakiDevice],
+        fetch_ssids: bool = True,
     ) -> dict[str, Awaitable[Any]]:
         """
         Build a dictionary of tasks to fetch detailed data.
-
         Args:
             networks: A list of networks.
             devices: A list of devices.
-
-        Returns
-        -------
+            fetch_ssids: Whether to fetch SSID configuration data.
+        Returns:
             A dictionary of tasks.
-
         """
         detail_tasks: dict[str, Awaitable[Any]] = {}
         for network in networks:
             product_types = network.get("productTypes", [])
             if "wireless" in product_types:
-                detail_tasks[f"ssids_{network['id']}"] = self._run_with_semaphore(
-                    self.wireless.get_network_ssids(network["id"]),
-                )
+                if fetch_ssids:
+                    detail_tasks[f"ssids_{network['id']}"] = self._run_with_semaphore(
+                        self.wireless.get_network_ssids(network["id"])
+                    )
                 detail_tasks[f"wireless_settings_{network['id']}"] = (
                     self._run_with_semaphore(
                         self.wireless.get_network_wireless_settings(network["id"]),
@@ -471,8 +483,15 @@ class MerakiAPIClient:
                     if "unconfigured ssid" not in ssid.get("name", "").lower():
                         ssid["networkId"] = network["id"]
                         ssids.append(ssid)
-            elif previous_data and network_ssids_key in previous_data:
-                ssids.extend(previous_data[network_ssids_key])
+            elif previous_data and "ssids" in previous_data:
+                # If SSID fetch was skipped, reuse old data for this network
+                ssids.extend(
+                    [
+                        s
+                        for s in previous_data["ssids"]
+                        if s.get("networkId") == network["id"]
+                    ]
+                )
 
             network_traffic_key = f"traffic_{network['id']}"
             network_traffic = detail_data.get(network_traffic_key)
@@ -608,33 +627,34 @@ class MerakiAPIClient:
         self,
         previous_data: dict[str, Any] | None = None,
         enabled_network_ids: set[str] | None = None,
+        fetch_networks: bool = True,
+        fetch_devices: bool = True,
+        fetch_clients: bool = True,
+        fetch_ssids: bool = True,
     ) -> dict[str, Any]:
         """
         Fetch all data from the Meraki API concurrently, with caching.
-
         Args:
             previous_data: The previous data from the coordinator.
-            enabled_network_ids: Optional set of network IDs to poll. If None,
-                all networks are polled. If provided, only networks in this set
-                will have detailed API calls made for them.
-
-        Returns
-        -------
+            enabled_network_ids: Optional set of network IDs to poll.
+            fetch_networks: Whether to fetch network-level data.
+            fetch_devices: Whether to fetch device inventory data.
+            fetch_clients: Whether to fetch client data.
+            fetch_ssids: Whether to fetch SSID configuration data.
+        Returns:
             A dictionary of all data.
-
         """
         if previous_data is None:
             previous_data = {}
 
         _LOGGER.debug("Fetching fresh Meraki data from API")
-        initial_results = await self._async_fetch_initial_data()
-        processed_initial_data = self._process_initial_data(initial_results)
+        initial_results = await self._async_fetch_initial_data(fetch_networks, fetch_devices)
+        processed_initial_data = self._process_initial_data(initial_results, previous_data)
 
         all_networks = processed_initial_data["networks"]
         all_devices = processed_initial_data["devices"]
 
         # Filter networks and devices based on enabled_network_ids setting.
-        # This avoids making API calls for networks that the user has disabled.
         if enabled_network_ids is not None:
             networks = [n for n in all_networks if n.get("id") in enabled_network_ids]
             devices = [
@@ -649,13 +669,17 @@ class MerakiAPIClient:
             networks = all_networks
             devices = all_devices
 
-        network_clients, device_clients = await asyncio.gather(
-            self._async_fetch_network_clients(networks),
-            self._async_fetch_device_clients(devices),
-            return_exceptions=True,
-        )
+        if fetch_clients:
+            network_clients, device_clients = await asyncio.gather(
+                self._async_fetch_network_clients(networks),
+                self._async_fetch_device_clients(devices),
+                return_exceptions=True,
+            )
+        else:
+            network_clients = previous_data.get("clients", [])
+            device_clients = previous_data.get("clients_by_serial", {})
 
-        detail_tasks = self._build_detail_tasks(networks, devices)
+        detail_tasks = self._build_detail_tasks(networks, devices, fetch_ssids)
         detail_results = await asyncio.gather(
             *detail_tasks.values(),
             return_exceptions=True,

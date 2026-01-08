@@ -13,9 +13,17 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    CONF_CLIENT_SCAN_INTERVAL,
+    CONF_DEVICE_SCAN_INTERVAL,
     CONF_ENABLED_NETWORKS,
+    CONF_NETWORK_SCAN_INTERVAL,
     CONF_SCAN_INTERVAL,
+    CONF_SSID_SCAN_INTERVAL,
+    DEFAULT_CLIENT_SCAN_INTERVAL,
+    DEFAULT_DEVICE_SCAN_INTERVAL,
+    DEFAULT_NETWORK_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SSID_SCAN_INTERVAL,
     DOMAIN,
 )
 from .core.api.client import MerakiAPIClient as ApiClient
@@ -53,14 +61,32 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._vlan_check_timestamps: dict[str, datetime] = {}
         self._traffic_check_timestamps: dict[str, datetime] = {}
 
-        try:
-            scan_interval = int(
-                entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        # Timestamps for tiered polling
+        self._last_network_refresh: datetime | None = None
+        self._last_device_refresh: datetime | None = None
+        self._last_client_refresh: datetime | None = None
+        self._last_ssid_refresh: datetime | None = None
+
+        # Tiered polling intervals
+        self._network_scan_interval = timedelta(
+            seconds=entry.options.get(
+                CONF_NETWORK_SCAN_INTERVAL, DEFAULT_NETWORK_SCAN_INTERVAL
             )
-            if scan_interval <= 0:
-                scan_interval = DEFAULT_SCAN_INTERVAL
-        except (ValueError, TypeError):
-            scan_interval = DEFAULT_SCAN_INTERVAL
+        )
+        self._device_scan_interval = timedelta(
+            seconds=entry.options.get(
+                CONF_DEVICE_SCAN_INTERVAL, DEFAULT_DEVICE_SCAN_INTERVAL
+            )
+        )
+        self._client_scan_interval = timedelta(
+            seconds=entry.options.get(
+                CONF_CLIENT_SCAN_INTERVAL, DEFAULT_CLIENT_SCAN_INTERVAL
+            )
+        )
+        self._ssid_scan_interval = timedelta(
+            seconds=entry.options.get(CONF_SSID_SCAN_INTERVAL, DEFAULT_SSID_SCAN_INTERVAL)
+        )
+        scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
         super().__init__(
             hass,
@@ -522,21 +548,55 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return set(enabled_network_ids)
 
     async def _async_update_data(self) -> dict[str, Any]:
-        """Fetch data from API endpoint and apply filters."""
+        """Fetch data from API endpoint based on tiered polling."""
+        now = datetime.now()
+
+        # Determine which data to fetch
+        fetch_networks = (
+            self._last_network_refresh is None
+            or (now - self._last_network_refresh) > self._network_scan_interval
+        )
+        fetch_devices = (
+            self._last_device_refresh is None
+            or (now - self._last_device_refresh) > self._device_scan_interval
+        )
+        fetch_clients = (
+            self._last_client_refresh is None
+            or (now - self._last_client_refresh) > self._client_scan_interval
+        )
+        fetch_ssids = (
+            self._last_ssid_refresh is None
+            or (now - self._last_ssid_refresh) > self._ssid_scan_interval
+        )
+
         try:
             # Get enabled network IDs to filter API calls upfront
             enabled_network_ids = self._get_enabled_network_ids()
 
+            # Always fetch frequently changing data (status, etc.)
             data = await self.api.get_all_data(
                 self.last_successful_data,
                 enabled_network_ids=enabled_network_ids,
+                fetch_networks=fetch_networks,
+                fetch_devices=fetch_devices,
+                fetch_clients=fetch_clients,
+                fetch_ssids=fetch_ssids,
             )
             if not data:
                 _LOGGER.warning("API call to get_all_data returned no data.")
                 raise UpdateFailed("API call returned no data.")
 
+            # Update timestamps if fetches were successful
+            if fetch_networks:
+                self._last_network_refresh = now
+            if fetch_devices:
+                self._last_device_refresh = now
+            if fetch_clients:
+                self._last_client_refresh = now
+            if fetch_ssids:
+                self._last_ssid_refresh = now
+
             self._filter_enabled_networks(data)
-            _LOGGER.debug("SSIDs after filtering: %s", data.get("ssids"))
             await self._async_remove_disabled_devices(data)
 
             # Process errors and update timers
@@ -583,15 +643,12 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._populate_device_entities(data)
             self._populate_ssid_entities(data)
 
-            _LOGGER.info("Meraki networks: %s", data.get("networks"))
+            _LOGGER.info("Meraki data refreshed")
 
-            self.last_successful_update = datetime.now()
+            self.last_successful_update = now
             self.last_successful_data = data
             return data
         except ApiClientCommunicationError as err:
-            # If we have successfully fetched data before, log a warning and return
-            # the stale data. Otherwise, raise UpdateFailed to indicate that the
-            # integration cannot start.
             if self.last_successful_data:
                 _LOGGER.warning(
                     "Could not connect to Meraki API, using stale data. "

@@ -30,3 +30,4 @@ custom_components/meraki_ha/www/dist/
 config/
 blocked_message.md
 .venv/
+meraki_homeassistant.egg-info

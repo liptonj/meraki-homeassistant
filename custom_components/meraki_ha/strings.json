@@ -75,13 +75,21 @@
         "title": "Meraki Options - Basic Settings",
         "description": "Step 1 of 3: Configure basic integration settings.",
         "data": {
-          "scan_interval": "Scan Interval (seconds)",
+          "scan_interval": "Device Status Scan Interval (seconds)",
+          "network_scan_interval": "Network/Org Scan Interval",
+          "device_scan_interval": "Device Inventory Scan Interval",
+          "client_scan_interval": "Client Scan Interval",
+          "ssid_scan_interval": "SSID Scan Interval",
           "enable_device_tracker": "Enable Client Tracker",
           "enable_vlan_management": "Enable VLAN Management",
           "enabled_networks": "Enabled Networks"
         },
         "data_description": {
-          "scan_interval": "How often to poll the Meraki API for updates, in seconds.",
+          "scan_interval": "How often to poll for frequently changing data, like device status and port status.",
+          "network_scan_interval": "How often to poll for rarely changing data, like network and organization structure.",
+          "device_scan_interval": "How often to poll for infrequently changing data, like the device inventory.",
+          "client_scan_interval": "How often to poll for very frequently changing data, like client information.",
+          "ssid_scan_interval": "How often to poll for infrequently changing data, like SSID configuration.",
           "enable_device_tracker": "Enable tracking of clients connected to the network.",
           "enable_vlan_management": "Enable VLAN management features.",
           "enabled_networks": "Select which networks to monitor. Leave empty for all networks."

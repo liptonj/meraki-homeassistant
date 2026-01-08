@@ -17,6 +17,10 @@ from .const import (
     CONF_MERAKI_API_KEY,
     CONF_MERAKI_ORG_ID,
     CONF_SCAN_INTERVAL,
+    CONF_NETWORK_SCAN_INTERVAL,
+    CONF_DEVICE_SCAN_INTERVAL,
+    CONF_CLIENT_SCAN_INTERVAL,
+    CONF_SSID_SCAN_INTERVAL,
     CONF_TEMPERATURE_UNIT,
     DASHBOARD_VIEW_MODE_NETWORK,
     DASHBOARD_VIEW_MODE_TYPE,
@@ -28,6 +32,10 @@ from .const import (
     DEFAULT_ENABLE_VLAN_MANAGEMENT,
     DEFAULT_ENABLED_NETWORKS,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_NETWORK_SCAN_INTERVAL,
+    DEFAULT_DEVICE_SCAN_INTERVAL,
+    DEFAULT_CLIENT_SCAN_INTERVAL,
+    DEFAULT_SSID_SCAN_INTERVAL,
     DEFAULT_TEMPERATURE_UNIT,
     TEMPERATURE_UNIT_CELSIUS,
     TEMPERATURE_UNIT_FAHRENHEIT,
@@ -52,6 +60,50 @@ OPTIONS_SCHEMA_BASIC = vol.Schema(
                 min=30,
                 max=300,
                 step=5,
+                unit_of_measurement="seconds",
+                mode=selector.NumberSelectorMode.SLIDER,
+            )
+        ),
+        vol.Required(
+            CONF_NETWORK_SCAN_INTERVAL, default=DEFAULT_NETWORK_SCAN_INTERVAL
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=300,
+                max=7200,
+                step=60,
+                unit_of_measurement="seconds",
+                mode=selector.NumberSelectorMode.SLIDER,
+            )
+        ),
+        vol.Required(
+            CONF_DEVICE_SCAN_INTERVAL, default=DEFAULT_DEVICE_SCAN_INTERVAL
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=60,
+                max=3600,
+                step=30,
+                unit_of_measurement="seconds",
+                mode=selector.NumberSelectorMode.SLIDER,
+            )
+        ),
+        vol.Required(
+            CONF_CLIENT_SCAN_INTERVAL, default=DEFAULT_CLIENT_SCAN_INTERVAL
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=30,
+                max=600,
+                step=10,
+                unit_of_measurement="seconds",
+                mode=selector.NumberSelectorMode.SLIDER,
+            )
+        ),
+        vol.Required(
+            CONF_SSID_SCAN_INTERVAL, default=DEFAULT_SSID_SCAN_INTERVAL
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=60,
+                max=3600,
+                step=30,
                 unit_of_measurement="seconds",
                 mode=selector.NumberSelectorMode.SLIDER,
             )
