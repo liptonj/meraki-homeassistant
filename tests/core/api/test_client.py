@@ -169,9 +169,9 @@ class TestMerakiAPIClient:
 
         processed = api_client._process_initial_data(results)
 
-        assert processed["networks"] == []
-        assert processed["devices"] == []
-        assert processed["appliance_uplink_statuses"] == []
+        assert "networks" not in processed
+        assert "devices" not in processed
+        assert "appliance_uplink_statuses" not in processed
 
     @pytest.mark.asyncio
     async def test_async_fetch_network_clients(
