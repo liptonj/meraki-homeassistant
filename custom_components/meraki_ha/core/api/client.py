@@ -674,9 +674,10 @@ class MerakiAPIClient:
                 return_exceptions=True,
             )
         else:
-            network_clients, device_clients = previous_data.get(
-                "clients", []
-            ), previous_data.get("clients_by_serial", {})
+            network_clients, device_clients = (
+                previous_data.get("clients", []),
+                previous_data.get("clients_by_serial", {}),
+            )
 
         detail_tasks = self._build_detail_tasks(
             networks, devices, fetch_ssids=fetch_ssids
