@@ -233,6 +233,13 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   );
   const hasAutoExpandedRef = useRef(false);
 
+  // Update view mode if the default prop changes from the backend
+  useEffect(() => {
+    if (defaultViewMode) {
+      setViewMode(defaultViewMode);
+    }
+  }, [defaultViewMode]);
+
   // Auto-expand if there's only one network (or a few networks)
   useEffect(() => {
     if (!hasAutoExpandedRef.current && data?.networks) {
