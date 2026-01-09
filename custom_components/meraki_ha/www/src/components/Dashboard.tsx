@@ -772,6 +772,11 @@ const Dashboard = memo(DashboardComponent, (prevProps, nextProps) => {
   // Return true if props are equal (skip re-render)
   // Return false if props are different (trigger re-render)
 
+  // Check if dashboard settings changed (fixes issue #77)
+  if (prevProps.defaultViewMode !== nextProps.defaultViewMode) {
+    return false; // View mode preference changed, re-render
+  }
+
   // Check if data reference changed
   if (prevProps.data === nextProps.data) {
     return true; // Same reference, skip re-render
