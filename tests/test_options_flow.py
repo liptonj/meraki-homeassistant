@@ -393,6 +393,7 @@ async def test_async_step_mqtt_destination_validation_host_required(
     # Should show form with error
     assert result["type"].value == "form"
     assert result["step_id"] == "mqtt_destination"
+    assert result["errors"] is not None
     assert "base" in result["errors"]
     assert result["errors"]["base"] == "host_required"
 
@@ -416,5 +417,6 @@ async def test_async_step_mqtt_destination_validation_name_required(
     # Should show form with error
     assert result["type"].value == "form"
     assert result["step_id"] == "mqtt_destination"
+    assert result["errors"] is not None
     assert "base" in result["errors"]
     assert result["errors"]["base"] == "name_required"

@@ -256,13 +256,12 @@ MQTT_DESTINATION_SCHEMA = vol.Schema(
 )
 
 # Step 4: MQTT Settings
+# Note: The MQTT relay destination management is handled dynamically in
+# options_flow.py using an action selector, not a static schema.
 OPTIONS_SCHEMA_MQTT = vol.Schema(
     {
         vol.Required(
             CONF_ENABLE_MQTT, default=DEFAULT_ENABLE_MQTT
-        ): selector.BooleanSelector(),
-        vol.Optional(
-            "add_relay_destination", default=False
         ): selector.BooleanSelector(),
     }
 )
