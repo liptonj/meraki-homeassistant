@@ -25,9 +25,9 @@ def wireless(mock_client):
 
 async def test_create_identity_psk(wireless, mock_client):
     """Test create_identity_psk."""
-    mock_client.dashboard.wireless.createNetworkWirelessSsidIdentityPsk.return_value = {
-        "id": "test_id"
-    }
+    mock_client.dashboard.wireless.createNetworkWirelessSsidIdentityPsk = AsyncMock(
+        return_value={"id": "test_id"}
+    )
 
     result = await wireless.create_identity_psk(
         network_id="net1",
@@ -49,9 +49,9 @@ async def test_create_identity_psk(wireless, mock_client):
 
 async def test_create_identity_psk_no_group_policy(wireless, mock_client):
     """Test create_identity_psk without group policy."""
-    mock_client.dashboard.wireless.createNetworkWirelessSsidIdentityPsk.return_value = {
-        "id": "test_id"
-    }
+    mock_client.dashboard.wireless.createNetworkWirelessSsidIdentityPsk = AsyncMock(
+        return_value={"id": "test_id"}
+    )
 
     result = await wireless.create_identity_psk(
         network_id="net1",
@@ -72,8 +72,8 @@ async def test_create_identity_psk_no_group_policy(wireless, mock_client):
 
 async def test_delete_identity_psk(wireless, mock_client):
     """Test delete_identity_psk."""
-    mock_client.dashboard.wireless.deleteNetworkWirelessSsidIdentityPsk.return_value = (
-        None
+    mock_client.dashboard.wireless.deleteNetworkWirelessSsidIdentityPsk = AsyncMock(
+        return_value=None
     )
 
     await wireless.delete_identity_psk(

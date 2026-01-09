@@ -25,7 +25,9 @@ def network(mock_client):
 async def test_get_group_policies(network, mock_client):
     """Test get_group_policies."""
     mock_data = [{"groupPolicyId": "gp1"}]
-    mock_client.dashboard.networks.getNetworkGroupPolicies.return_value = mock_data
+    mock_client.dashboard.networks.getNetworkGroupPolicies = AsyncMock(
+        return_value=mock_data
+    )
 
     result = await network.get_group_policies("net1")
 
