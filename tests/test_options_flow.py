@@ -146,16 +146,16 @@ def test_populate_schema_defaults_with_networks() -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_step_camera_with_user_input_moves_to_mqtt(
+async def test_async_step_camera_with_user_input_moves_to_polling(
     mock_options_config_entry: MagicMock,
 ) -> None:
-    """Test options flow step camera with user input moves to mqtt step."""
+    """Test options flow step camera with user input moves to polling step."""
     handler = MerakiOptionsFlowHandler(mock_options_config_entry)
 
     result = await handler.async_step_camera({"some_camera_option": True})
 
-    assert result["type"].value == "menu"
-    assert result["step_id"] == "mqtt"
+    assert result["type"].value == "form"
+    assert result["step_id"] == "polling"
 
 
 @pytest.mark.asyncio
@@ -285,7 +285,11 @@ async def test_full_options_flow_creates_entry(
     result = await handler.async_step_dashboard({})
     assert result["step_id"] == "camera"
 
-    # Step 3: camera -> goes to mqtt
+    # Step 3: camera -> goes to polling
     result = await handler.async_step_camera({})
+    assert result["step_id"] == "polling"
+
+    # Step 4: polling -> goes to mqtt
+    result = await handler.async_step_polling({})
     assert result["type"].value == "menu"
     assert result["step_id"] == "mqtt"

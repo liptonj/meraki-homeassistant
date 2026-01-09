@@ -347,6 +347,7 @@ class MerakiAPIClient:
         self,
         networks: list[MerakiNetwork],
         devices: list[MerakiDevice],
+        fetch_ssids: bool = True,
     ) -> dict[str, Awaitable[Any]]:
         """
         Build a dictionary of tasks to fetch detailed data.
@@ -363,7 +364,7 @@ class MerakiAPIClient:
         detail_tasks: dict[str, Awaitable[Any]] = {}
         for network in networks:
             product_types = network.get("productTypes", [])
-            if "wireless" in product_types:
+            if "wireless" in product_types and fetch_ssids:
                 detail_tasks[f"ssids_{network['id']}"] = self._run_with_semaphore(
                     self.wireless.get_network_ssids(network["id"]),
                 )
@@ -438,6 +439,7 @@ class MerakiAPIClient:
         networks: list[MerakiNetwork],
         devices: list[MerakiDevice],
         previous_data: dict[str, Any],
+        fetch_ssids: bool = True,
     ) -> dict[str, Any]:
         """
         Process the detailed data and merge it into the main data structure.
@@ -464,15 +466,16 @@ class MerakiAPIClient:
         wireless_settings_by_network: dict[str, Any] = {}
 
         for network in networks:
-            network_ssids_key = f"ssids_{network['id']}"
-            network_ssids = detail_data.get(network_ssids_key)
-            if isinstance(network_ssids, list):
-                for ssid in network_ssids:
-                    if "unconfigured ssid" not in ssid.get("name", "").lower():
-                        ssid["networkId"] = network["id"]
-                        ssids.append(ssid)
-            elif previous_data and network_ssids_key in previous_data:
-                ssids.extend(previous_data[network_ssids_key])
+            if fetch_ssids:
+                network_ssids_key = f"ssids_{network['id']}"
+                network_ssids = detail_data.get(network_ssids_key)
+                if isinstance(network_ssids, list):
+                    for ssid in network_ssids:
+                        if "unconfigured ssid" not in ssid.get("name", "").lower():
+                            ssid["networkId"] = network["id"]
+                            ssids.append(ssid)
+                elif previous_data and network_ssids_key in previous_data:
+                    ssids.extend(previous_data[network_ssids_key])
 
             network_traffic_key = f"traffic_{network['id']}"
             network_traffic = detail_data.get(network_traffic_key)
@@ -608,6 +611,10 @@ class MerakiAPIClient:
         self,
         previous_data: dict[str, Any] | None = None,
         enabled_network_ids: set[str] | None = None,
+        fetch_networks: bool = True,
+        fetch_devices: bool = True,
+        fetch_clients: bool = True,
+        fetch_ssids: bool = True,
     ) -> dict[str, Any]:
         """
         Fetch all data from the Meraki API concurrently, with caching.
@@ -627,11 +634,22 @@ class MerakiAPIClient:
             previous_data = {}
 
         _LOGGER.debug("Fetching fresh Meraki data from API")
-        initial_results = await self._async_fetch_initial_data()
-        processed_initial_data = self._process_initial_data(initial_results)
+        if fetch_networks or fetch_devices:
+            initial_results = await self._async_fetch_initial_data()
+            processed_initial_data = self._process_initial_data(initial_results)
+        else:
+            processed_initial_data = previous_data
 
-        all_networks = processed_initial_data["networks"]
-        all_devices = processed_initial_data["devices"]
+        all_networks = (
+            processed_initial_data["networks"]
+            if fetch_networks and "networks" in processed_initial_data
+            else previous_data.get("networks", [])
+        )
+        all_devices = (
+            processed_initial_data["devices"]
+            if fetch_devices and "devices" in processed_initial_data
+            else previous_data.get("devices", [])
+        )
 
         # Filter networks and devices based on enabled_network_ids setting.
         # This avoids making API calls for networks that the user has disabled.
@@ -649,24 +667,35 @@ class MerakiAPIClient:
             networks = all_networks
             devices = all_devices
 
-        network_clients, device_clients = await asyncio.gather(
-            self._async_fetch_network_clients(networks),
-            self._async_fetch_device_clients(devices),
-            return_exceptions=True,
-        )
+        if fetch_clients:
+            network_clients, device_clients = await asyncio.gather(
+                self._async_fetch_network_clients(networks),
+                self._async_fetch_device_clients(devices),
+                return_exceptions=True,
+            )
+        else:
+            network_clients, device_clients = previous_data.get(
+                "clients", []
+            ), previous_data.get("clients_by_serial", {})
 
-        detail_tasks = self._build_detail_tasks(networks, devices)
-        detail_results = await asyncio.gather(
-            *detail_tasks.values(),
-            return_exceptions=True,
+        detail_tasks = self._build_detail_tasks(
+            networks, devices, fetch_ssids=fetch_ssids
         )
-        detail_data = dict(zip(detail_tasks.keys(), detail_results, strict=True))
+        if detail_tasks:
+            detail_results = await asyncio.gather(
+                *detail_tasks.values(),
+                return_exceptions=True,
+            )
+            detail_data = dict(zip(detail_tasks.keys(), detail_results, strict=True))
+        else:
+            detail_data = {}
 
         processed_detailed_data = self._process_detailed_data(
             detail_data,
             networks,
             devices,
             previous_data,
+            fetch_ssids=fetch_ssids,
         )
 
         return {

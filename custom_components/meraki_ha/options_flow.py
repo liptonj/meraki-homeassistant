@@ -18,6 +18,7 @@ from .schemas import (
     OPTIONS_SCHEMA_BASIC,
     OPTIONS_SCHEMA_CAMERA,
     OPTIONS_SCHEMA_DASHBOARD,
+    OPTIONS_SCHEMA_POLLING,
 )
 
 
@@ -129,7 +130,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
         """
         if user_input is not None:
             self.options.update(user_input)
-            return await self.async_step_mqtt()
+            return await self.async_step_polling()
 
         schema_with_defaults = self._populate_schema_defaults(
             OPTIONS_SCHEMA_CAMERA,
@@ -139,6 +140,37 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         return self.async_show_form(
             step_id="camera",
+            data_schema=schema_with_defaults,
+        )
+
+    async def async_step_polling(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """
+        Step 4: Polling Settings.
+
+        Args:
+        ----
+            user_input: The user input.
+
+        Returns
+        -------
+            The flow result.
+
+        """
+        if user_input is not None:
+            self.options.update(user_input)
+            return await self.async_step_mqtt()
+
+        schema_with_defaults = self._populate_schema_defaults(
+            OPTIONS_SCHEMA_POLLING,
+            self.options,
+            [],
+        )
+
+        return self.async_show_form(
+            step_id="polling",
             data_schema=schema_with_defaults,
         )
 

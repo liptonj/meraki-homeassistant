@@ -19,6 +19,9 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SCAN_INTERVAL_CLIENTS,
     CONF_SCAN_INTERVAL_DEVICE_STATUS,
+    CONF_NETWORK_SCAN_INTERVAL,
+    CONF_DEVICE_SCAN_INTERVAL,
+    CONF_SSID_SCAN_INTERVAL,
     CONF_TEMPERATURE_UNIT,
     DASHBOARD_VIEW_MODE_NETWORK,
     DASHBOARD_VIEW_MODE_TYPE,
@@ -32,6 +35,9 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL_CLIENTS,
     DEFAULT_SCAN_INTERVAL_DEVICE_STATUS,
+    DEFAULT_NETWORK_SCAN_INTERVAL,
+    DEFAULT_DEVICE_SCAN_INTERVAL,
+    DEFAULT_SSID_SCAN_INTERVAL,
     DEFAULT_TEMPERATURE_UNIT,
     TEMPERATURE_UNIT_CELSIUS,
     TEMPERATURE_UNIT_FAHRENHEIT,
@@ -63,17 +69,6 @@ OPTIONS_SCHEMA_BASIC = vol.Schema(
         vol.Required(
             CONF_SCAN_INTERVAL_DEVICE_STATUS,
             default=DEFAULT_SCAN_INTERVAL_DEVICE_STATUS,
-        ): selector.NumberSelector(
-            selector.NumberSelectorConfig(
-                min=30,
-                max=300,
-                step=5,
-                unit_of_measurement="seconds",
-                mode=selector.NumberSelectorMode.SLIDER,
-            )
-        ),
-        vol.Required(
-            CONF_SCAN_INTERVAL_CLIENTS, default=DEFAULT_SCAN_INTERVAL_CLIENTS
         ): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=30,
@@ -219,6 +214,54 @@ MQTT_DESTINATION_SCHEMA = vol.Schema(
     }
 )
 
+OPTIONS_SCHEMA_POLLING = vol.Schema(
+    {
+        vol.Required(
+            CONF_NETWORK_SCAN_INTERVAL, default=DEFAULT_NETWORK_SCAN_INTERVAL
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=300,
+                max=7200,
+                step=60,
+                unit_of_measurement="seconds",
+                mode=selector.NumberSelectorMode.SLIDER,
+            )
+        ),
+        vol.Required(
+            CONF_DEVICE_SCAN_INTERVAL, default=DEFAULT_DEVICE_SCAN_INTERVAL
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=120,
+                max=3600,
+                step=30,
+                unit_of_measurement="seconds",
+                mode=selector.NumberSelectorMode.SLIDER,
+            )
+        ),
+        vol.Required(
+            CONF_SCAN_INTERVAL_CLIENTS, default=DEFAULT_SCAN_INTERVAL_CLIENTS
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=30,
+                max=300,
+                step=5,
+                unit_of_measurement="seconds",
+                mode=selector.NumberSelectorMode.SLIDER,
+            )
+        ),
+        vol.Required(
+            CONF_SSID_SCAN_INTERVAL, default=DEFAULT_SSID_SCAN_INTERVAL
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=120,
+                max=3600,
+                step=30,
+                unit_of_measurement="seconds",
+                mode=selector.NumberSelectorMode.SLIDER,
+            )
+        ),
+    }
+)
 # Combined schema for backwards compatibility
 OPTIONS_SCHEMA = vol.Schema(
     {

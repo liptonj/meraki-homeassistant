@@ -17,6 +17,14 @@ from .const import (
     CONF_ENABLED_NETWORKS,
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
+    CONF_NETWORK_SCAN_INTERVAL,
+    DEFAULT_NETWORK_SCAN_INTERVAL,
+    CONF_DEVICE_SCAN_INTERVAL,
+    DEFAULT_DEVICE_SCAN_INTERVAL,
+    CONF_SCAN_INTERVAL_CLIENTS,
+    DEFAULT_SCAN_INTERVAL_CLIENTS,
+    CONF_SSID_SCAN_INTERVAL,
+    DEFAULT_SSID_SCAN_INTERVAL,
     DOMAIN,
 )
 from .core.api.client import MerakiAPIClient as ApiClient
@@ -53,15 +61,37 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._pending_updates: dict[str, datetime] = {}
         self._vlan_check_timestamps: dict[str, datetime] = {}
         self._traffic_check_timestamps: dict[str, datetime] = {}
+        self.last_network_refresh: datetime | None = None
+        self.last_device_refresh: datetime | None = None
+        self.last_client_refresh: datetime | None = None
+        self.last_ssid_refresh: datetime | None = None
 
-        try:
-            scan_interval = int(
-                entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        def get_interval(key: str, default: int) -> int:
+            try:
+                interval = int(entry.options.get(key, default))
+                return interval if interval > 0 else default
+            except (ValueError, TypeError):
+                return default
+
+        scan_interval = get_interval(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        self.network_scan_interval = timedelta(
+            seconds=get_interval(
+                CONF_NETWORK_SCAN_INTERVAL, DEFAULT_NETWORK_SCAN_INTERVAL
             )
-            if scan_interval <= 0:
-                scan_interval = DEFAULT_SCAN_INTERVAL
-        except (ValueError, TypeError):
-            scan_interval = DEFAULT_SCAN_INTERVAL
+        )
+        self.device_scan_interval = timedelta(
+            seconds=get_interval(
+                CONF_DEVICE_SCAN_INTERVAL, DEFAULT_DEVICE_SCAN_INTERVAL
+            )
+        )
+        self.client_scan_interval = timedelta(
+            seconds=get_interval(
+                CONF_SCAN_INTERVAL_CLIENTS, DEFAULT_SCAN_INTERVAL_CLIENTS
+            )
+        )
+        self.ssid_scan_interval = timedelta(
+            seconds=get_interval(CONF_SSID_SCAN_INTERVAL, DEFAULT_SSID_SCAN_INTERVAL)
+        )
 
         super().__init__(
             hass,
@@ -559,16 +589,47 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from API endpoint and apply filters."""
         try:
+            now = datetime.now()
+            should_fetch_networks = (
+                not self.last_network_refresh
+                or (now - self.last_network_refresh) >= self.network_scan_interval
+            )
+            should_fetch_devices = (
+                not self.last_device_refresh
+                or (now - self.last_device_refresh) >= self.device_scan_interval
+            )
+            should_fetch_clients = (
+                not self.last_client_refresh
+                or (now - self.last_client_refresh) >= self.client_scan_interval
+            )
+            should_fetch_ssids = (
+                not self.last_ssid_refresh
+                or (now - self.last_ssid_refresh) >= self.ssid_scan_interval
+            )
+
             # Get enabled network IDs to filter API calls upfront
             enabled_network_ids = self._get_enabled_network_ids()
 
             data = await self.api.get_all_data(
                 self.last_successful_data,
                 enabled_network_ids=enabled_network_ids,
+                fetch_networks=should_fetch_networks,
+                fetch_devices=should_fetch_devices,
+                fetch_clients=should_fetch_clients,
+                fetch_ssids=should_fetch_ssids,
             )
             if not data:
                 _LOGGER.warning("API call to get_all_data returned no data.")
                 raise UpdateFailed("API call returned no data.")
+
+            if should_fetch_networks:
+                self.last_network_refresh = now
+            if should_fetch_devices:
+                self.last_device_refresh = now
+            if should_fetch_clients:
+                self.last_client_refresh = now
+            if should_fetch_ssids:
+                self.last_ssid_refresh = now
 
             self._filter_enabled_networks(data)
             self._filter_device_types(data)

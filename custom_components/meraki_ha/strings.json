@@ -73,11 +73,10 @@
     "step": {
       "init": {
         "title": "Meraki Options - Basic Settings",
-        "description": "Step 1 of 4: Configure basic integration settings.",
+        "description": "Step 1 of 5: Configure basic integration settings.",
         "data": {
           "scan_interval": "Default Polling Interval (seconds)",
           "scan_interval_device_status": "Device Status Polling Interval (seconds)",
-          "scan_interval_clients": "Client Polling Interval (seconds)",
           "enable_device_tracker": "Enable Client Tracker",
           "enable_vlan_management": "Enable VLAN Management",
           "enabled_networks": "Enabled Networks"
@@ -93,7 +92,7 @@
       },
       "dashboard": {
         "title": "Meraki Options - Dashboard Settings",
-        "description": "Step 2 of 4: Configure dashboard display preferences.",
+        "description": "Step 2 of 5: Configure dashboard display preferences.",
         "data": {
           "dashboard_view_mode": "Default Dashboard View",
           "dashboard_device_type_filter": "Default Device Type Filter",
@@ -109,7 +108,7 @@
       },
       "camera": {
         "title": "Meraki Options - Camera Settings",
-        "description": "Step 3 of 4: Configure camera-related settings.",
+        "description": "Step 3 of 5: Configure camera-related settings.",
         "data": {
           "camera_snapshot_interval": "Camera Snapshot Refresh Interval (seconds)",
           "camera_link_integration": "Camera Link Integration"
@@ -119,9 +118,25 @@
           "camera_link_integration": "Select an integration to filter which cameras are shown when linking Meraki cameras. Choose 'All Cameras' to see all available camera entities."
         }
       },
+      "polling": {
+        "title": "Meraki Options - Polling Intervals",
+        "description": "Step 4 of 5: Configure API polling intervals for different data types.",
+        "data": {
+          "network_scan_interval": "Networks and Org Structure",
+          "device_scan_interval": "Device Inventory",
+          "client_scan_interval": "Client Information",
+          "ssid_scan_interval": "SSID Configuration"
+        },
+        "data_description": {
+          "network_scan_interval": "How often to poll for network and organization structure. This data changes rarely.",
+          "device_scan_interval": "How often to poll for device inventory. This data changes infrequently.",
+          "client_scan_interval": "How often to poll for connected client information. More frequent polling can impact API rate limits.",
+          "ssid_scan_interval": "How often to poll for SSID configuration. This data changes infrequently."
+        }
+      },
       "mqtt": {
         "title": "Meraki Options - MQTT Settings",
-        "description": "Step 4 of 4: Configure MQTT relay destinations for MV Sense camera events.",
+        "description": "Step 5 of 5: Configure MQTT relay destinations for MV Sense camera events.",
         "menu_options": {
           "mqtt_add_destination": "Add New Destination",
           "mqtt_edit_destination": "Edit Existing Destination",
