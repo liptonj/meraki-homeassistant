@@ -9,11 +9,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable
-from functools import partial
+from collections.abc import Awaitable
 from typing import TYPE_CHECKING, Any
 
-import meraki
+import meraki.aio
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -66,7 +65,8 @@ class MerakiAPIClient:
         self._hass = hass
         self._base_url = base_url
 
-        self.dashboard: meraki.DashboardAPI | None = None
+        self.dashboard: meraki.aio.AsyncDashboardAPI | None = None
+        self._api_session: meraki.aio.AsyncDashboardAPI | None = None
 
         # Initialize endpoint handlers
         self.appliance = ApplianceEndpoints(self, self._hass)
@@ -87,13 +87,7 @@ class MerakiAPIClient:
 
     async def async_setup(self) -> None:
         """Perform asynchronous setup of the API client."""
-        self.dashboard = await self._hass.async_add_executor_job(
-            self._create_dashboard_api
-        )
-
-    def _create_dashboard_api(self) -> meraki.DashboardAPI:
-        """Create and return the MerakiDashboardAPI instance."""
-        return meraki.DashboardAPI(
+        self._api_session = meraki.aio.AsyncDashboardAPI(
             api_key=self._api_key,
             base_url=self._base_url,
             output_log=False,
@@ -103,28 +97,12 @@ class MerakiAPIClient:
             wait_on_rate_limit=True,
             nginx_429_retry_wait_time=2,
         )
+        self.dashboard = await self._api_session.__aenter__()
 
-    async def run_sync(
-        self,
-        func: Callable[..., Any],
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
-        """
-        Run a synchronous function in a thread pool.
-
-        Args:
-            func: The synchronous function to run.
-            *args: Positional arguments to pass to the function.
-            **kwargs: Keyword arguments to pass to the function.
-
-        Returns
-        -------
-            The result of the function.
-
-        """
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, partial(func, *args, **kwargs))
+    async def async_close(self) -> None:
+        """Close the API client session."""
+        if self._api_session:
+            await self._api_session.__aexit__(None, None, None)
 
     async def _run_with_semaphore(self, coro: Awaitable[Any]) -> Any:
         """
@@ -644,15 +622,18 @@ class MerakiAPIClient:
 
         _LOGGER.debug("Fetching fresh Meraki data from API")
         initial_results = await self._async_fetch_initial_data(
-            fetch_networks, fetch_devices
+            fetch_networks,
+            fetch_devices,
         )
         processed_initial_data = self._process_initial_data(initial_results)
 
         all_networks = processed_initial_data.get(
-            "networks", previous_data.get("networks", [])
+            "networks",
+            previous_data.get("networks", []),
         )
         all_devices = processed_initial_data.get(
-            "devices", previous_data.get("devices", [])
+            "devices",
+            previous_data.get("devices", []),
         )
 
         if enabled_network_ids is not None:
@@ -664,24 +645,35 @@ class MerakiAPIClient:
             networks = all_networks
             devices = all_devices
 
-        network_clients = []
-        device_clients = {}
-        if fetch_clients:
-            network_clients, device_clients = await asyncio.gather(
-                self._async_fetch_network_clients(networks),
-                self._async_fetch_device_clients(devices),
-                return_exceptions=True,
-            )
+        network_clients_future = (
+            self._async_fetch_network_clients(networks) if fetch_clients else None
+        )
+        device_clients_future = (
+            self._async_fetch_device_clients(devices) if fetch_clients else None
+        )
 
-        detail_tasks = {}
-        if fetch_ssids:
-            detail_tasks = self._build_detail_tasks(networks, devices)
-        detail_results = await asyncio.gather(
+        detail_tasks = (
+            self._build_detail_tasks(networks, devices) if fetch_ssids else {}
+        )
+        detail_results_future = asyncio.gather(
             *detail_tasks.values(),
             return_exceptions=True,
         )
-        detail_data = dict(zip(detail_tasks.keys(), detail_results, strict=True))
 
+        # Await all futures concurrently
+        results = await asyncio.gather(
+            network_clients_future,
+            device_clients_future,
+            detail_results_future,
+            return_exceptions=True,
+        )
+        network_clients, device_clients, detail_results = results
+
+        detail_data = (
+            dict(zip(detail_tasks.keys(), detail_results, strict=True))
+            if detail_results
+            else {}
+        )
         processed_detailed_data = self._process_detailed_data(
             detail_data,
             networks,
@@ -701,7 +693,7 @@ class MerakiAPIClient:
                 "devices": devices,
                 "appliance_uplink_statuses": appliance_uplinks,
                 **processed_detailed_data,
-            }
+            },
         )
         if fetch_clients:
             merged_data["clients"] = (
@@ -752,7 +744,7 @@ class MerakiAPIClient:
             The API response.
 
         """
-        return await self.appliance.reboot_device(serial)
+        return await self.devices.reboot_device(serial)
 
     async def async_get_switch_port_statuses(
         self,

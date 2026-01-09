@@ -84,6 +84,30 @@ class DevicesEndpoints:
         return validated
 
     @handle_meraki_errors
+    async def reboot_device(self, serial: str) -> dict[str, Any]:
+        """
+        Reboot a device.
+
+        Args:
+            serial: The serial number of the device.
+
+        Returns
+        -------
+            The response from the API.
+
+        """
+        if self._api_client.dashboard is None:
+            return {}
+        result = await self._api_client.dashboard.devices.rebootDevice(
+            serial=serial,
+        )
+        validated = validate_response(result)
+        if not isinstance(validated, dict):
+            _LOGGER.warning("reboot_device did not return a dict")
+            return {}
+        return validated
+
+    @handle_meraki_errors
     async def update_device(self, serial: str, **kwargs: Any) -> dict[str, Any]:
         """
         Update a device.
