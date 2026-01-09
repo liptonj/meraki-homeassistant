@@ -158,7 +158,7 @@ OPTIONS_SCHEMA_DASHBOARD = vol.Schema(
         ),
         vol.Required(
             CONF_DASHBOARD_DEVICE_TYPE_FILTER,
-            default=[DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER],
+            default=DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER,
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=[

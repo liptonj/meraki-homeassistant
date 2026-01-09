@@ -8,7 +8,13 @@ from homeassistant.helpers import selector
 
 from custom_components.meraki_ha.const import (
     CONF_ENABLED_NETWORKS,
+    CONF_MQTT_RELAY_DESTINATIONS,
     DOMAIN,
+    MQTT_DEST_HOST,
+    MQTT_DEST_NAME,
+    MQTT_DEST_PORT,
+    MQTT_DEST_TOPIC_FILTER,
+    MQTT_DEST_USE_TLS,
 )
 from custom_components.meraki_ha.options_flow import MerakiOptionsFlowHandler
 
@@ -208,3 +214,207 @@ async def test_full_options_flow_creates_entry(
     # Existing values should be preserved
     assert result["data"]["enable_device_status"] is True
     assert result["data"]["temperature_unit"] == "celsius"
+
+
+@pytest.mark.asyncio
+async def test_async_step_mqtt_action_add_navigates_to_destination(
+    mock_options_config_entry: MagicMock,
+) -> None:
+    """Test MQTT step with action='add' navigates to destination form."""
+    handler = MerakiOptionsFlowHandler(mock_options_config_entry)
+
+    result = await handler.async_step_mqtt({"enable_mqtt": True, "action": "add"})
+
+    assert result["type"].value == "form"
+    assert result["step_id"] == "mqtt_destination"
+
+
+@pytest.mark.asyncio
+async def test_async_step_mqtt_action_edit_navigates_to_select_edit(
+    mock_options_config_entry: MagicMock,
+) -> None:
+    """Test MQTT step with action='edit' navigates to select destination form."""
+    mock_options_config_entry.options[CONF_MQTT_RELAY_DESTINATIONS] = [
+        {MQTT_DEST_NAME: "Test Dest", MQTT_DEST_HOST: "localhost"},
+    ]
+    handler = MerakiOptionsFlowHandler(mock_options_config_entry)
+
+    result = await handler.async_step_mqtt({"enable_mqtt": True, "action": "edit"})
+
+    assert result["type"].value == "form"
+    assert result["step_id"] == "mqtt_select_destination_to_edit"
+
+
+@pytest.mark.asyncio
+async def test_async_step_mqtt_action_delete_navigates_to_select_delete(
+    mock_options_config_entry: MagicMock,
+) -> None:
+    """Test MQTT step with action='delete' navigates to select destination form."""
+    mock_options_config_entry.options[CONF_MQTT_RELAY_DESTINATIONS] = [
+        {MQTT_DEST_NAME: "Test Dest", MQTT_DEST_HOST: "localhost"},
+    ]
+    handler = MerakiOptionsFlowHandler(mock_options_config_entry)
+
+    result = await handler.async_step_mqtt({"enable_mqtt": True, "action": "delete"})
+
+    assert result["type"].value == "form"
+    assert result["step_id"] == "mqtt_select_destination_to_delete"
+
+
+@pytest.mark.asyncio
+async def test_async_step_mqtt_select_destination_to_edit(
+    mock_options_config_entry: MagicMock,
+) -> None:
+    """Test selecting a destination to edit navigates to destination form."""
+    mock_options_config_entry.options[CONF_MQTT_RELAY_DESTINATIONS] = [
+        {MQTT_DEST_NAME: "Dest 1", MQTT_DEST_HOST: "host1.example.com"},
+        {MQTT_DEST_NAME: "Dest 2", MQTT_DEST_HOST: "host2.example.com"},
+    ]
+    handler = MerakiOptionsFlowHandler(mock_options_config_entry)
+
+    result = await handler.async_step_mqtt_select_destination_to_edit(
+        {"destination_index": "1"}
+    )
+
+    assert result["type"].value == "form"
+    assert result["step_id"] == "mqtt_destination"
+    assert handler._editing_destination_index == 1
+
+
+@pytest.mark.asyncio
+async def test_async_step_mqtt_select_destination_to_delete(
+    mock_options_config_entry: MagicMock,
+) -> None:
+    """Test selecting a destination to delete removes it and returns to mqtt."""
+    mock_options_config_entry.options[CONF_MQTT_RELAY_DESTINATIONS] = [
+        {MQTT_DEST_NAME: "Dest 1", MQTT_DEST_HOST: "host1.example.com"},
+        {MQTT_DEST_NAME: "Dest 2", MQTT_DEST_HOST: "host2.example.com"},
+    ]
+    handler = MerakiOptionsFlowHandler(mock_options_config_entry)
+
+    result = await handler.async_step_mqtt_select_destination_to_delete(
+        {"destination_index": "0"}
+    )
+
+    # Should return to mqtt step
+    assert result["type"].value == "form"
+    assert result["step_id"] == "mqtt"
+    # First destination should be removed
+    assert len(handler.options[CONF_MQTT_RELAY_DESTINATIONS]) == 1
+    assert handler.options[CONF_MQTT_RELAY_DESTINATIONS][0][MQTT_DEST_NAME] == "Dest 2"
+
+
+@pytest.mark.asyncio
+async def test_async_step_mqtt_destination_add_new(
+    mock_options_config_entry: MagicMock,
+) -> None:
+    """Test adding a new MQTT destination."""
+    mock_options_config_entry.options[CONF_MQTT_RELAY_DESTINATIONS] = []
+    handler = MerakiOptionsFlowHandler(mock_options_config_entry)
+    handler._editing_destination_index = None
+
+    result = await handler.async_step_mqtt_destination(
+        {
+            MQTT_DEST_NAME: "New Destination",
+            MQTT_DEST_HOST: "new.example.com",
+            MQTT_DEST_PORT: 1883,
+            MQTT_DEST_USE_TLS: False,
+            MQTT_DEST_TOPIC_FILTER: "meraki/v1/mt/#",
+        }
+    )
+
+    # Should return to mqtt step
+    assert result["type"].value == "form"
+    assert result["step_id"] == "mqtt"
+    # New destination should be added
+    assert len(handler.options[CONF_MQTT_RELAY_DESTINATIONS]) == 1
+    assert (
+        handler.options[CONF_MQTT_RELAY_DESTINATIONS][0][MQTT_DEST_NAME]
+        == "New Destination"
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_step_mqtt_destination_edit_existing(
+    mock_options_config_entry: MagicMock,
+) -> None:
+    """Test editing an existing MQTT destination."""
+    mock_options_config_entry.options[CONF_MQTT_RELAY_DESTINATIONS] = [
+        {
+            MQTT_DEST_NAME: "Old Name",
+            MQTT_DEST_HOST: "old.example.com",
+            MQTT_DEST_PORT: 1883,
+        },
+    ]
+    handler = MerakiOptionsFlowHandler(mock_options_config_entry)
+    handler._editing_destination_index = 0
+
+    result = await handler.async_step_mqtt_destination(
+        {
+            MQTT_DEST_NAME: "Updated Name",
+            MQTT_DEST_HOST: "updated.example.com",
+            MQTT_DEST_PORT: 8883,
+            MQTT_DEST_USE_TLS: True,
+            MQTT_DEST_TOPIC_FILTER: "meraki/v1/mt/#",
+        }
+    )
+
+    # Should return to mqtt step
+    assert result["type"].value == "form"
+    assert result["step_id"] == "mqtt"
+    # Destination should be updated
+    assert len(handler.options[CONF_MQTT_RELAY_DESTINATIONS]) == 1
+    assert (
+        handler.options[CONF_MQTT_RELAY_DESTINATIONS][0][MQTT_DEST_NAME]
+        == "Updated Name"
+    )
+    assert (
+        handler.options[CONF_MQTT_RELAY_DESTINATIONS][0][MQTT_DEST_HOST]
+        == "updated.example.com"
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_step_mqtt_destination_validation_host_required(
+    mock_options_config_entry: MagicMock,
+) -> None:
+    """Test MQTT destination validation requires host."""
+    handler = MerakiOptionsFlowHandler(mock_options_config_entry)
+    handler._editing_destination_index = None
+
+    result = await handler.async_step_mqtt_destination(
+        {
+            MQTT_DEST_NAME: "Test",
+            MQTT_DEST_HOST: "",  # Empty host
+            MQTT_DEST_PORT: 1883,
+        }
+    )
+
+    # Should show form with error
+    assert result["type"].value == "form"
+    assert result["step_id"] == "mqtt_destination"
+    assert "base" in result["errors"]
+    assert result["errors"]["base"] == "host_required"
+
+
+@pytest.mark.asyncio
+async def test_async_step_mqtt_destination_validation_name_required(
+    mock_options_config_entry: MagicMock,
+) -> None:
+    """Test MQTT destination validation requires name."""
+    handler = MerakiOptionsFlowHandler(mock_options_config_entry)
+    handler._editing_destination_index = None
+
+    result = await handler.async_step_mqtt_destination(
+        {
+            MQTT_DEST_NAME: "",  # Empty name
+            MQTT_DEST_HOST: "test.example.com",
+            MQTT_DEST_PORT: 1883,
+        }
+    )
+
+    # Should show form with error
+    assert result["type"].value == "form"
+    assert result["step_id"] == "mqtt_destination"
+    assert "base" in result["errors"]
+    assert result["errors"]["base"] == "name_required"
