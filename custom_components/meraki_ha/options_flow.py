@@ -170,133 +170,130 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         """
         if user_input is not None:
-            # Handle MQTT enable/disable separately from relay management
             self.options[CONF_ENABLE_MQTT] = user_input.get(CONF_ENABLE_MQTT, False)
+            action = user_input.get("action")
 
-            # Check if there's an action to add a destination
-            if user_input.get("add_relay_destination"):
+            if action == "add":
                 self._editing_destination_index = None
                 return await self.async_step_mqtt_destination()
+            if action == "edit":
+                return await self.async_step_mqtt_select_destination_to_edit()
+            if action == "delete":
+                return await self.async_step_mqtt_select_destination_to_delete()
 
-            # Check if user wants to manage existing destinations
-            if user_input.get("manage_relay_destinations"):
-                return await self.async_step_mqtt_manage_relays()
-
+            # No action or "finish", so create the entry
             return self.async_create_entry(
                 title=CONF_INTEGRATION_TITLE,
                 data=self.options,
             )
 
-        # Build the schema with current relay destinations info
         current_destinations = self.options.get(
             CONF_MQTT_RELAY_DESTINATIONS, DEFAULT_MQTT_RELAY_DESTINATIONS
         )
-        destinations_summary = ""
-        if current_destinations:
-            destinations_summary = ", ".join(
+        destinations_summary = (
+            ", ".join(
                 d.get(MQTT_DEST_NAME, d.get(MQTT_DEST_HOST, "Unknown"))
                 for d in current_destinations
             )
+            if current_destinations
+            else "None configured"
+        )
 
-        # Build schema dynamically based on whether destinations exist
-        mqtt_schema = {
-            vol.Required(
-                CONF_ENABLE_MQTT,
-                default=self.options.get(CONF_ENABLE_MQTT, False),
-            ): selector.BooleanSelector(),
-            vol.Optional(
-                "add_relay_destination", default=False
-            ): selector.BooleanSelector(),
-        }
-
-        # Add manage button if there are destinations to manage
+        menu_options = ["add", "finish"]
         if current_destinations:
-            mqtt_schema[vol.Optional("manage_relay_destinations", default=False)] = (
-                selector.BooleanSelector()
-            )
+            menu_options.extend(["edit", "delete"])
 
         return self.async_show_form(
             step_id="mqtt",
-            data_schema=vol.Schema(mqtt_schema),
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_ENABLE_MQTT,
+                        default=self.options.get(CONF_ENABLE_MQTT, False),
+                    ): selector.BooleanSelector(),
+                    vol.Optional("action"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=menu_options,
+                            mode=selector.SelectSelectorMode.LIST,
+                            translation_key="mqtt_relay_menu",
+                        )
+                    ),
+                }
+            ),
             description_placeholders={
                 "relay_destinations": destinations_summary or "None configured",
                 "destination_count": str(len(current_destinations)),
             },
         )
 
-    async def async_step_mqtt_manage_relays(
-        self,
-        user_input: dict[str, Any] | None = None,
+    async def async_step_mqtt_select_destination_to_edit(
+        self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """
-        Sub-step: Manage existing MQTT Relay Destinations.
-
-        Args:
-        ----
-            user_input: The user input.
-
-        Returns
-        -------
-            The flow result.
-
-        """
+        """Sub-step to select an MQTT destination to edit."""
         current_destinations = self.options.get(
             CONF_MQTT_RELAY_DESTINATIONS, DEFAULT_MQTT_RELAY_DESTINATIONS
         )
-
-        if user_input is not None:
-            action = user_input.get("action", "back")
-            selected_dest = user_input.get("destination_index")
-
-            # Find the index by matching the display string
-            idx = None
-            if selected_dest:
-                for i, d in enumerate(current_destinations):
-                    display = (
-                        f"{d.get(MQTT_DEST_NAME, 'Unnamed')} ({d.get(MQTT_DEST_HOST)})"
-                    )
-                    if display == selected_dest:
-                        idx = i
-                        break
-
-            if action == "edit" and idx is not None:
-                self._editing_destination_index = idx
-                return await self.async_step_mqtt_destination()
-            if action == "delete" and idx is not None:
-                if 0 <= idx < len(current_destinations):
-                    current_destinations = list(current_destinations)
-                    del current_destinations[idx]
-                    self.options[CONF_MQTT_RELAY_DESTINATIONS] = current_destinations
-                return await self.async_step_mqtt()
-            return await self.async_step_mqtt()
-
-        # Build list of destinations for selection
-        destination_options: list[str] = [
-            f"{d.get(MQTT_DEST_NAME, 'Unnamed')} ({d.get(MQTT_DEST_HOST)})"
-            for d in current_destinations
+        destination_options = [
+            selector.SelectOptionDict(
+                value=str(i),
+                label=f"{d.get(MQTT_DEST_NAME, 'Unnamed')} ({d.get(MQTT_DEST_HOST)})",
+            )
+            for i, d in enumerate(current_destinations)
         ]
 
-        manage_schema = vol.Schema(
-            {
-                vol.Required("destination_index"): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=destination_options,
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                    )
-                ),
-                vol.Required("action", default="edit"): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=["edit", "delete", "back"],
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                        translation_key="mqtt_relay_action",
-                    )
-                ),
-            }
-        )
+        if user_input is not None:
+            self._editing_destination_index = int(user_input["destination_index"])
+            return await self.async_step_mqtt_destination()
 
         return self.async_show_form(
-            step_id="mqtt_manage_relays",
-            data_schema=manage_schema,
+            step_id="mqtt_select_destination_to_edit",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("destination_index"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=destination_options,
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                }
+            ),
+        )
+
+    async def async_step_mqtt_select_destination_to_delete(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Sub-step to select an MQTT destination to delete."""
+        current_destinations = self.options.get(
+            CONF_MQTT_RELAY_DESTINATIONS, DEFAULT_MQTT_RELAY_DESTINATIONS
+        )
+        destination_options = [
+            selector.SelectOptionDict(
+                value=str(i),
+                label=f"{d.get(MQTT_DEST_NAME, 'Unnamed')} ({d.get(MQTT_DEST_HOST)})",
+            )
+            for i, d in enumerate(current_destinations)
+        ]
+
+        if user_input is not None:
+            idx_to_delete = int(user_input["destination_index"])
+            if 0 <= idx_to_delete < len(current_destinations):
+                updated_destinations = list(current_destinations)
+                del updated_destinations[idx_to_delete]
+                self.options[CONF_MQTT_RELAY_DESTINATIONS] = updated_destinations
+            return await self.async_step_mqtt()
+
+        return self.async_show_form(
+            step_id="mqtt_select_destination_to_delete",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("destination_index"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=destination_options,
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                }
+            ),
         )
 
     async def async_step_mqtt_destination(

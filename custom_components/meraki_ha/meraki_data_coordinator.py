@@ -764,6 +764,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             CONF_DASHBOARD_DEVICE_TYPE_FILTER
         )
 
+        # Ensure selected_types is a list for consistent handling
+        if isinstance(selected_types, str):
+            selected_types = [selected_types]
+
         if not selected_types or "all" in selected_types:
             return
 
