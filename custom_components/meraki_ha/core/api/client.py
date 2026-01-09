@@ -141,35 +141,39 @@ class MerakiAPIClient:
         async with self._semaphore:
             return await coro
 
-    async def _async_fetch_initial_data(self) -> dict[str, Any]:
+    async def _async_fetch_initial_data(
+        self, fetch_networks: bool, fetch_devices: bool
+    ) -> dict[str, Any]:
         """
         Fetch the initial batch of data from the Meraki API.
-
         Returns
         -------
             A dictionary of initial data.
-
         """
-        tasks = {
-            "networks": self._run_with_semaphore(
+        tasks = {}
+        if fetch_networks:
+            tasks["networks"] = self._run_with_semaphore(
                 self.organization.get_organization_networks(),
-            ),
-            "devices": self._run_with_semaphore(
+            )
+        if fetch_devices:
+            tasks["devices"] = self._run_with_semaphore(
                 self.organization.get_organization_devices(),
-            ),
-            "devices_availabilities": self._run_with_semaphore(
+            )
+            tasks["devices_availabilities"] = self._run_with_semaphore(
                 self.organization.get_organization_devices_availabilities(),
-            ),
-            "appliance_uplink_statuses": self._run_with_semaphore(
+            )
+            tasks["appliance_uplink_statuses"] = self._run_with_semaphore(
                 self.appliance.get_organization_appliance_uplink_statuses(),
-            ),
-            "cellular_uplink_statuses": self._run_with_semaphore(
+            )
+            tasks["cellular_uplink_statuses"] = self._run_with_semaphore(
                 self.cellular.get_organization_cellular_gateway_uplink_statuses(),
-            ),
-            "sensor_readings": self._run_with_semaphore(
+            )
+            tasks["sensor_readings"] = self._run_with_semaphore(
                 self.sensor.get_organization_sensor_readings_latest(),
-            ),
-        }
+            )
+
+        if not tasks:
+            return {}
         results = await asyncio.gather(*tasks.values(), return_exceptions=True)
         return dict(zip(tasks.keys(), results, strict=True))
 
@@ -347,26 +351,25 @@ class MerakiAPIClient:
         self,
         networks: list[MerakiNetwork],
         devices: list[MerakiDevice],
+        fetch_ssids: bool,
     ) -> dict[str, Awaitable[Any]]:
         """
         Build a dictionary of tasks to fetch detailed data.
-
         Args:
             networks: A list of networks.
             devices: A list of devices.
-
         Returns
         -------
             A dictionary of tasks.
-
         """
         detail_tasks: dict[str, Awaitable[Any]] = {}
         for network in networks:
             product_types = network.get("productTypes", [])
             if "wireless" in product_types:
-                detail_tasks[f"ssids_{network['id']}"] = self._run_with_semaphore(
-                    self.wireless.get_network_ssids(network["id"]),
-                )
+                if fetch_ssids:
+                    detail_tasks[f"ssids_{network['id']}"] = self._run_with_semaphore(
+                        self.wireless.get_network_ssids(network["id"]),
+                    )
                 detail_tasks[f"wireless_settings_{network['id']}"] = (
                     self._run_with_semaphore(
                         self.wireless.get_network_wireless_settings(network["id"]),
@@ -608,30 +611,37 @@ class MerakiAPIClient:
         self,
         previous_data: dict[str, Any] | None = None,
         enabled_network_ids: set[str] | None = None,
+        fetch_networks: bool = True,
+        fetch_devices: bool = True,
+        fetch_clients: bool = True,
+        fetch_ssids: bool = True,
     ) -> dict[str, Any]:
         """
         Fetch all data from the Meraki API concurrently, with caching.
-
         Args:
             previous_data: The previous data from the coordinator.
             enabled_network_ids: Optional set of network IDs to poll. If None,
                 all networks are polled. If provided, only networks in this set
                 will have detailed API calls made for them.
-
         Returns
         -------
             A dictionary of all data.
-
         """
         if previous_data is None:
             previous_data = {}
-
         _LOGGER.debug("Fetching fresh Meraki data from API")
-        initial_results = await self._async_fetch_initial_data()
+        initial_results = await self._async_fetch_initial_data(
+            fetch_networks, fetch_devices
+        )
         processed_initial_data = self._process_initial_data(initial_results)
 
         all_networks = processed_initial_data["networks"]
         all_devices = processed_initial_data["devices"]
+
+        if not all_networks:
+            all_networks = previous_data.get("networks", [])
+        if not all_devices:
+            all_devices = previous_data.get("devices", [])
 
         # Filter networks and devices based on enabled_network_ids setting.
         # This avoids making API calls for networks that the user has disabled.
@@ -649,13 +659,17 @@ class MerakiAPIClient:
             networks = all_networks
             devices = all_devices
 
-        network_clients, device_clients = await asyncio.gather(
-            self._async_fetch_network_clients(networks),
-            self._async_fetch_device_clients(devices),
-            return_exceptions=True,
-        )
+        network_clients = previous_data.get("clients", [])
+        device_clients = previous_data.get("clients_by_serial", {})
 
-        detail_tasks = self._build_detail_tasks(networks, devices)
+        if fetch_clients:
+            network_clients, device_clients = await asyncio.gather(
+                self._async_fetch_network_clients(networks),
+                self._async_fetch_device_clients(devices),
+                return_exceptions=True,
+            )
+
+        detail_tasks = self._build_detail_tasks(networks, devices, fetch_ssids)
         detail_results = await asyncio.gather(
             *detail_tasks.values(),
             return_exceptions=True,

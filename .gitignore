@@ -25,6 +25,7 @@ archive/
 
 # Build artifacts
 custom_components/meraki_ha/www/dist/
+*.egg-info
 
 # Local configuration
 config/

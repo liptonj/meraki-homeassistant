@@ -120,7 +120,9 @@ class TestMerakiAPIClient:
             return_value=[]
         )
 
-        result = await api_client._async_fetch_initial_data()
+        result = await api_client._async_fetch_initial_data(
+            fetch_networks=True, fetch_devices=True
+        )
 
         assert "networks" in result
         assert "devices" in result
@@ -228,7 +230,7 @@ class TestMerakiAPIClient:
         networks = [{"id": "N_123", "productTypes": ["wireless"]}]
         devices: list = []
 
-        tasks = api_client._build_detail_tasks(networks, devices)
+        tasks = api_client._build_detail_tasks(networks, devices, fetch_ssids=True)
 
         assert "ssids_N_123" in tasks
         assert "wireless_settings_N_123" in tasks
@@ -250,7 +252,7 @@ class TestMerakiAPIClient:
         networks = [{"id": "N_123", "productTypes": ["appliance"]}]
         devices: list = []
 
-        tasks = api_client._build_detail_tasks(networks, devices)
+        tasks = api_client._build_detail_tasks(networks, devices, fetch_ssids=True)
 
         assert "traffic_N_123" in tasks
         assert "vlans_N_123" in tasks
@@ -277,7 +279,7 @@ class TestMerakiAPIClient:
         networks = [{"id": "N_123", "productTypes": ["appliance"]}]
         devices: list = []
 
-        tasks = api_client._build_detail_tasks(networks, devices)
+        tasks = api_client._build_detail_tasks(networks, devices, fetch_ssids=True)
 
         assert "traffic_N_123" not in tasks
 
@@ -295,7 +297,7 @@ class TestMerakiAPIClient:
         networks: list = []
         devices = [{"serial": "CAM-123", "productType": "camera"}]
 
-        tasks = api_client._build_detail_tasks(networks, devices)
+        tasks = api_client._build_detail_tasks(networks, devices, fetch_ssids=True)
 
         assert "video_settings_CAM-123" in tasks
         assert "sense_settings_CAM-123" in tasks
@@ -311,7 +313,7 @@ class TestMerakiAPIClient:
         networks: list = []
         devices = [{"serial": "SW-123", "productType": "switch"}]
 
-        tasks = api_client._build_detail_tasks(networks, devices)
+        tasks = api_client._build_detail_tasks(networks, devices, fetch_ssids=True)
 
         assert "ports_statuses_SW-123" in tasks
 
@@ -330,7 +332,7 @@ class TestMerakiAPIClient:
             {"serial": "MX-123", "productType": "appliance", "networkId": "N_123"}
         ]
 
-        tasks = api_client._build_detail_tasks(networks, devices)
+        tasks = api_client._build_detail_tasks(networks, devices, fetch_ssids=True)
 
         assert "appliance_settings_MX-123" in tasks
 

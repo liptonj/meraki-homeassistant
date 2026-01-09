@@ -8,30 +8,34 @@ from homeassistant.helpers import selector
 from .const import (
     CONF_CAMERA_LINK_INTEGRATION,
     CONF_CAMERA_SNAPSHOT_INTERVAL,
+    CONF_CLIENT_SCAN_INTERVAL,
     CONF_DASHBOARD_DEVICE_TYPE_FILTER,
     CONF_DASHBOARD_STATUS_FILTER,
     CONF_DASHBOARD_VIEW_MODE,
+    CONF_DEVICE_SCAN_INTERVAL,
     CONF_ENABLE_DEVICE_TRACKER,
     CONF_ENABLE_VLAN_MANAGEMENT,
     CONF_ENABLED_NETWORKS,
     CONF_MERAKI_API_KEY,
     CONF_MERAKI_ORG_ID,
+    CONF_NETWORK_SCAN_INTERVAL,
     CONF_SCAN_INTERVAL,
-    CONF_SCAN_INTERVAL_CLIENTS,
-    CONF_SCAN_INTERVAL_DEVICE_STATUS,
+    CONF_SSID_SCAN_INTERVAL,
     CONF_TEMPERATURE_UNIT,
     DASHBOARD_VIEW_MODE_NETWORK,
     DASHBOARD_VIEW_MODE_TYPE,
     DEFAULT_CAMERA_LINK_INTEGRATION,
     DEFAULT_CAMERA_SNAPSHOT_INTERVAL,
+    DEFAULT_CLIENT_SCAN_INTERVAL,
     DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER,
     DEFAULT_DASHBOARD_STATUS_FILTER,
     DEFAULT_DASHBOARD_VIEW_MODE,
+    DEFAULT_DEVICE_SCAN_INTERVAL,
     DEFAULT_ENABLE_VLAN_MANAGEMENT,
     DEFAULT_ENABLED_NETWORKS,
+    DEFAULT_NETWORK_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_SCAN_INTERVAL_CLIENTS,
-    DEFAULT_SCAN_INTERVAL_DEVICE_STATUS,
+    DEFAULT_SSID_SCAN_INTERVAL,
     DEFAULT_TEMPERATURE_UNIT,
     TEMPERATURE_UNIT_CELSIUS,
     TEMPERATURE_UNIT_FAHRENHEIT,
@@ -61,8 +65,29 @@ OPTIONS_SCHEMA_BASIC = vol.Schema(
             )
         ),
         vol.Required(
-            CONF_SCAN_INTERVAL_DEVICE_STATUS,
-            default=DEFAULT_SCAN_INTERVAL_DEVICE_STATUS,
+            CONF_NETWORK_SCAN_INTERVAL, default=DEFAULT_NETWORK_SCAN_INTERVAL
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=30,
+                max=3600,
+                step=30,
+                unit_of_measurement="seconds",
+                mode=selector.NumberSelectorMode.SLIDER,
+            )
+        ),
+        vol.Required(
+            CONF_DEVICE_SCAN_INTERVAL, default=DEFAULT_DEVICE_SCAN_INTERVAL
+        ): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=30,
+                max=3600,
+                step=30,
+                unit_of_measurement="seconds",
+                mode=selector.NumberSelectorMode.SLIDER,
+            )
+        ),
+        vol.Required(
+            CONF_CLIENT_SCAN_INTERVAL, default=DEFAULT_CLIENT_SCAN_INTERVAL
         ): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=30,
@@ -73,12 +98,12 @@ OPTIONS_SCHEMA_BASIC = vol.Schema(
             )
         ),
         vol.Required(
-            CONF_SCAN_INTERVAL_CLIENTS, default=DEFAULT_SCAN_INTERVAL_CLIENTS
+            CONF_SSID_SCAN_INTERVAL, default=DEFAULT_SSID_SCAN_INTERVAL
         ): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=30,
-                max=300,
-                step=5,
+                max=3600,
+                step=30,
                 unit_of_measurement="seconds",
                 mode=selector.NumberSelectorMode.SLIDER,
             )

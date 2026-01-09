@@ -13,10 +13,18 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    CONF_CLIENT_SCAN_INTERVAL,
     CONF_DASHBOARD_DEVICE_TYPE_FILTER,
+    CONF_DEVICE_SCAN_INTERVAL,
     CONF_ENABLED_NETWORKS,
+    CONF_NETWORK_SCAN_INTERVAL,
     CONF_SCAN_INTERVAL,
+    CONF_SSID_SCAN_INTERVAL,
+    DEFAULT_CLIENT_SCAN_INTERVAL,
+    DEFAULT_DEVICE_SCAN_INTERVAL,
+    DEFAULT_NETWORK_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SSID_SCAN_INTERVAL,
     DOMAIN,
 )
 from .core.api.client import MerakiAPIClient as ApiClient
@@ -37,12 +45,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     ) -> None:
         """
         Initialize the coordinator.
-
         Args:
         ----
             hass: The Home Assistant instance.
             entry: The config entry.
-
         """
         self.api = api_client
         self.devices_by_serial: dict[str, MerakiDevice] = {}
@@ -54,14 +60,39 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._vlan_check_timestamps: dict[str, datetime] = {}
         self._traffic_check_timestamps: dict[str, datetime] = {}
 
-        try:
-            scan_interval = int(
-                entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        # Timestamps for tiered polling
+        self.last_network_refresh: datetime | None = None
+        self.last_device_refresh: datetime | None = None
+        self.last_client_refresh: datetime | None = None
+        self.last_ssid_refresh: datetime | None = None
+
+        # Helper to safely get and validate scan intervals
+        def get_interval(conf_key: str, default: int) -> int:
+            try:
+                interval = int(entry.options.get(conf_key, default))
+                return interval if interval > 0 else default
+            except (ValueError, TypeError):
+                return default
+
+        scan_interval = get_interval(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        self._network_scan_interval = timedelta(
+            seconds=get_interval(
+                CONF_NETWORK_SCAN_INTERVAL, DEFAULT_NETWORK_SCAN_INTERVAL
             )
-            if scan_interval <= 0:
-                scan_interval = DEFAULT_SCAN_INTERVAL
-        except (ValueError, TypeError):
-            scan_interval = DEFAULT_SCAN_INTERVAL
+        )
+        self._device_scan_interval = timedelta(
+            seconds=get_interval(
+                CONF_DEVICE_SCAN_INTERVAL, DEFAULT_DEVICE_SCAN_INTERVAL
+            )
+        )
+        self._client_scan_interval = timedelta(
+            seconds=get_interval(
+                CONF_CLIENT_SCAN_INTERVAL, DEFAULT_CLIENT_SCAN_INTERVAL
+            )
+        )
+        self._ssid_scan_interval = timedelta(
+            seconds=get_interval(CONF_SSID_SCAN_INTERVAL, DEFAULT_SSID_SCAN_INTERVAL)
+        )
 
         super().__init__(
             hass,
@@ -559,16 +590,38 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from API endpoint and apply filters."""
         try:
+            now = datetime.now()
+
+            def is_due(last_refresh: datetime | None, interval: timedelta) -> bool:
+                return last_refresh is None or (now - last_refresh) > interval
+
+            fetch_networks = is_due(self.last_network_refresh, self._network_scan_interval)
+            fetch_devices = is_due(self.last_device_refresh, self._device_scan_interval)
+            fetch_clients = is_due(self.last_client_refresh, self._client_scan_interval)
+            fetch_ssids = is_due(self.last_ssid_refresh, self._ssid_scan_interval)
+
             # Get enabled network IDs to filter API calls upfront
             enabled_network_ids = self._get_enabled_network_ids()
-
             data = await self.api.get_all_data(
                 self.last_successful_data,
                 enabled_network_ids=enabled_network_ids,
+                fetch_networks=fetch_networks,
+                fetch_devices=fetch_devices,
+                fetch_clients=fetch_clients,
+                fetch_ssids=fetch_ssids,
             )
             if not data:
                 _LOGGER.warning("API call to get_all_data returned no data.")
                 raise UpdateFailed("API call returned no data.")
+
+            if fetch_networks:
+                self.last_network_refresh = now
+            if fetch_devices:
+                self.last_device_refresh = now
+            if fetch_clients:
+                self.last_client_refresh = now
+            if fetch_ssids:
+                self.last_ssid_refresh = now
 
             self._filter_enabled_networks(data)
             self._filter_device_types(data)
@@ -593,17 +646,20 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     self.mark_vlan_check_done(network_id)
 
             # Create lookup tables for efficient access in entities
-            self.devices_by_serial = {
-                d["serial"]: d for d in data.get("devices", []) if "serial" in d
-            }
-            self.networks_by_id = {
-                n["id"]: n for n in data.get("networks", []) if "id" in n
-            }
-            self.ssids_by_network_and_number = {
-                (s["networkId"], s["number"]): s
-                for s in data.get("ssids", [])
-                if "networkId" in s and "number" in s
-            }
+            if fetch_devices and "devices" in data:
+                self.devices_by_serial = {
+                    d["serial"]: d for d in data.get("devices", []) if "serial" in d
+                }
+            if fetch_networks and "networks" in data:
+                self.networks_by_id = {
+                    n["id"]: n for n in data.get("networks", []) if "id" in n
+                }
+            if fetch_ssids and "ssids" in data:
+                self.ssids_by_network_and_number = {
+                    (s["networkId"], s["number"]): s
+                    for s in data.get("ssids", [])
+                    if "networkId" in s and "number" in s
+                }
 
             # Add SSIDs to each network for easier access in the UI
             all_ssids = data.get("ssids", [])
