@@ -308,7 +308,7 @@ const MqttStatusCardComponent: React.FC<MqttStatusCardProps> = ({
 /**
  * Memoized MqttStatusCard - only re-renders when MQTT data changes
  */
-export const MqttStatusCard = memo(
+export default memo(
   MqttStatusCardComponent,
   (prevProps, nextProps) => {
     // Compare stats
@@ -343,5 +343,3 @@ export const MqttStatusCard = memo(
     return true; // No changes, skip re-render
   }
 );
-
-export default MqttStatusCard;
