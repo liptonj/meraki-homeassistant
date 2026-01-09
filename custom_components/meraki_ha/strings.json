@@ -84,7 +84,6 @@
         "data_description": {
           "scan_interval": "Default polling interval for general data like network and device information.",
           "scan_interval_device_status": "How often to poll specifically for device status (online/offline). More frequent polling can provide faster status updates.",
-          "scan_interval_clients": "How often to poll for connected client information. This is a heavy API call, so a longer interval is recommended.",
           "enable_device_tracker": "Enable tracking of clients connected to the network.",
           "enable_vlan_management": "Enable VLAN management features.",
           "enabled_networks": "Select which networks to monitor. Leave empty for all networks."
