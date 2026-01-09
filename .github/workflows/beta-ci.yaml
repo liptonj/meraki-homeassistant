@@ -21,6 +21,7 @@ jobs:
       issue_number: ${{ steps.extract.outputs.issue_number }}
       is_jules_pr: ${{ steps.extract.outputs.is_jules_pr }}
     steps:
+      - uses: actions/checkout@v4
       - name: Extract linked issue number
         id: extract
         env:
