@@ -119,30 +119,6 @@ class MerakiAPIClient:
         async with self._semaphore:
             return await coro
 
-    async def run_sync(
-        self,
-        func: Any,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
-        """
-        Execute an async SDK method with the given arguments.
-
-        This is a helper method to call async Meraki SDK methods in a
-        consistent way across endpoint classes.
-
-        Args:
-            func: The async SDK method to call.
-            *args: Positional arguments to pass to the method.
-            **kwargs: Keyword arguments to pass to the method.
-
-        Returns
-        -------
-            The result of the SDK method call.
-
-        """
-        return await func(*args, **kwargs)
-
     async def _async_fetch_initial_data(
         self,
         fetch_networks: bool = True,
