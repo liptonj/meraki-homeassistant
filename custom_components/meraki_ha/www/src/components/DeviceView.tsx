@@ -1713,14 +1713,8 @@ const DeviceView = memo(DeviceViewComponent, (prevProps, nextProps) => {
     return false;
   }
 
-  // Compare client count
-  const prevClients = prevProps.data.clients?.filter(
-    (c) => c.recentDeviceSerial === prevDevice?.serial
-  ).length;
-  const nextClients = nextProps.data.clients?.filter(
-    (c) => c.recentDeviceSerial === nextDevice?.serial
-  ).length;
-  if (prevClients !== nextClients) {
+  // Compare overall client count (clients are filtered inside the component)
+  if (prevProps.clients?.length !== nextProps.clients?.length) {
     return false;
   }
 
