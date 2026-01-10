@@ -151,7 +151,6 @@ interface Client {
   os?: string;
   recentDeviceSerial?: string;
   recentDeviceName?: string;
-  recentDeviceSerial?: string;
   ssid?: string;
   vlan?: number;
   switchport?: string;
