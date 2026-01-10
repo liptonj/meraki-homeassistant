@@ -119,6 +119,30 @@ class MerakiAPIClient:
         async with self._semaphore:
             return await coro
 
+    async def run_sync(
+        self,
+        func: Any,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Execute an async SDK method with the given arguments.
+
+        This is a helper method to call async Meraki SDK methods in a
+        consistent way across endpoint classes.
+
+        Args:
+            func: The async SDK method to call.
+            *args: Positional arguments to pass to the method.
+            **kwargs: Keyword arguments to pass to the method.
+
+        Returns
+        -------
+            The result of the SDK method call.
+
+        """
+        return await func(*args, **kwargs)
+
     async def _async_fetch_initial_data(
         self,
         fetch_networks: bool = True,
@@ -635,35 +659,38 @@ class MerakiAPIClient:
             networks = all_networks
             devices = all_devices
 
-        network_clients_future = (
-            self._async_fetch_network_clients(networks) if fetch_clients else None
-        )
-        device_clients_future = (
-            self._async_fetch_device_clients(devices) if fetch_clients else None
-        )
-
         detail_tasks = (
             self._build_detail_tasks(networks, devices) if fetch_ssids else {}
         )
-        detail_results_future = asyncio.gather(
-            *detail_tasks.values(),
-            return_exceptions=True,
-        )
+
+        # Build list of tasks to run concurrently
+        gather_tasks: list[Awaitable[Any]] = []
+        task_names: list[str] = []
+
+        if fetch_clients:
+            gather_tasks.append(self._async_fetch_network_clients(networks))
+            task_names.append("network_clients")
+            gather_tasks.append(self._async_fetch_device_clients(devices))
+            task_names.append("device_clients")
+
+        if detail_tasks:
+            gather_tasks.append(
+                asyncio.gather(*detail_tasks.values(), return_exceptions=True)
+            )
+            task_names.append("detail_results")
 
         # Await all futures concurrently
-        results = await asyncio.gather(
-            network_clients_future,
-            device_clients_future,
-            detail_results_future,
-            return_exceptions=True,
-        )
-        network_clients, device_clients, detail_results = results
+        results = await asyncio.gather(*gather_tasks, return_exceptions=True)
 
-        detail_data = (
-            dict(zip(detail_tasks.keys(), detail_results, strict=True))
-            if detail_results
-            else {}
-        )
+        # Map results back to named variables
+        results_map = dict(zip(task_names, results, strict=True))
+        network_clients = results_map.get("network_clients")
+        device_clients = results_map.get("device_clients")
+        detail_results = results_map.get("detail_results")
+
+        detail_data: dict[str, Any] = {}
+        if detail_results and isinstance(detail_results, list):
+            detail_data = dict(zip(detail_tasks.keys(), detail_results, strict=True))
         processed_detailed_data = self._process_detailed_data(
             detail_data,
             networks,

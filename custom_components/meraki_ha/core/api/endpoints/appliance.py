@@ -54,10 +54,9 @@ class ApplianceEndpoints:
         if self._api_client.dashboard is None:
             return []
 
-        statuses = (
-            await self._api_client.dashboard.appliance.getOrganizationApplianceUplinkStatuses(
-                self._api_client.organization_id, total_pages="all"
-            )
+        api = self._api_client.dashboard.appliance
+        statuses = await api.getOrganizationApplianceUplinkStatuses(
+            self._api_client.organization_id, total_pages="all"
         )
         validated = validate_response(statuses)
         if not isinstance(validated, list):
@@ -148,7 +147,8 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        rules = await self._api_client.dashboard.appliance.getNetworkApplianceFirewallL3FirewallRules(
+        api = self._api_client.dashboard.appliance
+        rules = await api.getNetworkApplianceFirewallL3FirewallRules(
             networkId=network_id,
         )
         validated = validate_response(rules)
@@ -177,7 +177,8 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        rules = await self._api_client.dashboard.appliance.updateNetworkApplianceFirewallL3FirewallRules(
+        api = self._api_client.dashboard.appliance
+        rules = await api.updateNetworkApplianceFirewallL3FirewallRules(
             networkId=network_id,
             **kwargs,
         )
@@ -203,10 +204,9 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        settings = (
-            await self._api_client.dashboard.appliance.getNetworkApplianceTrafficShaping(
-                networkId=network_id,
-            )
+        api = self._api_client.dashboard.appliance
+        settings = await api.getNetworkApplianceTrafficShaping(
+            networkId=network_id,
         )
         validated = validate_response(settings)
         if not isinstance(validated, dict):
@@ -234,11 +234,10 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        settings = (
-            await self._api_client.dashboard.appliance.updateNetworkApplianceTrafficShaping(
-                networkId=network_id,
-                **kwargs,
-            )
+        api = self._api_client.dashboard.appliance
+        settings = await api.updateNetworkApplianceTrafficShaping(
+            networkId=network_id,
+            **kwargs,
         )
         validated = validate_response(settings)
         if not isinstance(validated, dict):
@@ -262,10 +261,9 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        status = (
-            await self._api_client.dashboard.appliance.getNetworkApplianceVpnSiteToSiteVpn(
-                networkId=network_id,
-            )
+        api = self._api_client.dashboard.appliance
+        status = await api.getNetworkApplianceVpnSiteToSiteVpn(
+            networkId=network_id,
         )
         validated = validate_response(status)
         if not isinstance(validated, dict):
@@ -289,11 +287,10 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        status = (
-            await self._api_client.dashboard.appliance.updateNetworkApplianceVpnSiteToSiteVpn(
-                networkId=network_id,
-                **kwargs,
-            )
+        api = self._api_client.dashboard.appliance
+        status = await api.updateNetworkApplianceVpnSiteToSiteVpn(
+            networkId=network_id,
+            **kwargs,
         )
         validated = validate_response(status)
         if not isinstance(validated, dict):
@@ -320,10 +317,9 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        uplinks = (
-            await self._api_client.dashboard.appliance.getDeviceApplianceUplinksSettings(
-                serial=serial,
-            )
+        api = self._api_client.dashboard.appliance
+        uplinks = await api.getDeviceApplianceUplinksSettings(
+            serial=serial,
         )
         validated = validate_response(uplinks)
         if not isinstance(validated, dict):
@@ -352,7 +348,8 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        result = await self._api_client.dashboard.appliance.getNetworkApplianceContentFiltering(
+        api = self._api_client.dashboard.appliance
+        result = await api.getNetworkApplianceContentFiltering(
             networkId=network_id,
         )
         validated = validate_response(result)
@@ -382,7 +379,8 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        result = await self._api_client.dashboard.appliance.getNetworkApplianceContentFilteringCategories(
+        api = self._api_client.dashboard.appliance
+        result = await api.getNetworkApplianceContentFilteringCategories(
             networkId=network_id,
         )
         validated = validate_response(result)
@@ -465,7 +463,8 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        rules = await self._api_client.dashboard.appliance.getNetworkApplianceL7FirewallRules(
+        api = self._api_client.dashboard.appliance
+        rules = await api.getNetworkApplianceL7FirewallRules(
             networkId=network_id,
         )
         validated = validate_response(rules)
@@ -496,7 +495,8 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        rules = await self._api_client.dashboard.appliance.updateNetworkApplianceL7FirewallRules(
+        api = self._api_client.dashboard.appliance
+        rules = await api.updateNetworkApplianceL7FirewallRules(
             networkId=network_id,
             **kwargs,
         )
@@ -528,7 +528,8 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        result = await self._api_client.dashboard.appliance.updateNetworkApplianceContentFiltering(
+        api = self._api_client.dashboard.appliance
+        result = await api.updateNetworkApplianceContentFiltering(
             networkId=network_id,
             **kwargs,
         )
