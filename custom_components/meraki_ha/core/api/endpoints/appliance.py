@@ -83,10 +83,8 @@ class ApplianceEndpoints:
         if self._api_client.dashboard is None:
             return []
         try:
-            vlans = (
-                await self._api_client.dashboard.appliance.getNetworkApplianceVlans(
-                    networkId=network_id,
-                )
+            vlans = await self._api_client.dashboard.appliance.getNetworkApplianceVlans(
+                networkId=network_id,
             )
             validated = validate_response(vlans)
             if not isinstance(validated, list):
