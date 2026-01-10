@@ -415,6 +415,16 @@ class MerakiClientDeviceTracker(
         ) or self._cached_client_data.get("description")
 
     @property
+    def latitude(self) -> float | None:
+        """Return latitude value of the device."""
+        return self._cached_client_data.get("latitude")
+
+    @property
+    def longitude(self) -> float | None:
+        """Return longitude value of the device."""
+        return self._cached_client_data.get("longitude")
+
+    @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional state attributes.
 
@@ -455,6 +465,10 @@ class MerakiClientDeviceTracker(
                 attrs["connected_to_serial"] = device_serial
             if device_mac := self._cached_client_data.get("recentDeviceMac"):
                 attrs["connected_to_mac"] = device_mac
+
+            # Scanning API data
+            if rssi := self._cached_client_data.get("rssi"):
+                attrs["signal_strength"] = f"{rssi} dBm"
 
             # Group policy information
             if group_policy := self._cached_client_data.get("groupPolicy8021x"):

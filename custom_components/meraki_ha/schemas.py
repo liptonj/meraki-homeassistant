@@ -213,6 +213,18 @@ SCHEMA_DISPLAY_PREFERENCES = vol.Schema(
 )
 
 # Section: Camera Settings
+SCHEMA_SCANNING_API = vol.Schema(
+    {
+        vol.Required("enable_scanning_api", default=False): selector.BooleanSelector(),
+        vol.Optional("scanning_api_validator", default=""): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+        ),
+        vol.Optional("scanning_api_secret", default=""): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+        ),
+    }
+)
+
 SCHEMA_CAMERA = vol.Schema(
     {
         vol.Required(
