@@ -166,13 +166,19 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
     async def async_step_notifications(
         self,
-        _user_input: dict[str, Any] | None = None,
+        user_input: dict[str, Any] | None = None,
     ) -> ConfigFlowResult:
-        """Handle notifications placeholder."""
-        return self.async_show_progress(
+        """Handle notifications settings (coming soon placeholder)."""
+        if user_input is not None:
+            # Return to menu when user clicks submit
+            return await self.async_step_init()
+
+        return self.async_show_form(
             step_id="notifications",
-            progress_action="progress_notification",
-            progress_task="Setting up notifications...",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "message": "Notification settings will be available in a future update."
+            },
         )
 
     async def async_step_mqtt(
