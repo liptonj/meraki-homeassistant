@@ -161,7 +161,7 @@ class TestApplyLogLevels:
 
     def test_apply_log_levels_sets_correct_levels(self) -> None:
         """Test apply_log_levels sets the correct log level for each logger."""
-        options = {
+        options: dict[str, str] = {
             "log_level_mqtt": "warning",
             "log_level_api": "debug",
             "log_level_coordinator": "error",

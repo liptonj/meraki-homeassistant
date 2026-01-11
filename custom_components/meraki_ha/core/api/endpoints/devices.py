@@ -1,16 +1,15 @@
-from ....async_logging import async_log_time\n"""Meraki API endpoints for devices."""
+"""Meraki API endpoints for devices."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from custom_components.meraki_ha.core.utils.api_utils import (
+from ....async_logging import async_log_time
+from ....helpers.logging_helper import MerakiLoggers
+from ...utils.api_utils import (
     handle_meraki_errors,
     validate_response,
 )
-
-from ....async_logging import async_log_time
-from ....helpers.logging_helper import MerakiLoggers
 
 if TYPE_CHECKING:
     from ..client import MerakiAPIClient
