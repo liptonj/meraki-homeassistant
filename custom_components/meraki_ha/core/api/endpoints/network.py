@@ -1,4 +1,4 @@
-"""Meraki API endpoints for networks."""
+from ....async_logging import async_log_time\n"""Meraki API endpoints for networks."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from custom_components.meraki_ha.core.utils.api_utils import (
     validate_response,
 )
 
+from ....async_logging import async_log_time
 from ....helpers.logging_helper import MerakiLoggers
 from ..cache import async_timed_cache
 
@@ -38,6 +39,7 @@ class NetworkEndpoints:
 
     @handle_meraki_errors
     @async_timed_cache(timeout=60)
+    @async_log_time(slow_threshold=3.0)
     async def get_network_clients(self, network_id: str) -> list[dict[str, Any]]:
         """
         Get all clients in a network.
@@ -63,6 +65,7 @@ class NetworkEndpoints:
 
     @handle_meraki_errors
     @async_timed_cache(timeout=60)
+    @async_log_time(slow_threshold=3.0)
     async def get_network_traffic(
         self, network_id: str, device_type: str
     ) -> list[dict[str, Any]]:
@@ -123,7 +126,7 @@ class NetworkEndpoints:
             A list of webhooks.
 
         """
-        if self._api_client.dashboard is None:
+        if self._api_.dashboard is None:
             return []
         api = self._api_client.dashboard.networks
         webhooks = await api.getNetworkWebhooksHttpServers(networkId=network_id)

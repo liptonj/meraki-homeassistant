@@ -1,4 +1,4 @@
-"""Meraki API endpoints for devices."""
+from ....async_logging import async_log_time\n"""Meraki API endpoints for devices."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from custom_components.meraki_ha.core.utils.api_utils import (
     validate_response,
 )
 
+from ....async_logging import async_log_time
 from ....helpers.logging_helper import MerakiLoggers
 
 if TYPE_CHECKING:
@@ -33,6 +34,7 @@ class DevicesEndpoints:
         self._api_client = api_client
 
     @handle_meraki_errors
+    @async_log_time(slow_threshold=3.0)
     async def get_device_clients(self, serial: str) -> list[dict[str, Any]]:
         """
         Get all clients for a device.
@@ -59,6 +61,7 @@ class DevicesEndpoints:
         return []
 
     @handle_meraki_errors
+    @async_log_time(slow_threshold=3.0)
     async def get_device(self, serial: str) -> dict[str, Any]:
         """
         Get a single device.
