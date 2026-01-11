@@ -4,9 +4,9 @@ This module implements proper ScannerEntity-based device tracking for
 Meraki network clients, following Home Assistant's device tracker entity
 documentation.
 
-When a Meraki client's MAC address matches an existing Home Assistant device
-(e.g., Sonos, Apple TV), the tracker entity is added to that existing device
-instead of creating a duplicate.
+When a Meraki client's MAC or IP address matches an existing Home Assistant
+device (e.g., Sonos, Apple TV), the tracker entity is added to that existing
+device instead of creating a duplicate.
 """
 
 from __future__ import annotations
@@ -17,13 +17,10 @@ from typing import Any
 from homeassistant.components.device_tracker import SourceType
 from homeassistant.components.device_tracker.config_entry import ScannerEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_CONNECTIONS
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.device_registry import (
-    CONNECTION_NETWORK_MAC,
-    DeviceInfo,
-)
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -120,6 +117,12 @@ def _find_existing_device_by_mac(
                 # Normalize the stored MAC for comparison
                 stored_mac = conn_id.lower().replace("-", ":")
                 if stored_mac == normalized_mac:
+                    # Don't match our own Meraki client devices
+                    if any(
+                        DOMAIN in str(ident) and "client_" in str(ident)
+                        for ident in device.identifiers
+                    ):
+                        continue
                     _LOGGER.debug(
                         "Found existing device '%s' for MAC %s",
                         device.name,
@@ -135,14 +138,11 @@ def _find_existing_device_by_ip(
 ) -> dr.DeviceEntry | None:
     """Find an existing Home Assistant device by IP address.
 
-    Many devices (IP cameras, smart TVs, network devices) use IP addresses
-    as their primary identifier. This allows us to link Meraki client
-    tracking to these devices.
+    Searches the entity registry for entities with matching IP addresses
+    in their configuration, then returns the associated device.
 
-    We check:
-    1. Device configuration_url containing the IP
-    2. Device identifiers containing the IP
-    3. Entity unique_ids containing the IP
+    This helps match devices that don't expose MAC addresses but are
+    configured with static IPs (e.g., some smart home devices).
 
     Parameters
     ----------
@@ -161,61 +161,65 @@ def _find_existing_device_by_ip(
         return None
 
     try:
+        entity_registry = er.async_get(hass)
         device_registry = dr.async_get(hass)
     except (AttributeError, TypeError):
         return None
 
-    # Search devices by configuration_url or identifiers containing the IP
-    for device in device_registry.devices.values():
-        # Check configuration_url (many devices use http://IP:port)
-        if device.configuration_url:
-            # Check if IP is in the URL (handles http://192.168.1.1:8080 etc)
-            if ip_address in device.configuration_url:
-                # Skip our own Meraki devices
-                if any(DOMAIN in str(ident) for ident in device.identifiers):
-                    continue
-                _LOGGER.debug(
-                    "Found existing device '%s' for IP %s (via config_url)",
-                    device.name,
-                    ip_address,
-                )
-                return device
+    # Search through entities that might have IP-based config
+    # Common patterns: host, ip_address, address, ip in config
+    for entity in entity_registry.entities.values():
+        if not entity.device_id:
+            continue
 
-        # Check identifiers for IP address
-        for identifier in device.identifiers:
-            if len(identifier) >= 2:
-                # identifier is (domain, id) - check if id contains IP
-                if ip_address in str(identifier[1]):
-                    # Skip our own Meraki devices
-                    if identifier[0] == DOMAIN:
-                        continue
-                    _LOGGER.debug(
-                        "Found existing device '%s' for IP %s (via identifier)",
-                        device.name,
-                        ip_address,
-                    )
-                    return device
+        # Check entity's config entry data for IP matches
+        # This works for integrations that store IP in config
+        if entity.config_entry_id:
+            try:
+                config_entry = hass.config_entries.async_get_entry(
+                    entity.config_entry_id
+                )
+                if config_entry and config_entry.data:
+                    # Check common IP field names in config
+                    for key in ("host", "ip_address", "address", "ip"):
+                        if config_entry.data.get(key) == ip_address:
+                            device = device_registry.async_get(entity.device_id)
+                            if device:
+                                # Don't match our own Meraki client devices
+                                if any(
+                                    DOMAIN in str(ident) and "client_" in str(ident)
+                                    for ident in device.identifiers
+                                ):
+                                    continue
+                                _LOGGER.debug(
+                                    "Found existing device '%s' for IP %s",
+                                    device.name,
+                                    ip_address,
+                                )
+                                return device
+            except (AttributeError, KeyError):
+                continue
 
     return None
 
 
 def _find_existing_device(
     hass: HomeAssistant,
-    mac_address: str | None,
-    ip_address: str | None,
+    mac_address: str,
+    ip_address: str | None = None,
 ) -> dr.DeviceEntry | None:
     """Find an existing Home Assistant device by MAC or IP address.
 
-    Tries MAC first (most reliable), then falls back to IP.
+    Tries MAC first (more reliable), then falls back to IP matching.
 
     Parameters
     ----------
     hass : HomeAssistant
         The Home Assistant instance.
-    mac_address : str | None
+    mac_address : str
         The MAC address to search for.
     ip_address : str | None
-        The IP address to search for.
+        The IP address to search for (optional).
 
     Returns
     -------
@@ -223,13 +227,12 @@ def _find_existing_device(
         The matching device entry, or None if not found.
 
     """
-    # Try MAC address first (most reliable)
-    if mac_address:
-        device = _find_existing_device_by_mac(hass, mac_address)
-        if device:
-            return device
+    # Try MAC first - more reliable
+    device = _find_existing_device_by_mac(hass, mac_address)
+    if device:
+        return device
 
-    # Fall back to IP address
+    # Fall back to IP matching
     if ip_address:
         device = _find_existing_device_by_ip(hass, ip_address)
         if device:
@@ -272,17 +275,35 @@ async def async_setup_entry(
         Uses clients data from getNetworkClients() API which returns
         all clients connected to the network.
 
-        If a client's MAC matches an existing Home Assistant device (e.g.,
-        Sonos, Apple TV), the tracker will be added to that device.
+        Filters out Meraki devices (APs, switches, etc.) that appear as
+        "clients" on the network - we only want actual client devices.
         """
         if not coordinator.data or not coordinator.data.get("clients"):
             return
+
+        # Build a set of Meraki device MACs to filter out
+        # Meraki devices (APs, switches, sensors) appear as "clients" on the network
+        # but we don't want to create device trackers for them
+        meraki_device_macs: set[str] = set()
+        for device in coordinator.data.get("devices", []):
+            device_mac = device.get("mac")
+            if device_mac:
+                # Normalize to lowercase for comparison
+                meraki_device_macs.add(device_mac.lower())
 
         new_entities: list[MerakiClientDeviceTracker] = []
 
         for client_data in coordinator.data["clients"]:
             client_mac = client_data.get("mac")
             if not client_mac:
+                continue
+
+            # Skip if this "client" is actually a Meraki device
+            if client_mac.lower() in meraki_device_macs:
+                _LOGGER.debug(
+                    "Skipping client %s - it's a Meraki device, not a client",
+                    client_mac,
+                )
                 continue
 
             if client_mac not in tracked_clients:
@@ -320,8 +341,8 @@ class MerakiClientDeviceTracker(
     states and integrates with Home Assistant's presence detection.
 
     If the client's MAC matches an existing Home Assistant device (e.g.,
-    Sonos, Apple TV, smart TV), the tracker entity is added to that
-    existing device instead of creating a duplicate device entry.
+    Sonos, Apple TV), this entity is added to that device. Otherwise,
+    a new client device is created.
     """
 
     _attr_has_entity_name = True
@@ -366,44 +387,42 @@ class MerakiClientDeviceTracker(
         client_ip = client_data.get("ip")
 
         # Check if this client matches an existing Home Assistant device
-        # (e.g., Sonos speaker, Apple TV, smart TV, IP camera, etc.)
-        # First tries MAC address, then falls back to IP address
+        # (e.g., Sonos speaker, Apple TV, smart TV, etc.)
+        # Try MAC first, then IP address for devices without exposed MACs
+        client_ip = client_data.get("ip")
         existing_device = _find_existing_device(hass, self._client_mac, client_ip)
 
         if existing_device:
             # Link to the existing device - add our entity to that device
             _LOGGER.info(
-                "Linking Meraki client %s (IP: %s) to existing device '%s'",
+                "Linking Meraki client %s to existing device '%s'",
                 self._client_mac,
-                client_ip,
                 existing_device.name,
             )
-            # Use the existing device's identifiers
-            device_info = DeviceInfo(
+            # Use the existing device's identifiers to add our entity to it
+            self._attr_device_info = DeviceInfo(
                 identifiers=existing_device.identifiers,
             )
-            # Add MAC connection to help with future lookups
-            device_info[ATTR_CONNECTIONS] = {(CONNECTION_NETWORK_MAC, self._client_mac)}
-            self._linked_to_existing = True
         else:
-            # Create a new client device under the Clients group
-            # Hierarchy: Organization → Network → Clients Group → Client
+            # Create a new client device
+            device_name = (
+                client_data.get("description")
+                or client_data.get("dhcpHostname")
+                or client_data.get("ip")
+                or self._client_mac
+            )
             network_id = client_data.get("networkId")
-            device_info = DeviceInfo(
+
+            self._attr_device_info = DeviceInfo(
                 identifiers={(DOMAIN, f"client_{self._client_mac}")},
-                name=self._attr_name,
-                manufacturer=client_data.get("manufacturer"),
+                name=device_name,
+                manufacturer=client_data.get("manufacturer") or "Unknown",
                 connections={(CONNECTION_NETWORK_MAC, self._client_mac)},
             )
-            # Link client to its Clients group (under network)
-            if network_id:
-                device_info["via_device"] = (
-                    DOMAIN,
-                    f"devicetype_{network_id}_clients",
-                )
-            self._linked_to_existing = False
 
-        self._attr_device_info = device_info
+            # Link client to its network if available
+            if network_id:
+                self._attr_device_info["via_device"] = (DOMAIN, f"network_{network_id}")
 
         # Cache client data for properties
         self._cached_client_data: dict[str, Any] = client_data
