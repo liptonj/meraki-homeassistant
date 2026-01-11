@@ -254,6 +254,7 @@ jobs:
 
       - name: Comment on Jules PR
         if: steps.pr.outputs.skip != 'true' && steps.cursor.outputs.agent_id != ''
+        continue-on-error: true  # Don't fail workflow if commenting fails
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -288,6 +289,7 @@ jobs:
 
       - name: Update issue with progress
         if: steps.pr.outputs.skip != 'true' && steps.cursor.outputs.agent_id != '' && steps.pr.outputs.issue_number != ''
+        continue-on-error: true  # Don't fail workflow if commenting fails
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

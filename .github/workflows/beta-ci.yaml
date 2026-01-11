@@ -66,6 +66,7 @@ jobs:
 
       - name: Comment on issue - CI started
         if: steps.extract.outputs.issue_number != '' && (steps.extract.outputs.is_jules_pr == 'true' || steps.extract.outputs.is_cursor_pr == 'true')
+        continue-on-error: true  # Don't fail CI if commenting fails
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -287,6 +288,7 @@ jobs:
 
       - name: Comment on issue - CI passed
         if: needs.setup.outputs.issue_number != '' && (needs.setup.outputs.is_jules_pr == 'true' || needs.setup.outputs.is_cursor_pr == 'true')
+        continue-on-error: true  # Don't fail CI if commenting fails
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -367,6 +369,7 @@ jobs:
 
       - name: Comment on issue - CI failed
         if: needs.setup.outputs.issue_number != '' && (needs.setup.outputs.is_jules_pr == 'true' || needs.setup.outputs.is_cursor_pr == 'true')
+        continue-on-error: true  # Don't fail CI if commenting fails
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
