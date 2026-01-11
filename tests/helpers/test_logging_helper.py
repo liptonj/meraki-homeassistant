@@ -161,7 +161,7 @@ class TestApplyLogLevels:
 
     def test_apply_log_levels_sets_correct_levels(self) -> None:
         """Test apply_log_levels sets the correct log level for each logger."""
-        options = {
+        options: dict[str, str] = {
             "log_level_mqtt": "warning",
             "log_level_api": "debug",
             "log_level_coordinator": "error",
@@ -178,7 +178,7 @@ class TestApplyLogLevels:
         # Reset logger level first
         MerakiLoggers.MQTT.setLevel(logging.NOTSET)
 
-        options = {}  # No options provided
+        options: dict[str, str] = {}  # No options provided
 
         apply_log_levels(options)
 
@@ -187,7 +187,7 @@ class TestApplyLogLevels:
 
     def test_apply_log_levels_handles_invalid_level(self) -> None:
         """Test apply_log_levels handles invalid log level gracefully."""
-        options = {
+        options: dict[str, str] = {
             "log_level_mqtt": "invalid_level",
         }
 

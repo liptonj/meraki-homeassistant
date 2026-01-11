@@ -1,4 +1,4 @@
-from ....async_logging import async_log_time\n"""Meraki API endpoints for networks."""
+"""Meraki API endpoints for networks."""
 
 from __future__ import annotations
 
@@ -6,14 +6,13 @@ from typing import TYPE_CHECKING, Any
 
 from meraki.exceptions import AsyncAPIError
 
-from custom_components.meraki_ha.core.errors import MerakiTrafficAnalysisError
-from custom_components.meraki_ha.core.utils.api_utils import (
+from ....async_logging import async_log_time
+from ....helpers.logging_helper import MerakiLoggers
+from ...errors import MerakiTrafficAnalysisError
+from ...utils.api_utils import (
     handle_meraki_errors,
     validate_response,
 )
-
-from ....async_logging import async_log_time
-from ....helpers.logging_helper import MerakiLoggers
 from ..cache import async_timed_cache
 
 if TYPE_CHECKING:
@@ -126,7 +125,7 @@ class NetworkEndpoints:
             A list of webhooks.
 
         """
-        if self._api_.dashboard is None:
+        if self._api_client.dashboard is None:
             return []
         api = self._api_client.dashboard.networks
         webhooks = await api.getNetworkWebhooksHttpServers(networkId=network_id)
