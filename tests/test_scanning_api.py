@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -63,6 +63,7 @@ async def test_scanning_api_post_invalid_secret(
         CONF_ENABLE_SCANNING_API: True,
         CONF_SCANNING_API_SECRET: "wrong_secret",
     }
+    hass.config_entries.async_get_entry = MagicMock(return_value=mock_config_entry)
     response = await async_handle_scanning_api(
         hass, mock_config_entry.entry_id, mock_request
     )
@@ -80,6 +81,8 @@ async def test_scanning_api_post_valid_data(
     hass.data["meraki_ha"] = {
         mock_config_entry.entry_id: {"coordinator": mock_coordinator}
     }
+    mock_coordinator.async_handle_scanning_api_data = AsyncMock()
+    hass.config_entries.async_get_entry = MagicMock(return_value=mock_config_entry)
     response = await async_handle_scanning_api(
         hass, mock_config_entry.entry_id, mock_request
     )
