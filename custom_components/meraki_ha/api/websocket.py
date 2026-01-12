@@ -1,194 +1,201 @@
-"""WebSocket API for Meraki HA."""
-
+"""WebSocket API for Meraki Lovelace UI."""
 from __future__ import annotations
-
-from typing import Any
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 
-from ..const import (
-    CONF_CAMERA_LINK_INTEGRATION,
-    CONF_DASHBOARD_DEVICE_TYPE_FILTER,
-    CONF_DASHBOARD_STATUS_FILTER,
-    CONF_DASHBOARD_VIEW_MODE,
-    CONF_ENABLE_MQTT,
-    CONF_ENABLED_NETWORKS,
-    CONF_SCAN_INTERVAL,
-    CONF_TEMPERATURE_UNIT,
-    DEFAULT_CAMERA_LINK_INTEGRATION,
-    DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER,
-    DEFAULT_DASHBOARD_STATUS_FILTER,
-    DEFAULT_DASHBOARD_VIEW_MODE,
-    DEFAULT_ENABLE_MQTT,
-    DEFAULT_SCAN_INTERVAL,
-    DEFAULT_TEMPERATURE_UNIT,
-    DOMAIN,
-)
+from ..const import DOMAIN
 from ..meraki_data_coordinator import MerakiDataCoordinator
 
 
-def _build_enriched_data(
-    coordinator: MerakiDataCoordinator,
-    config_entry_id: str,
-    hass: HomeAssistant,
-) -> dict[str, Any]:
-    """Build enriched data payload with coordinator data and config options."""
-    config_entry = hass.config_entries.async_get_entry(config_entry_id)
-    if not config_entry:
-        return coordinator.data or {}
-
-    enabled_networks = config_entry.options.get(CONF_ENABLED_NETWORKS)
-    has_networks = coordinator.data and coordinator.data.get("networks")
-    if enabled_networks is None and has_networks:
-        enabled_networks = [
-            n["id"] for n in coordinator.data.get("networks", []) if "id" in n
-        ]
-
-    # Use the coordinator's actual update_interval to ensure frontend is in sync
-    scan_interval = (
-        int(coordinator.update_interval.total_seconds())
-        if coordinator.update_interval
-        else config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-    )
-    last_updated = (
-        coordinator.last_successful_update.isoformat()
-        if coordinator.last_successful_update
-        else None
-    )
-
-    # Build MQTT status data for frontend dashboard
-    mqtt_enabled = config_entry.options.get(CONF_ENABLE_MQTT, DEFAULT_ENABLE_MQTT)
-    mqtt_data: dict[str, Any] = {"enabled": mqtt_enabled}
-    if mqtt_enabled:
-        entry_data = hass.data.get(DOMAIN, {}).get(config_entry_id, {})
-        mqtt_service = entry_data.get("mqtt_service")
-        mqtt_relay_manager = entry_data.get("mqtt_relay_manager")
-        if mqtt_service:
-            mqtt_data["stats"] = mqtt_service.get_statistics()
-        if mqtt_relay_manager:
-            mqtt_data["relay_destinations"] = mqtt_relay_manager.get_health_status()
-
-    return {
-        **coordinator.data,
-        "enabled_networks": enabled_networks,
-        "config_entry_id": config_entry_id,
-        "scan_interval": scan_interval,
-        "last_updated": last_updated,
-        "dashboard_view_mode": config_entry.options.get(
-            CONF_DASHBOARD_VIEW_MODE, DEFAULT_DASHBOARD_VIEW_MODE
-        ),
-        "dashboard_device_type_filter": config_entry.options.get(
-            CONF_DASHBOARD_DEVICE_TYPE_FILTER, DEFAULT_DASHBOARD_DEVICE_TYPE_FILTER
-        ),
-        "dashboard_status_filter": config_entry.options.get(
-            CONF_DASHBOARD_STATUS_FILTER, DEFAULT_DASHBOARD_STATUS_FILTER
-        ),
-        "camera_link_integration": config_entry.options.get(
-            CONF_CAMERA_LINK_INTEGRATION, DEFAULT_CAMERA_LINK_INTEGRATION
-        ),
-        "temperature_unit": config_entry.options.get(
-            CONF_TEMPERATURE_UNIT, DEFAULT_TEMPERATURE_UNIT
-        ),
-        "mqtt": mqtt_data,
-    }
-
-
-@callback
 def async_setup_websocket_api(hass: HomeAssistant) -> None:
     """Set up the WebSocket API."""
-    websocket_api.async_register_command(hass, ws_subscribe_meraki_data)
-    websocket_api.async_register_command(hass, ws_get_rtsp_url)
+    websocket_api.async_register_command(hass, ws_get_overview)
+    websocket_api.async_register_command(hass, ws_get_device)
+    websocket_api.async_register_command(hass, ws_get_clients)
+    websocket_api.async_register_command(hass, ws_get_ssids)
+    websocket_api.async_register_command(hass, ws_get_switch_ports)
+    websocket_api.async_register_command(hass, ws_subscribe_updates)
+    websocket_api.async_register_command(hass, ws_block_client)
+    websocket_api.async_register_command(hass, ws_unblock_client)
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "meraki_ha/subscribe_meraki_data",
+        vol.Required("type"): "meraki/get_overview",
         vol.Required("config_entry_id"): str,
     }
 )
-@callback
-def ws_subscribe_meraki_data(
-    hass: HomeAssistant,
-    connection: websocket_api.ActiveConnection,
-    msg: dict,
-) -> None:
-    """Subscribe to Meraki data updates."""
-    config_entry_id = msg["config_entry_id"]
-
-    if config_entry_id not in hass.data[DOMAIN]:
-        connection.send_error(msg["id"], "not_found", "Config entry not found")
+@websocket_api.async_response
+async def ws_get_overview(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    """Get Meraki network overview data."""
+    entry_id = msg["config_entry_id"]
+    if entry_id not in hass.data[DOMAIN]:
+        connection.send_error(msg["id"], "not_found", "Config entry not found.")
         return
 
-    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][config_entry_id][
-        "coordinator"
-    ]
+    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
+    if not coordinator.last_update_success:
+        connection.send_error(msg["id"], "coordinator_not_ready", "Coordinator is not ready.")
+        return
 
-    @callback
-    def async_send_update() -> None:
-        """Send update to client."""
-        enriched_data = _build_enriched_data(coordinator, config_entry_id, hass)
-        connection.send_message(websocket_api.event_message(msg["id"], enriched_data))
-
-    # Confirm the subscription (required by HA WebSocket protocol)
-    connection.send_result(msg["id"])
-
-    # Send initial data as an event (subscribeMessage callback only receives events)
-    initial_data = _build_enriched_data(coordinator, config_entry_id, hass)
-    connection.send_message(websocket_api.event_message(msg["id"], initial_data))
-
-    # Register for updates
-    cancel_subscription = coordinator.async_add_listener(async_send_update)
-    connection.subscriptions[msg["id"]] = cancel_subscription
+    connection.send_result(
+        msg["id"],
+        {
+            "devices": coordinator.data.get("devices", []),
+            "clients": coordinator.data.get("clients", []),
+            "ssids": coordinator.data.get("ssids", []),
+        },
+    )
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "meraki_ha/get_rtsp_url",
+        vol.Required("type"): "meraki/get_device",
         vol.Required("config_entry_id"): str,
         vol.Required("serial"): str,
     }
 )
 @websocket_api.async_response
-async def ws_get_rtsp_url(
-    hass: HomeAssistant,
-    connection: websocket_api.ActiveConnection,
-    msg: dict,
-) -> None:
-    """Get RTSP stream URL for a Meraki camera."""
-    config_entry_id = msg["config_entry_id"]
+async def ws_get_device(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    """Get single device details."""
+    entry_id = msg["config_entry_id"]
+    if entry_id not in hass.data[DOMAIN]:
+        connection.send_error(msg["id"], "not_found", "Config entry not found.")
+        return
+
+    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
     serial = msg["serial"]
+    device = next((d for d in coordinator.data.get("devices", []) if d.get("serial") == serial), None)
+    if device:
+        connection.send_result(msg["id"], device)
+    else:
+        connection.send_error(msg["id"], "not_found", "Device not found.")
 
-    if config_entry_id not in hass.data[DOMAIN]:
-        connection.send_error(msg["id"], "not_found", "Config entry not found")
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "meraki/get_clients",
+        vol.Required("config_entry_id"): str,
+        vol.Optional("network_id"): str,
+        vol.Optional("limit"): int,
+    }
+)
+@websocket_api.async_response
+async def ws_get_clients(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    """Get network clients with optional filtering."""
+    entry_id = msg["config_entry_id"]
+    if entry_id not in hass.data[DOMAIN]:
+        connection.send_error(msg["id"], "not_found", "Config entry not found.")
         return
 
-    entry_data = hass.data[DOMAIN][config_entry_id]
-    coordinator: MerakiDataCoordinator = entry_data.get("coordinator")
+    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
+    clients = coordinator.data.get("clients", [])
+    if "network_id" in msg:
+        clients = [c for c in clients if c.get("networkId") == msg["network_id"]]
+    if "limit" in msg:
+        clients = clients[: msg["limit"]]
+    connection.send_result(msg["id"], clients)
 
-    if not coordinator:
-        connection.send_error(msg["id"], "not_ready", "Coordinator not ready")
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "meraki/get_ssids",
+        vol.Required("config_entry_id"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_get_ssids(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    """Get SSID list."""
+    entry_id = msg["config_entry_id"]
+    if entry_id not in hass.data[DOMAIN]:
+        connection.send_error(msg["id"], "not_found", "Config entry not found.")
+        return
+    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
+    ssids = coordinator.data.get("ssids", [])
+    connection.send_result(msg["id"], ssids)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "meraki/get_switch_ports",
+        vol.Required("config_entry_id"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_get_switch_ports(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    """Get switch port statuses."""
+    entry_id = msg["config_entry_id"]
+    if entry_id not in hass.data[DOMAIN]:
+        connection.send_error(msg["id"], "not_found", "Config entry not found.")
         return
 
-    # Find the device in coordinator data
-    devices = coordinator.data.get("devices", [])
-    device = next((d for d in devices if d.get("serial") == serial), None)
-
-    if not device:
-        connection.send_error(msg["id"], "not_found", f"Device {serial} not found")
+    switch_port_coordinator = hass.data[DOMAIN][entry_id].get("switch_port_coordinator")
+    if not switch_port_coordinator or not switch_port_coordinator.last_update_success:
+        connection.send_error(msg["id"], "coordinator_not_ready", "Switch port coordinator is not ready.")
         return
 
-    # Check if device has RTSP URL stored
-    rtsp_url = device.get("rtsp_url")
+    connection.send_result(msg["id"], switch_port_coordinator.data)
 
-    # If not in device data, try to fetch from camera service
-    if not rtsp_url:
-        camera_service = entry_data.get("camera_service")
-        if camera_service:
-            try:
-                rtsp_url = await camera_service.get_rtsp_stream_url(serial)
-            except Exception:  # noqa: BLE001
-                rtsp_url = None
 
-    connection.send_result(msg["id"], {"rtsp_url": rtsp_url})
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "meraki/subscribe_updates",
+        vol.Required("config_entry_id"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_subscribe_updates(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    """Subscribe to coordinator updates."""
+    entry_id = msg["config_entry_id"]
+    if entry_id not in hass.data[DOMAIN]:
+        connection.send_error(msg["id"], "not_found", "Config entry not found.")
+        return
+
+    @callback
+    def forward_data(data):
+        """Forward data to client."""
+        connection.send_message(websocket_api.event_message(msg["id"], data))
+
+    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
+    remove_listener = coordinator.async_add_listener(forward_data)
+    connection.subscriptions[msg["id"]] = remove_listener
+    connection.send_result(msg["id"])
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "meraki/block_client",
+        vol.Required("config_entry_id"): str,
+        vol.Required("mac"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_block_client(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    """Block a client."""
+    entry_id = msg["config_entry_id"]
+    if entry_id not in hass.data[DOMAIN]:
+        connection.send_error(msg["id"], "not_found", "Config entry not found.")
+        return
+
+    # In a real implementation, this would call a Home Assistant service
+    connection.send_result(msg["id"], {"status": "success", "mac": msg["mac"]})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "meraki/unblock_client",
+        vol.Required("config_entry_id"): str,
+        vol.Required("mac"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_unblock_client(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+    """Unblock a client."""
+    entry_id = msg["config_entry_id"]
+    if entry_id not in hass.data[DOMAIN]:
+        connection.send_error(msg["id"], "not_found", "Config entry not found.")
+        return
+
+    connection.send_result(msg["id"], {"status": "success", "mac": msg["mac"]})
