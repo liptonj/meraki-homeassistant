@@ -17,6 +17,7 @@ from .const import (
     CONF_ENABLE_MQTT,
     CONF_ENABLE_SCANNING_API,
     CONF_ENABLE_VLAN_MANAGEMENT,
+    CONF_ENABLE_WEBHOOKS,
     CONF_ENABLED_NETWORKS,
     CONF_LOG_LEVEL_ALERTS,
     CONF_LOG_LEVEL_API,
@@ -38,6 +39,10 @@ from .const import (
     CONF_SCANNING_API_VALIDATOR,
     CONF_SSID_SCAN_INTERVAL,
     CONF_TEMPERATURE_UNIT,
+    CONF_WEBHOOK_AUTO_REGISTER,
+    CONF_WEBHOOK_EXTERNAL_URL,
+    CONF_WEBHOOK_POLLING_REDUCTION,
+    CONF_WEBHOOK_SHARED_SECRET,
     DASHBOARD_VIEW_MODE_NETWORK,
     DASHBOARD_VIEW_MODE_TYPE,
     DEFAULT_CAMERA_LINK_INTEGRATION,
@@ -258,6 +263,24 @@ SCHEMA_SCANNING_API = vol.Schema(
         ): selector.TextSelector(
             selector.TextSelectorConfig(type=selector.TextSelectorType.URL)
         ),
+    }
+)
+
+SCHEMA_WEBHOOKS = vol.Schema(
+    {
+        vol.Required(CONF_ENABLE_WEBHOOKS, default=False): selector.BooleanSelector(),
+        vol.Optional(CONF_WEBHOOK_EXTERNAL_URL, default=""): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.URL)
+        ),
+        vol.Optional(CONF_WEBHOOK_SHARED_SECRET, default=""): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+        ),
+        vol.Required(
+            CONF_WEBHOOK_POLLING_REDUCTION, default=True
+        ): selector.BooleanSelector(),
+        vol.Required(
+            CONF_WEBHOOK_AUTO_REGISTER, default=True
+        ): selector.BooleanSelector(),
     }
 )
 

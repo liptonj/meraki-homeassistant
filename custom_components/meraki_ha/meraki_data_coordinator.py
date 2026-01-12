@@ -17,15 +17,22 @@ from .const import (
     CONF_DASHBOARD_DEVICE_TYPE_FILTER,
     CONF_DEVICE_SCAN_INTERVAL,
     CONF_ENABLE_MQTT,
+    CONF_ENABLE_WEBHOOKS,
     CONF_ENABLED_NETWORKS,
     CONF_NETWORK_SCAN_INTERVAL,
     CONF_SSID_SCAN_INTERVAL,
+    CONF_WEBHOOK_POLLING_REDUCTION,
     DEFAULT_CLIENT_SCAN_INTERVAL,
     DEFAULT_DEVICE_SCAN_INTERVAL,
     DEFAULT_ENABLE_MQTT,
     DEFAULT_NETWORK_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
     DEFAULT_SSID_SCAN_INTERVAL,
     DOMAIN,
+    WEBHOOK_CLIENT_SCAN_INTERVAL,
+    WEBHOOK_DEVICE_SCAN_INTERVAL,
+    WEBHOOK_NETWORK_SCAN_INTERVAL,
+    WEBHOOK_SSID_SCAN_INTERVAL,
 )
 from .core.api.client import MerakiAPIClient as ApiClient
 from .core.errors import ApiClientCommunicationError
@@ -78,6 +85,11 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             entry.options.get(CONF_ENABLE_MQTT, DEFAULT_ENABLE_MQTT)
         )
         self._mqtt_last_updates: dict[str, datetime] = {}  # serial -> last MQTT update
+
+        # Webhook-related state
+        self._webhooks_active: bool = False
+        self._last_webhook_by_type: dict[str, datetime] = {}
+        self._webhook_data_freshness: dict[str, datetime] = {}
 
         # Set a short update interval for the coordinator to run frequently
         super().__init__(
@@ -840,18 +852,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not self.config_entry:
             raise UpdateFailed("Configuration entry not available.")
 
-        network_interval_seconds = self.config_entry.options.get(
-            CONF_NETWORK_SCAN_INTERVAL, DEFAULT_NETWORK_SCAN_INTERVAL
-        )
-        device_interval_seconds = self.config_entry.options.get(
-            CONF_DEVICE_SCAN_INTERVAL, DEFAULT_DEVICE_SCAN_INTERVAL
-        )
-        client_interval_seconds = self.config_entry.options.get(
-            CONF_CLIENT_SCAN_INTERVAL, DEFAULT_CLIENT_SCAN_INTERVAL
-        )
-        ssid_interval_seconds = self.config_entry.options.get(
-            CONF_SSID_SCAN_INTERVAL, DEFAULT_SSID_SCAN_INTERVAL
-        )
+        network_interval_seconds = self._get_polling_interval("networks")
+        device_interval_seconds = self._get_polling_interval("devices")
+        client_interval_seconds = self._get_polling_interval("clients")
+        ssid_interval_seconds = self._get_polling_interval("ssids")
 
         network_interval = timedelta(seconds=network_interval_seconds)
         device_interval = timedelta(seconds=device_interval_seconds)
@@ -1184,3 +1188,65 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if updated_clients > 0:
             _LOGGER.info("Updated %d client(s) from Scanning API data", updated_clients)
             self.async_update_listeners()
+
+    def _get_polling_interval(self, data_type: str) -> int:
+        """Get the polling interval for a specific data type."""
+        if not self.config_entry:
+            return DEFAULT_SCAN_INTERVAL
+
+        webhooks_enabled = self.config_entry.options.get(CONF_ENABLE_WEBHOOKS)
+        polling_reduction_enabled = self.config_entry.options.get(
+            CONF_WEBHOOK_POLLING_REDUCTION
+        )
+
+        if webhooks_enabled and polling_reduction_enabled:
+            if data_type == "networks":
+                return WEBHOOK_NETWORK_SCAN_INTERVAL
+            if data_type == "devices":
+                return WEBHOOK_DEVICE_SCAN_INTERVAL
+            if data_type == "clients":
+                return WEBHOOK_CLIENT_SCAN_INTERVAL
+            if data_type == "ssids":
+                return WEBHOOK_SSID_SCAN_INTERVAL
+
+        # Fallback to default intervals
+        if data_type == "networks":
+            return self.config_entry.options.get(
+                CONF_NETWORK_SCAN_INTERVAL, DEFAULT_NETWORK_SCAN_INTERVAL
+            )
+        if data_type == "devices":
+            return self.config_entry.options.get(
+                CONF_DEVICE_SCAN_INTERVAL, DEFAULT_DEVICE_SCAN_INTERVAL
+            )
+        if data_type == "clients":
+            return self.config_entry.options.get(
+                CONF_CLIENT_SCAN_INTERVAL, DEFAULT_CLIENT_SCAN_INTERVAL
+            )
+        if data_type == "ssids":
+            return self.config_entry.options.get(
+                CONF_SSID_SCAN_INTERVAL, DEFAULT_SSID_SCAN_INTERVAL
+            )
+
+        return DEFAULT_SCAN_INTERVAL
+
+    async def async_handle_webhook_alert(self, data: dict[str, Any]) -> None:
+        """Process incoming webhook alert and update state."""
+        from .webhook_handlers.client_alerts import async_handle_client_alert
+        from .webhook_handlers.device_alerts import async_handle_device_alert
+
+        alert_type = data.get("alertType")
+        if not alert_type:
+            _LOGGER.debug("Received webhook with no alertType")
+            return
+
+        _LOGGER.debug("Processing webhook alert of type: %s", alert_type)
+        self._last_webhook_by_type[alert_type] = datetime.now()
+
+        if alert_type in ("APs went down", "APs came up"):
+            await async_handle_device_alert(self, data)
+        elif alert_type == "Client connectivity changed":
+            await async_handle_client_alert(self, data)
+        else:
+            _LOGGER.debug("Ignoring webhook alert type: %s", alert_type)
+
+        self.async_update_listeners()

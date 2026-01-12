@@ -308,56 +308,38 @@ async def async_handle_webhook(
         _LOGGER_SCANNING.debug("Scanning API webhook %s received: %s", webhook_id, data)
         # Handle Scanning API data directly (request already parsed above)
         return await _handle_scanning_api_data(hass, webhook_id, data)
+    elif "sharedSecret" in data:
+        _LOGGER_ALERTS.debug("Alerts webhook %s received: %s", webhook_id, data)
+        return await _handle_alerts_webhook(hass, webhook_id, data)
 
-    # --- Legacy Alerts Webhook Handling ---
-    _LOGGER_ALERTS.debug("Alerts webhook %s received: %s", webhook_id, data)
+    _LOGGER_ALERTS.warning(
+        "Received webhook with unknown format for %s: %s", webhook_id, data
+    )
+    return web.Response(status=400)
 
-    entry_data = hass.data.get(DOMAIN, {}).get(webhook_id)
-    if not entry_data:
+
+async def _handle_alerts_webhook(
+    hass: HomeAssistant,
+    config_entry_id: str,
+    data: dict,
+) -> web.Response:
+    """Handle a webhook from the Meraki Dashboard alerts."""
+    config_entry = hass.config_entries.async_get_entry(config_entry_id)
+    if not config_entry:
         _LOGGER_ALERTS.warning(
-            "Received webhook for unknown config entry: %s", webhook_id
+            "Alerts webhook: config entry %s not found", config_entry_id
         )
         return web.Response(status=404)
 
-    secret = entry_data.get("secret")
+    secret = config_entry.options.get("webhook_shared_secret")
     if not secret or data.get("sharedSecret") != secret:
-        _LOGGER_ALERTS.warning("Received webhook with invalid secret: %s", webhook_id)
+        _LOGGER_ALERTS.warning(
+            "Received webhook with invalid secret for %s", config_entry_id
+        )
         return web.Response(status=401)
 
-    coordinator = entry_data.get("coordinator")
-    if not coordinator:
-        _LOGGER_ALERTS.warning("Coordinator not found for webhook: %s", webhook_id)
-        return web.Response(status=500)
-
-    alert_type = data.get("alertType")
-    if alert_type == "APs went down":
-        device_serial = data.get("deviceSerial")
-        if device_serial and coordinator.data:
-            for i, device in enumerate(coordinator.data.get("devices", [])):
-                if device.get("serial") == device_serial:
-                    _LOGGER_ALERTS.info(
-                        "Device %s reported as down via webhook",
-                        device_serial,
-                    )
-                    coordinator.data["devices"][i]["status"] = "offline"
-                    coordinator.async_update_listeners()
-                    break
-    elif alert_type == "Client connectivity changed":
-        alert_data = data.get("alertData", {})
-        client_mac = alert_data.get("mac")
-        if client_mac and coordinator.data:
-            for i, client in enumerate(coordinator.data.get("clients", [])):
-                if client.get("mac") == client_mac:
-                    _LOGGER_ALERTS.info(
-                        "Client %s connectivity changed via webhook",
-                        client_mac,
-                    )
-                    coordinator.data["clients"][i]["status"] = (
-                        "Online" if alert_data.get("connected") else "Offline"
-                    )
-                    coordinator.async_update_listeners()
-                    break
-    else:
-        _LOGGER_ALERTS.debug("Ignoring webhook alert type: %s", alert_type)
-
+    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][config_entry_id][
+        "coordinator"
+    ]
+    await coordinator.async_handle_webhook_alert(data)
     return web.Response(status=200)

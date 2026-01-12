@@ -190,6 +190,12 @@ DEFAULT_CLIENT_SCAN_INTERVAL: Final = 90
 DEFAULT_SSID_SCAN_INTERVAL: Final = 600
 """Default scan interval in seconds for SSIDs (10 minutes)."""
 
+# Webhook-adjusted Polling Intervals
+WEBHOOK_NETWORK_SCAN_INTERVAL: Final = 21600  # 6 hours
+WEBHOOK_DEVICE_SCAN_INTERVAL: Final = 3600  # 1 hour
+WEBHOOK_CLIENT_SCAN_INTERVAL: Final = 300  # 5 minutes
+WEBHOOK_SSID_SCAN_INTERVAL: Final = 3600  # 1 hour
+
 
 # Defaults for new options
 DEFAULT_ENABLE_DEVICE_STATUS: Final = True
@@ -230,6 +236,44 @@ CONF_SCANNING_API_EXTERNAL_URL: Final = "scanning_api_external_url"
 
 DEFAULT_SCANNING_API_EXTERNAL_URL: Final = ""
 """Default value for custom external URL (empty = use HA's external URL)."""
+
+# Webhook Configuration
+CONF_ENABLE_WEBHOOKS: Final = "enable_webhooks"
+"""Configuration key for enabling webhook alerts."""
+
+CONF_WEBHOOK_EXTERNAL_URL: Final = "webhook_external_url"
+"""Configuration key for custom external URL for webhooks."""
+
+CONF_WEBHOOK_SHARED_SECRET: Final = "webhook_shared_secret"
+"""Configuration key for webhook shared secret."""
+
+CONF_WEBHOOK_POLLING_REDUCTION: Final = "webhook_polling_reduction"
+"""Configuration key for reducing polling when webhooks are active."""
+
+CONF_WEBHOOK_AUTO_REGISTER: Final = "webhook_auto_register"
+"""Configuration key for automatic webhook registration."""
+
+CONF_WEBHOOK_ALERT_TYPES: Final = "webhook_alert_types"
+"""Configuration key for a list of alert types to subscribe to."""
+
+DEFAULT_ENABLE_WEBHOOKS: Final = False
+"""Default value for webhook alerts enable toggle."""
+
+DEFAULT_WEBHOOK_EXTERNAL_URL: Final = ""
+"""Default value for custom external URL for webhooks."""
+
+DEFAULT_WEBHOOK_SHARED_SECRET: Final = ""
+"""Default value for webhook shared secret."""
+
+DEFAULT_WEBHOOK_POLLING_REDUCTION: Final = True
+"""Default value for reducing polling when webhooks are active."""
+
+DEFAULT_WEBHOOK_AUTO_REGISTER: Final = True
+"""Default value for automatic webhook registration."""
+
+DEFAULT_WEBHOOK_ALERT_TYPES: Final[list[str]] = []
+"""Default empty list of alert types to subscribe to."""
+
 
 CONF_ENABLE_MQTT: Final = "enable_mqtt"
 """Configuration key for enabling MQTT functionality."""

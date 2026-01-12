@@ -84,6 +84,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                 "polling",
                 "camera",
                 "mqtt",
+                "webhooks",
                 "scanning_api",
                 "display_preferences",
                 "notifications",
@@ -143,6 +144,29 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             step_id="scanning_api",
             data_schema=schema_with_defaults,
             description_placeholders={"webhook_url": webhook_url},
+        )
+
+    async def async_step_webhooks(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle webhook settings."""
+        from .schemas import SCHEMA_WEBHOOKS
+
+        if user_input is not None:
+            self.options.update(user_input)
+            return self.async_create_entry(
+                title=CONF_INTEGRATION_TITLE, data=self.options
+            )
+
+        schema_with_defaults = self._populate_schema_defaults(
+            SCHEMA_WEBHOOKS,
+            self.options,
+        )
+
+        return self.async_show_form(
+            step_id="webhooks",
+            data_schema=schema_with_defaults,
         )
 
     async def async_step_network_selection(
