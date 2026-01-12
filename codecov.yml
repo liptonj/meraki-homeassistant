@@ -1,0 +1,22 @@
+# Codecov configuration
+# Controls the codecov/project and codecov/patch status checks on PRs
+# https://docs.codecov.com/docs/codecovyml-reference
+
+coverage:
+  status:
+    # Project coverage - overall coverage of the codebase
+    project:
+      default:
+        # Make this check informational only (won't block PRs)
+        informational: true
+
+    # Patch coverage - coverage of changed lines
+    patch:
+      default:
+        # Make this check informational only (won't block PRs)
+        informational: true
+
+comment:
+  layout: 'reach,diff,flags,files'
+  behavior: default
+  require_changes: true
