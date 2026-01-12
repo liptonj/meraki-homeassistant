@@ -2,12 +2,15 @@ from __future__ import annotations
 
 """Tests for the device alert handler."""
 
+
 import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from custom_components.meraki_ha.handlers.device_alerts import async_handle_device_alert
+from custom_components.meraki_ha.handlers.device_alerts import (
+    async_handle_device_alert,
+)
 
 
 @pytest.mark.asyncio

@@ -1336,3 +1336,29 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             return
         except Exception as e:
             _LOGGER.error("Error during targeted device refresh for %s: %s", serial, e)
+
+    def _update_device_status_immediate(self, serial: str, is_online: bool) -> None:
+        """Update device status in coordinator data without an API call."""
+        device = self.devices_by_serial.get(serial)
+        if device:
+            new_status = "online" if is_online else "offline"
+            if device.get("status") != new_status:
+                device["status"] = new_status
+                _LOGGER.debug(
+                    "Immediately updated device %s status to %s", serial, new_status
+                )
+
+    def _update_client_status_immediate(self, mac: str, is_online: bool) -> None:
+        """Update client status in coordinator data without an API call."""
+        if self.data and "clients" in self.data:
+            for client in self.data["clients"]:
+                if client.get("mac") == mac:
+                    new_status = "Online" if is_online else "Offline"
+                    if client.get("status") != new_status:
+                        client["status"] = new_status
+                        _LOGGER.debug(
+                            "Immediately updated client %s status to %s",
+                            mac,
+                            new_status,
+                        )
+                    break

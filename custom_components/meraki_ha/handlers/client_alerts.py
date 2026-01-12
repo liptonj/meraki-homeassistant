@@ -33,14 +33,27 @@ async def async_handle_client_alert(
         _LOGGER.warning("Client alert missing 'mac': %s", data)
         return
 
-    network_id = data.get("networkId")
-    if not network_id:
-        _LOGGER.warning("Client alert missing 'networkId': %s", data)
+    is_connected = alert_data.get("connected")
+    if is_connected is None:
+        _LOGGER.warning("Client alert missing 'connected' status: %s", data)
         return
 
-    coordinator.hass.async_create_task(
-        coordinator._targeted_client_refresh(
-            network_id=network_id,
-            client_mac=client_mac,
-        )
+    status = "Online" if is_connected else "Offline"
+    _LOGGER.info(
+        "Client %s changed status to %s via webhook (%s)",
+        client_mac,
+        status,
+        alert_type,
     )
+    coordinator._update_client_status_immediate(client_mac, is_connected)
+    coordinator.async_update_listeners()
+
+    network_id = data.get("networkId")
+    if network_id:
+        coordinator.hass.async_create_task(
+            coordinator._targeted_client_refresh(
+                network_id=network_id,
+                client_mac=client_mac,
+                delay=5,
+            )
+        )
