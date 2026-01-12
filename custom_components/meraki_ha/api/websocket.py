@@ -177,12 +177,15 @@ async def ws_subscribe_updates(
         connection.send_error(msg["id"], "not_found", "Config entry not found.")
         return
 
-    @callback
-    def forward_data(data):
-        """Forward data to client."""
-        connection.send_message(websocket_api.event_message(msg["id"], data))
-
     coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
+
+    @callback
+    def forward_data() -> None:
+        """Forward data to client."""
+        connection.send_message(
+            websocket_api.event_message(msg["id"], coordinator.data)
+        )
+
     remove_listener = coordinator.async_add_listener(forward_data)
     connection.subscriptions[msg["id"]] = remove_listener
     connection.send_result(msg["id"])
