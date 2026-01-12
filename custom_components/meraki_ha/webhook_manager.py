@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.core import HomeAssistant
-from meraki_sdk.exceptions import APIError
+from meraki.exceptions import APIError
 
 from .core.api.client import MerakiAPIClient
 from .helpers.logging_helper import MerakiLoggers
@@ -27,10 +27,18 @@ class WebhookManager:
         self, webhook_url: str, shared_secret: str, alert_types: list[str]
     ) -> dict[str, Any]:
         """Register webhooks for a network."""
-        status = {"success": False, "error": None, "manual_setup_required": False}
+        status: dict[str, Any] = {
+            "success": False,
+            "error": None,
+            "manual_setup_required": False,
+        }
         server_name = "Home Assistant Meraki Integration"
 
         try:
+            if not self.api_client.dashboard or not self.api_client.dashboard.webhooks:
+                status["error"] = "Dashboard API not available"
+                return status
+
             webhooks_api = self.api_client.dashboard.webhooks
 
             # Step 1: Find or Create HTTP Server
@@ -71,6 +79,10 @@ class WebhookManager:
 
             # Step 2: Subscribe to Alert Types
             if self.http_server_id:
+                if not self.api_client.dashboard.alerts:
+                    status["error"] = "Alerts API not available"
+                    return status
+
                 current_settings = (
                     await self.api_client.dashboard.alerts.getNetworkAlertsSettings(
                         self.network_id
@@ -108,7 +120,7 @@ class WebhookManager:
             MerakiLoggers.ALERTS.error(
                 "API error registering webhook for network %s: %s", self.network_id, e
             )
-            if e.response.status == 403:
+            if hasattr(e, "response") and e.response.status == 403:
                 status["error"] = "Read-only API key. Manual setup required."
                 status["manual_setup_required"] = True
             else:
@@ -126,6 +138,12 @@ class WebhookManager:
         """Unregister webhooks for a network."""
         server_name = "Home Assistant Meraki Integration"
         try:
+            if not self.api_client.dashboard or not self.api_client.dashboard.webhooks:
+                MerakiLoggers.ALERTS.warning(
+                    "Cannot unregister webhooks, dashboard API not available."
+                )
+                return
+
             existing_servers = (
                 await self.api_client.dashboard.webhooks.getNetworkWebhooksHttpServers(
                     self.network_id
@@ -158,4 +176,4 @@ class WebhookManager:
     async def async_check_webhook_status(self) -> dict[str, Any]:
         """Check the status of webhooks for a network."""
         # TODO: Implement webhook status check logic
-        pass
+        return {}

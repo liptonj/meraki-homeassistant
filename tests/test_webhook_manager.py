@@ -3,7 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from meraki_sdk.exceptions import APIError
+from meraki.exceptions import APIError
 
 from custom_components.meraki_ha.webhook_manager import WebhookManager
 

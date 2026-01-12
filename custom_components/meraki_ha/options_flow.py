@@ -127,7 +127,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                     manager = WebhookManager(self.hass, api_client, network["id"])
                     await manager.async_register_webhooks(
                         get_webhook_url(self.hass, self.config_entry.entry_id),
-                        self.options.get(CONF_WEBHOOK_SHARED_SECRET),
+                        self.options.get(CONF_WEBHOOK_SHARED_SECRET) or "",
                         self.options.get(
                             CONF_WEBHOOK_ALERT_TYPES, DEFAULT_WEBHOOK_ALERT_TYPES
                         ),

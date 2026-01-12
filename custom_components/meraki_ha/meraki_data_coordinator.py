@@ -973,7 +973,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     include_version = self.config_entry.options.get(
                         CONF_SYNC_INCLUDE_VERSION, DEFAULT_SYNC_INCLUDE_VERSION
                     )
-                    clients_to_update_by_net = {}
+                    clients_to_update_by_net: dict[str, list[dict[str, str]]] = {}
                     for client in new_clients:
                         description = build_client_description(
                             self.hass,
@@ -982,12 +982,13 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             include_version,
                         )
                         if description:
-                            net_id = client["networkId"]
-                            if net_id not in clients_to_update_by_net:
-                                clients_to_update_by_net[net_id] = []
-                            clients_to_update_by_net[net_id].append(
-                                {"mac": client["mac"], "name": description}
-                            )
+                            net_id = client.get("networkId")
+                            if net_id:
+                                if net_id not in clients_to_update_by_net:
+                                    clients_to_update_by_net[net_id] = []
+                                clients_to_update_by_net[net_id].append(
+                                    {"mac": client["mac"], "name": description}
+                                )
                     for net_id, clients in clients_to_update_by_net.items():
                         try:
                             await self.api.network.provision_network_clients(
@@ -1312,11 +1313,11 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "Cameras came up",
         ):
             serial = data.get("deviceSerial")
-            is_up = "came up" in alert_type or "Up" in alert_type
-            self._update_device_status_immediate(serial, is_up)
-            self.async_update_listeners()
-
-            self.hass.async_create_task(self._targeted_device_refresh(serial))
+            if serial:
+                is_up = "came up" in alert_type or "Up" in alert_type
+                self._update_device_status_immediate(serial, is_up)
+                self.async_update_listeners()
+                self.hass.async_create_task(self._targeted_device_refresh(serial))
 
     def _update_client_status_immediate(self, mac: str | None, connected: bool) -> None:
         """Perform an immediate client status update from a webhook."""
@@ -1345,8 +1346,13 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "online" if is_up else "offline",
             )
 
-    async def _targeted_client_refresh(self, network_id: str, client_mac: str) -> None:
+    async def _targeted_client_refresh(
+        self, network_id: str | None, client_mac: str | None
+    ) -> None:
         """Fetch single client details after webhook."""
+        if not network_id or not client_mac:
+            return
+
         from .const import WEBHOOK_DETAIL_REFRESH_DELAY
 
         await asyncio.sleep(WEBHOOK_DETAIL_REFRESH_DELAY)
@@ -1361,8 +1367,11 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 f"Error during targeted client refresh for {client_mac}: {e}"
             )
 
-    async def _targeted_device_refresh(self, serial: str) -> None:
+    async def _targeted_device_refresh(self, serial: str | None) -> None:
         """Fetch single device details after webhook."""
+        if not serial:
+            return
+
         from .const import WEBHOOK_DETAIL_REFRESH_DELAY
 
         await asyncio.sleep(WEBHOOK_DETAIL_REFRESH_DELAY)
@@ -1392,5 +1401,8 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Merge updated device data into the coordinator's data."""
         device = self.devices_by_serial.get(serial)
         if device:
-            device.update(device_data)
+            # Only update with keys that are valid for the MerakiDevice TypedDict
+            valid_keys = MerakiDevice.__annotations__.keys()
+            update_data = {k: v for k, v in device_data.items() if k in valid_keys}
+            device.update(update_data)
             _LOGGER.info(f"Merged targeted device update for {serial}")
