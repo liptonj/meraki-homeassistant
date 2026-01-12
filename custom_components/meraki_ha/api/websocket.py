@@ -1,4 +1,5 @@
 """WebSocket API for Meraki Lovelace UI."""
+
 from __future__ import annotations
 
 import voluptuous as vol
@@ -28,7 +29,9 @@ def async_setup_websocket_api(hass: HomeAssistant) -> None:
     }
 )
 @websocket_api.async_response
-async def ws_get_overview(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+async def ws_get_overview(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
     """Get Meraki network overview data."""
     entry_id = msg["config_entry_id"]
     if entry_id not in hass.data[DOMAIN]:
@@ -37,7 +40,9 @@ async def ws_get_overview(hass: HomeAssistant, connection: websocket_api.ActiveC
 
     coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
     if not coordinator.last_update_success:
-        connection.send_error(msg["id"], "coordinator_not_ready", "Coordinator is not ready.")
+        connection.send_error(
+            msg["id"], "coordinator_not_ready", "Coordinator is not ready."
+        )
         return
 
     connection.send_result(
@@ -58,7 +63,9 @@ async def ws_get_overview(hass: HomeAssistant, connection: websocket_api.ActiveC
     }
 )
 @websocket_api.async_response
-async def ws_get_device(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+async def ws_get_device(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
     """Get single device details."""
     entry_id = msg["config_entry_id"]
     if entry_id not in hass.data[DOMAIN]:
@@ -67,7 +74,10 @@ async def ws_get_device(hass: HomeAssistant, connection: websocket_api.ActiveCon
 
     coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
     serial = msg["serial"]
-    device = next((d for d in coordinator.data.get("devices", []) if d.get("serial") == serial), None)
+    device = next(
+        (d for d in coordinator.data.get("devices", []) if d.get("serial") == serial),
+        None,
+    )
     if device:
         connection.send_result(msg["id"], device)
     else:
@@ -83,7 +93,9 @@ async def ws_get_device(hass: HomeAssistant, connection: websocket_api.ActiveCon
     }
 )
 @websocket_api.async_response
-async def ws_get_clients(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+async def ws_get_clients(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
     """Get network clients with optional filtering."""
     entry_id = msg["config_entry_id"]
     if entry_id not in hass.data[DOMAIN]:
@@ -106,7 +118,9 @@ async def ws_get_clients(hass: HomeAssistant, connection: websocket_api.ActiveCo
     }
 )
 @websocket_api.async_response
-async def ws_get_ssids(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+async def ws_get_ssids(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
     """Get SSID list."""
     entry_id = msg["config_entry_id"]
     if entry_id not in hass.data[DOMAIN]:
@@ -124,7 +138,9 @@ async def ws_get_ssids(hass: HomeAssistant, connection: websocket_api.ActiveConn
     }
 )
 @websocket_api.async_response
-async def ws_get_switch_ports(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+async def ws_get_switch_ports(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
     """Get switch port statuses."""
     entry_id = msg["config_entry_id"]
     if entry_id not in hass.data[DOMAIN]:
@@ -133,7 +149,9 @@ async def ws_get_switch_ports(hass: HomeAssistant, connection: websocket_api.Act
 
     switch_port_coordinator = hass.data[DOMAIN][entry_id].get("switch_port_coordinator")
     if not switch_port_coordinator or not switch_port_coordinator.last_update_success:
-        connection.send_error(msg["id"], "coordinator_not_ready", "Switch port coordinator is not ready.")
+        connection.send_error(
+            msg["id"], "coordinator_not_ready", "Switch port coordinator is not ready."
+        )
         return
 
     connection.send_result(msg["id"], switch_port_coordinator.data)
@@ -146,7 +164,9 @@ async def ws_get_switch_ports(hass: HomeAssistant, connection: websocket_api.Act
     }
 )
 @websocket_api.async_response
-async def ws_subscribe_updates(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+async def ws_subscribe_updates(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
     """Subscribe to coordinator updates."""
     entry_id = msg["config_entry_id"]
     if entry_id not in hass.data[DOMAIN]:
@@ -172,7 +192,9 @@ async def ws_subscribe_updates(hass: HomeAssistant, connection: websocket_api.Ac
     }
 )
 @websocket_api.async_response
-async def ws_block_client(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+async def ws_block_client(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
     """Block a client."""
     entry_id = msg["config_entry_id"]
     if entry_id not in hass.data[DOMAIN]:
@@ -191,7 +213,9 @@ async def ws_block_client(hass: HomeAssistant, connection: websocket_api.ActiveC
     }
 )
 @websocket_api.async_response
-async def ws_unblock_client(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
+async def ws_unblock_client(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
     """Unblock a client."""
     entry_id = msg["config_entry_id"]
     if entry_id not in hass.data[DOMAIN]:

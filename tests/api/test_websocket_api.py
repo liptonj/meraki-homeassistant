@@ -1,4 +1,5 @@
 """Tests for the Meraki WebSocket API."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock
@@ -38,7 +39,9 @@ def mock_hass(hass: HomeAssistant, mock_coordinator):
     hass.data[DOMAIN] = {
         CONFIG_ENTRY_ID: {
             "coordinator": mock_coordinator,
-            "switch_port_coordinator": AsyncMock(last_update_success=True, data=[{"portId": "1"}]),
+            "switch_port_coordinator": AsyncMock(
+                last_update_success=True, data=[{"portId": "1"}]
+            ),
         }
     }
     return hass
@@ -47,7 +50,9 @@ def mock_hass(hass: HomeAssistant, mock_coordinator):
 async def test_ws_get_overview(hass_ws_client, mock_hass):
     """Test get_overview websocket command."""
     client = await hass_ws_client(mock_hass)
-    await client.send_json({"id": 1, "type": "meraki/get_overview", "config_entry_id": CONFIG_ENTRY_ID})
+    await client.send_json(
+        {"id": 1, "type": "meraki/get_overview", "config_entry_id": CONFIG_ENTRY_ID}
+    )
     msg = await client.receive_json()
     assert msg["success"]
     assert msg["result"]["devices"][0]["serial"] == "123"
@@ -57,7 +62,12 @@ async def test_ws_get_device(hass_ws_client, mock_hass):
     """Test get_device websocket command."""
     client = await hass_ws_client(mock_hass)
     await client.send_json(
-        {"id": 2, "type": "meraki/get_device", "config_entry_id": CONFIG_ENTRY_ID, "serial": "123"}
+        {
+            "id": 2,
+            "type": "meraki/get_device",
+            "config_entry_id": CONFIG_ENTRY_ID,
+            "serial": "123",
+        }
     )
     msg = await client.receive_json()
     assert msg["success"]
@@ -68,7 +78,12 @@ async def test_ws_get_device_not_found(hass_ws_client, mock_hass):
     """Test get_device websocket command with an unknown serial."""
     client = await hass_ws_client(mock_hass)
     await client.send_json(
-        {"id": 3, "type": "meraki/get_device", "config_entry_id": CONFIG_ENTRY_ID, "serial": "456"}
+        {
+            "id": 3,
+            "type": "meraki/get_device",
+            "config_entry_id": CONFIG_ENTRY_ID,
+            "serial": "456",
+        }
     )
     msg = await client.receive_json()
     assert not msg["success"]
@@ -78,7 +93,9 @@ async def test_ws_get_device_not_found(hass_ws_client, mock_hass):
 async def test_ws_get_clients(hass_ws_client, mock_hass):
     """Test get_clients websocket command."""
     client = await hass_ws_client(mock_hass)
-    await client.send_json({"id": 4, "type": "meraki/get_clients", "config_entry_id": CONFIG_ENTRY_ID})
+    await client.send_json(
+        {"id": 4, "type": "meraki/get_clients", "config_entry_id": CONFIG_ENTRY_ID}
+    )
     msg = await client.receive_json()
     assert msg["success"]
     assert msg["result"][0]["mac"] == "aa:bb:cc:dd:ee:ff"
@@ -87,7 +104,9 @@ async def test_ws_get_clients(hass_ws_client, mock_hass):
 async def test_ws_get_ssids(hass_ws_client, mock_hass):
     """Test get_ssids websocket command."""
     client = await hass_ws_client(mock_hass)
-    await client.send_json({"id": 5, "type": "meraki/get_ssids", "config_entry_id": CONFIG_ENTRY_ID})
+    await client.send_json(
+        {"id": 5, "type": "meraki/get_ssids", "config_entry_id": CONFIG_ENTRY_ID}
+    )
     msg = await client.receive_json()
     assert msg["success"]
     assert msg["result"][0]["name"] == "Test SSID"
@@ -108,20 +127,31 @@ async def test_ws_subscribe_updates(hass_ws_client, mock_hass):
     """Test subscribe_updates websocket command."""
     client = await hass_ws_client(mock_hass)
     await client.send_json(
-        {"id": 7, "type": "meraki/subscribe_updates", "config_entry_id": CONFIG_ENTRY_ID}
+        {
+            "id": 7,
+            "type": "meraki/subscribe_updates",
+            "config_entry_id": CONFIG_ENTRY_ID,
+        }
     )
     msg = await client.receive_json()
     assert msg["success"]
 
     # Verify that the coordinator's listener was added
-    mock_hass.data[DOMAIN][CONFIG_ENTRY_ID]["coordinator"].async_add_listener.assert_called_once()
+    mock_hass.data[DOMAIN][CONFIG_ENTRY_ID][
+        "coordinator"
+    ].async_add_listener.assert_called_once()
 
 
 async def test_ws_block_client(hass_ws_client, mock_hass):
     """Test block_client websocket command."""
     client = await hass_ws_client(mock_hass)
     await client.send_json(
-        {"id": 8, "type": "meraki/block_client", "config_entry_id": CONFIG_ENTRY_ID, "mac": "aa:bb:cc:dd:ee:ff"}
+        {
+            "id": 8,
+            "type": "meraki/block_client",
+            "config_entry_id": CONFIG_ENTRY_ID,
+            "mac": "aa:bb:cc:dd:ee:ff",
+        }
     )
     msg = await client.receive_json()
     assert msg["success"]
@@ -131,17 +161,25 @@ async def test_ws_unblock_client(hass_ws_client, mock_hass):
     """Test unblock_client websocket command."""
     client = await hass_ws_client(mock_hass)
     await client.send_json(
-        {"id": 9, "type": "meraki/unblock_client", "config_entry_id": CONFIG_ENTRY_ID, "mac": "aa:bb:cc:dd:ee:ff"}
+        {
+            "id": 9,
+            "type": "meraki/unblock_client",
+            "config_entry_id": CONFIG_ENTRY_ID,
+            "mac": "aa:bb:cc:dd:ee:ff",
+        }
     )
     msg = await client.receive_json()
     assert msg["success"]
+
 
 async def test_ws_command_coordinator_not_ready(hass_ws_client, mock_hass):
     """Test commands when coordinator is not ready."""
     mock_hass.data[DOMAIN][CONFIG_ENTRY_ID]["coordinator"].last_update_success = False
     client = await hass_ws_client(mock_hass)
 
-    await client.send_json({"id": 10, "type": "meraki/get_overview", "config_entry_id": CONFIG_ENTRY_ID})
+    await client.send_json(
+        {"id": 10, "type": "meraki/get_overview", "config_entry_id": CONFIG_ENTRY_ID}
+    )
     msg = await client.receive_json()
     assert not msg["success"]
     assert msg["error"]["code"] == "coordinator_not_ready"
