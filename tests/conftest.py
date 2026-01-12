@@ -1,11 +1,13 @@
-"""Global fixtures for meraki_ha integration."""
-
-"""Global fixtures for meraki_ha integration."""
 from __future__ import annotations
 
+"""Global fixtures for meraki_ha integration."""
 import sys
 from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from tests.const import MOCK_ALL_DATA
 
 # Mock the homeassistant modules to prevent ImportError. This must be done before
 # any other imports from the custom component.
@@ -36,11 +38,6 @@ MOCK_MODULES = {
 
 for module, mock_obj in MOCK_MODULES.items():
     sys.modules[module] = mock_obj
-
-
-import pytest
-
-from tests.const import MOCK_ALL_DATA
 
 
 @pytest.fixture(autouse=True)
