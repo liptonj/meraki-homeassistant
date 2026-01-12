@@ -537,6 +537,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register frontend panel and WebSocket API
     await async_register_static_path(hass)
     await async_register_panel(hass, entry)
+
+    # Register custom cards
+    from homeassistant.components.http import StaticPathConfig
+
+    await hass.http.async_register_static_paths(
+        [
+            StaticPathConfig(
+                url_path="/meraki_cards",
+                path=hass.config.path("custom_components/meraki_ha/www/cards"),
+                cache_headers=False,
+            )
+        ]
+    )
+
     async_setup_api(hass)
     async_setup_websocket_api(hass)
 
