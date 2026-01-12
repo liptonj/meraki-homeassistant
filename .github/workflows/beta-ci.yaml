@@ -10,6 +10,7 @@ run-name: 'CI: ${{ github.event.pull_request.title }} (#${{ github.event.pull_re
 on:
   pull_request:
     branches-ignore: ['main'] # Run on all PRs except those targeting main
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # IMPORTANT: Repository settings must also allow workflow permissions
 # Go to: Settings → Actions → General → Workflow permissions
