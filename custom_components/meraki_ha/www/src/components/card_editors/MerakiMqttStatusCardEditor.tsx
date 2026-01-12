@@ -7,6 +7,7 @@ interface MerakiMqttStatusCardConfig {
   title?: string;
   show_relay_destinations?: boolean;
   show_message_stats?: boolean;
+  show_sensor_count?: boolean;
   collapsible?: boolean;
   default_collapsed?: boolean;
   auto_hide_when_disabled?: boolean;
@@ -25,6 +26,7 @@ const MerakiMqttStatusCardEditor: React.FC<MerakiMqttStatusCardEditorProps> = ({
   const autoHideRef = useRef<any>(null);
   const showStatsRef = useRef<any>(null);
   const showRelayRef = useRef<any>(null);
+  const showSensorCountRef = useRef<any>(null);
 
   const handleConfigChanged = useCallback((e: any) => {
     const target = e.target;
@@ -49,6 +51,7 @@ const MerakiMqttStatusCardEditor: React.FC<MerakiMqttStatusCardEditorProps> = ({
       { ref: autoHideRef, event: 'change' },
       { ref: showStatsRef, event: 'change' },
       { ref: showRelayRef, event: 'change' },
+      { ref: showSensorCountRef, event: 'change' },
     ];
 
     elements.forEach(({ ref, event }) => {
@@ -87,6 +90,9 @@ const MerakiMqttStatusCardEditor: React.FC<MerakiMqttStatusCardEditorProps> = ({
     }
     if (showRelayRef.current) {
         showRelayRef.current.checked = config.show_relay_destinations !== false;
+    }
+    if (showSensorCountRef.current) {
+        showSensorCountRef.current.checked = config.show_sensor_count !== false;
     }
   }, [config]);
 
@@ -131,6 +137,13 @@ const MerakiMqttStatusCardEditor: React.FC<MerakiMqttStatusCardEditorProps> = ({
             <ha-switch
                 ref={showRelayRef}
                 name="show_relay_destinations"
+            ></ha-switch>
+        </ha-formfield>
+
+        <ha-formfield label="Show Sensor Count">
+            <ha-switch
+                ref={showSensorCountRef}
+                name="show_sensor_count"
             ></ha-switch>
         </ha-formfield>
     </div>

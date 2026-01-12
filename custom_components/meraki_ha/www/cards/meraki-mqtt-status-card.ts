@@ -24,6 +24,19 @@ export class MerakiMqttStatusCard extends LitElement {
     return document.createElement('meraki-mqtt-status-card-editor');
   }
 
+  public static getStubConfig() {
+    return {
+      type: 'custom:meraki-mqtt-status-card',
+      title: 'MQTT Status',
+      show_relay_destinations: true,
+      show_message_stats: true,
+      show_sensor_count: true,
+      collapsible: true,
+      default_collapsed: true,
+      auto_hide_when_disabled: true,
+    };
+  }
+
   protected updated(changedProperties: Map<string | number | symbol, unknown>): void {
     super.updated(changedProperties);
     if (changedProperties.has('hass') || changedProperties.has('_config')) {
