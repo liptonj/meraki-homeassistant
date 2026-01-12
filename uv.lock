@@ -1612,6 +1612,9 @@ wheels = [
 name = "meraki-homeassistant"
 version = "0.0.0"
 source = { editable = "." }
+dependencies = [
+    { name = "playwright" },
+]
 
 [package.optional-dependencies]
 dev = [
@@ -1650,6 +1653,7 @@ requires-dist = [
     { name = "meraki", marker = "extra == 'dev'", specifier = ">=2.1.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==1.11.0" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = "==2.7.3" },
+    { name = "playwright", specifier = ">=1.57.0" },
     { name = "playwright", marker = "extra == 'dev'" },
     { name = "pycares", marker = "extra == 'dev'", specifier = "==4.11.0" },
     { name = "pydantic", marker = "extra == 'dev'", specifier = ">=2.0.0" },

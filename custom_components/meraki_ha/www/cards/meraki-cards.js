@@ -1,8 +1,13 @@
+// This file is the main entry point for all Meraki Lovelace cards.
+// It registers all cards with Lovelace.
+
+// Import card components
 import './meraki-mqtt-status-card';
+import './meraki-client-card/meraki-client-card.js';
+import './meraki-client-card/meraki-client-card-editor.js';
 
 console.info(
-  `%c MERAKI-MQTT-STATUS-CARD %c LOADED `,
-  'color: #2980b9; background: #fff; font-weight: 700;',
+  '%c MERAKI CARDS LOADED ',
   'color: #2980b9; background: #fff; font-weight: 700;'
 );
 
