@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.meraki_ha.api.websocket import async_setup_websocket_api
+from custom_components.meraki_ha.api.legacy import async_setup_websocket_api
 from custom_components.meraki_ha.const import DATA_CLIENT, DOMAIN
 
 CONFIG_ENTRY_ID = "test_entry_id"
