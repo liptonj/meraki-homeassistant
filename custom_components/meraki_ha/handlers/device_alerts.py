@@ -44,9 +44,9 @@ async def async_handle_device_alert(
             status,
             alert_type,
         )
-        # coordinator._update_device_status_immediate(serial, is_up)
-        # coordinator.async_update_listeners()
+        coordinator._update_device_status_immediate(serial, is_up)
+        coordinator.async_update_listeners()
 
-        # coordinator.hass.async_create_task(
-        #     coordinator._targeted_device_refresh(serial, delay=5)
-        # )
+        coordinator.hass.async_create_task(
+            coordinator._targeted_device_refresh(serial, delay=5)
+        )
