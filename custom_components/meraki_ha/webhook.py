@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
@@ -239,7 +240,7 @@ async def async_register_webhook(
     api_client: MerakiAPIClient,
     entry: ConfigEntry | None = None,
     config_entry_id: str | None = None,
-) -> None:
+) -> bool:
     """
     Register a webhook with the Meraki API.
 
@@ -250,15 +251,28 @@ async def async_register_webhook(
         secret: The secret for the webhook.
         api_client: The Meraki API client.
         entry: The config entry.
+        config_entry_id: The config entry ID (used in webhook name).
+
+    Returns
+    -------
+        True if registration was successful, False otherwise.
 
     """
+    if not config_entry_id:
+        _LOGGER_ALERTS.error("Cannot register webhook without config_entry_id")
+        return False
+
     try:
         webhook_url_from_entry = entry.data.get("webhook_url") if entry else None
         webhook_url = get_webhook_url(hass, webhook_id, webhook_url_from_entry)
-        if config_entry_id:
-            await api_client.register_webhook(webhook_url, secret)
+        await api_client.register_webhook(webhook_url, secret, config_entry_id)
+        _LOGGER_ALERTS.info(
+            "Successfully registered webhook with Meraki Dashboard: %s", webhook_url
+        )
+        return True
     except (MerakiConnectionError, ValueError, TypeError) as err:
         _LOGGER_ALERTS.error("Failed to register webhook: %s", err)
+        return False
 
 
 async def async_unregister_webhook(
@@ -283,14 +297,35 @@ async def _validate_shared_secret(
     request_secret: str | None,
     config_entry: ConfigEntry,
 ) -> bool:
-    """Validate the shared secret from the webhook request."""
+    """Validate the shared secret from the webhook request.
+
+    The secret can be stored in two places:
+    1. config_entry.options[CONF_WEBHOOK_SHARED_SECRET] - user-configured
+    2. config_entry.data["secret"] - auto-generated during registration
+
+    We check both locations for flexibility.
+    """
+    # First, check user-configured secret in options
     configured_secret = config_entry.options.get(CONF_WEBHOOK_SHARED_SECRET)
+
+    # If not in options, check auto-generated secret in data
     if not configured_secret:
-        _LOGGER_ALERTS.warning("No webhook shared secret is configured.")
+        configured_secret = config_entry.data.get("secret")
+
+    if not configured_secret:
+        _LOGGER_ALERTS.warning(
+            "No webhook shared secret is configured. "
+            "Please configure a shared secret in the integration options."
+        )
         return False
+
     if request_secret != configured_secret:
-        _LOGGER_ALERTS.warning("Webhook shared secret mismatch.")
+        _LOGGER_ALERTS.warning(
+            "Webhook shared secret mismatch. "
+            "Received secret does not match configured secret."
+        )
         return False
+
     return True
 
 
@@ -299,40 +334,102 @@ async def _route_by_alert_type(
     alert_type: str,
     data: dict,
 ) -> None:
-    """Route webhook data to the appropriate handler based on alertType."""
+    """Route webhook data to the appropriate handler based on alertType.
+
+    This function also marks the webhook as received to enable polling reduction.
+
+    Alert type categories:
+    - Device: AP/Switch/Gateway/Camera/Sensor up/down, rebooted
+    - Client: connectivity changed, new client, blocked
+    - Network: settings changed (SSID, VLAN, firewall)
+    - Security: rogue AP, intrusion, malware
+    - Sensor: temperature, humidity, water, door, power thresholds
+    """
+    # Track processing start time for metrics
+    start_time = datetime.now()
+
+    # Mark that we received a valid webhook - enables polling reduction
+    # Also handles deduplication via alertId
+    alert_id = data.get("alertId")
+    is_new = coordinator.mark_webhook_received(alert_type, alert_id)
+    if not is_new:
+        # This is a duplicate alert, skip processing
+        return
+
+    # Track webhook count by alert type (for metrics)
+    webhook_counts = getattr(coordinator, "_webhook_counts_by_type", {})
+    webhook_counts[alert_type] = webhook_counts.get(alert_type, 0) + 1
+    coordinator._webhook_counts_by_type = webhook_counts
+
+    alert_lower = alert_type.lower()
+
+    # Device alerts: status changes and reboots
     if (
         alert_type.startswith("APs")
         or alert_type.startswith("Switches")
         or alert_type.startswith("Gateways")
         or alert_type.startswith("Cameras")
         or alert_type.startswith("Sensors")
-        or alert_type.endswith("rebooted")
+        or "went down" in alert_lower
+        or "came up" in alert_lower
+        or "went offline" in alert_lower
+        or "came online" in alert_lower
+        or "rebooted" in alert_lower
     ):
         await device_alerts.async_handle_device_alert(coordinator, alert_type, data)
-    elif "Client" in alert_type:
-        await client_alerts.async_handle_client_alert(coordinator, alert_type, data)
+
+    # Client alerts: connectivity, new clients, blocked
     elif (
-        "Settings changed" in alert_type
-        or "SSID settings changed" in alert_type
-        or "VLAN settings changed" in alert_type
-        or "Firewall rule changed" in alert_type
+        "client" in alert_lower
+        or "connectivity" in alert_lower
+        or "new client" in alert_lower
+        or "blocked" in alert_lower
+    ):
+        await client_alerts.async_handle_client_alert(coordinator, alert_type, data)
+
+    # Network/configuration alerts
+    elif (
+        "settings changed" in alert_lower
+        or "ssid" in alert_lower
+        or "vlan" in alert_lower
+        or "firewall" in alert_lower
+        or "configuration" in alert_lower
     ):
         await network_alerts.async_handle_network_alert(coordinator, alert_type, data)
+
+    # Security alerts
     elif (
-        "Rogue AP detected" in alert_type
-        or "Intrusion detected" in alert_type
-        or "Malware detected" in alert_type
+        "rogue" in alert_lower
+        or "intrusion" in alert_lower
+        or "malware" in alert_lower
+        or "security" in alert_lower
+        or "threat" in alert_lower
     ):
         await security_alerts.async_handle_security_alert(coordinator, alert_type, data)
+
+    # MT Sensor alerts: environmental thresholds
     elif (
-        "threshold" in alert_type
-        or "Water detected" in alert_type
-        or "Door" in alert_type
-        or "Power" in alert_type
+        "temperature" in alert_lower
+        or "humidity" in alert_lower
+        or "water" in alert_lower
+        or "door" in alert_lower
+        or "power" in alert_lower
+        or "threshold" in alert_lower
+        or "sensor" in alert_lower
     ):
         await sensor_alerts.async_handle_sensor_alert(coordinator, alert_type, data)
+
     else:
         _LOGGER_ALERTS.debug("No handler for webhook alert type: %s", alert_type)
+
+    # Track processing duration for metrics
+    duration_ms = (datetime.now() - start_time).total_seconds() * 1000
+    durations = getattr(coordinator, "_webhook_processing_durations", [])
+    durations.append(duration_ms)
+    # Keep only last 1000 samples to avoid memory growth
+    if len(durations) > 1000:
+        durations = durations[-1000:]
+    coordinator._webhook_processing_durations = durations
 
 
 async def async_handle_webhook(

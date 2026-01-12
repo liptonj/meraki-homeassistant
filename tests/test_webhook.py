@@ -120,7 +120,7 @@ class TestAsyncRegisterWebhook:
             )
 
         api_client.register_webhook.assert_called_once_with(
-            "https://public.example.com/api/webhook/wh_123", "secret"
+            "https://public.example.com/api/webhook/wh_123", "secret", "entry_id"
         )
 
     @pytest.mark.asyncio

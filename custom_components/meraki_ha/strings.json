@@ -149,7 +149,7 @@
       },
       "webhooks": {
         "title": "Webhook Settings",
-        "description": "Configure Meraki webhooks for real-time event notifications.\n\n**Webhook URL:** `{webhook_url}`\n\n**Status:** {status}",
+        "description": "Configure Meraki webhooks for real-time event notifications.\n\n**Webhook URL:** `{webhook_url}`\n\n**Status:** {status}\n\n**Manual setup (use if auto-register fails):**\n{manual_setup}",
         "data": {
           "enable_webhooks": "Enable Webhooks",
           "webhook_external_url": "External URL (optional)",

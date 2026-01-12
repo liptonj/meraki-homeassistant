@@ -547,10 +547,25 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             webhook_url = get_webhook_url(
                 self.hass, self.config_entry.entry_id, custom_url or None
             )
-            status = "✅ Webhooks active and receiving data"  # Placeholder
         except MerakiConnectionError as err:
             webhook_url = f"⚠️ {err}"
-            status = "❌ Webhook URL not reachable"
+
+        # Get real webhook status from coordinator
+        status = self._get_webhook_status()
+
+        # Provide manual setup guidance if available from WebhookManager
+        manual_setup = ""
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id, {})
+        webhook_manager = entry_data.get("webhook_manager")
+        if webhook_manager:
+            manual = webhook_manager.get_manual_setup_instructions()
+            url = manual.get("webhook_url", "N/A")
+            secret = manual.get("shared_secret", "N/A")
+            alert_types = ", ".join(manual.get("alert_types", [])) or "None"
+            manual_setup = (
+                "Manual setup (use if auto-register fails):\n"
+                f"URL: {url}\nSecret: {secret}\nAlerts: {alert_types}"
+            )
 
         schema_with_defaults = self._populate_schema_defaults(
             SCHEMA_WEBHOOKS,
@@ -563,8 +578,61 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             description_placeholders={
                 "webhook_url": webhook_url,
                 "status": status,
+                "manual_setup": manual_setup,
             },
         )
+
+    def _get_webhook_status(self) -> str:
+        """Get the current webhook status from the coordinator."""
+        from .const import DOMAIN
+
+        try:
+            entry_data = self.hass.data.get(DOMAIN, {}).get(
+                self.config_entry.entry_id, {}
+            )
+            # Prefer WebhookManager status if available
+            webhook_manager = entry_data.get("webhook_manager")
+            if webhook_manager:
+                status = webhook_manager.webhook_status
+                base_msg = status.get("message", "❓ Unable to determine status")
+                # Include manual setup hint if auto-registration failed
+                if status.get("status") == "error":
+                    manual = webhook_manager.get_manual_setup_instructions()
+                    url = manual.get("webhook_url", "N/A")
+                    secret = manual.get("shared_secret", "N/A")
+                    alert_types = ", ".join(manual.get("alert_types", [])) or "None"
+                    return (
+                        f"{base_msg}\nManual setup:\nURL: {url}\nSecret: {secret}\n"
+                        f"Alerts: {alert_types}"
+                    )
+                return base_msg
+
+            coordinator = entry_data.get("coordinator")
+
+            if not coordinator:
+                return "❓ Coordinator not available"
+
+            # Check if webhooks are active (received recently)
+            if hasattr(coordinator, "webhooks_active") and coordinator.webhooks_active:
+                stats = getattr(coordinator, "webhook_stats", {})
+                count = stats.get("total_received", 0)
+                return f"✅ Webhooks active ({count} received)"
+
+            # Check if webhooks were ever received
+            if hasattr(coordinator, "webhook_stats"):
+                stats = coordinator.webhook_stats
+                if stats.get("last_received"):
+                    return "⚠️ Webhooks configured but not recently active"
+
+            # Check if webhook is registered with HA
+            webhook_id = self.config_entry.data.get("webhook_id")
+            if webhook_id:
+                return "✅ Webhook registered with Home Assistant"
+
+            return "❌ Webhooks not configured"
+
+        except Exception:
+            return "❓ Unable to determine status"
 
     async def async_step_data_sync(
         self,

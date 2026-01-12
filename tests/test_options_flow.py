@@ -516,6 +516,39 @@ async def test_network_selection_with_empty_coordinator_data() -> None:
     assert result["step_id"] == "network_selection"
 
 
+@pytest.mark.asyncio
+async def test_webhooks_step_includes_manual_setup_placeholders() -> None:
+    """Ensure webhooks step shows manual setup guidance from WebhookManager."""
+    handler = create_options_flow_handler()
+
+    # Inject a WebhookManager-like object with status/errors and manual instructions
+    mock_manager = MagicMock()
+    mock_manager.webhook_status = {
+        "status": "error",
+        "message": "⚠️ Registration errors: 1",
+        "errors": ["Read-only API key"],
+    }
+    mock_manager.get_manual_setup_instructions.return_value = {
+        "webhook_url": "https://ha.example.com/api/webhook/test",
+        "shared_secret": "secret123",
+        "alert_types": ["APs went down", "Client blocked"],
+    }
+
+    handler.hass.data[DOMAIN][handler.handler]["webhook_manager"] = mock_manager
+
+    result: ConfigFlowResult = await handler.async_step_webhooks()
+
+    assert result["type"].value == "form"
+    placeholders = result.get("description_placeholders") or {}
+    # Status should come from webhook_status.message
+    assert placeholders.get("status", "").startswith("⚠️ Registration errors")
+    manual = placeholders.get("manual_setup", "")
+    assert "https://ha.example.com/api/webhook/test" in manual
+    assert "secret123" in manual
+    assert "APs went down" in manual
+    assert "Client blocked" in manual
+
+
 # --- Tests for async_get_options_flow ---
 
 
