@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
-from custom_components.meraki_ha.types import MerakiDevice, MerakiNetwork
+if TYPE_CHECKING:
+    from custom_components.meraki_ha.types import MerakiDevice, MerakiNetwork
 
 MOCK_CONFIG_ENTRY_ID = "test_entry"
 MOCK_CONFIG_ENTRY = MagicMock()
