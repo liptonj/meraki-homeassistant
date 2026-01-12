@@ -556,8 +556,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         webhook_secret = secrets.token_hex(16)
 
     if enable_webhooks:
-        # Single handler supports both alerts and Scanning API payloads.
-        webhook_id = entry.entry_id
+        # Use unique webhook ID for alerts to prevent conflicts with scanning API
+        webhook_id = f"{entry.entry_id}_alerts"
+
+        # Unregister any existing webhook before registering to handle reloads
+        try:
+            ha_webhook.async_unregister(hass, webhook_id)
+        except ValueError:
+            pass  # Webhook wasn't registered, which is fine
+
         ha_webhook.async_register(
             hass,
             DOMAIN,
@@ -587,13 +594,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 webhook_id,
             )
 
-        # If Scanning API is also enabled, register the validator path in addition
+        # If Scanning API is also enabled, register with a separate unique ID
         if scanning_api_enabled:
             validator = entry.options.get(
                 CONF_SCANNING_API_VALIDATOR, DEFAULT_SCANNING_API_VALIDATOR
             )
             if validator:
-                scanning_webhook_id = entry.entry_id
+                # Use unique webhook ID for scanning API
+                scanning_webhook_id = f"{entry.entry_id}_scanning"
+
+                # Unregister any existing webhook before registering
+                try:
+                    ha_webhook.async_unregister(hass, scanning_webhook_id)
+                except ValueError:
+                    pass
+
                 ha_webhook.async_register(
                     hass,
                     DOMAIN,
@@ -617,7 +632,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Ensure alerts webhook is not registered when disabled
         existing_webhook_id = entry.data.get("webhook_id")
         if existing_webhook_id:
-            ha_webhook.async_unregister(hass, existing_webhook_id)
+            try:
+                ha_webhook.async_unregister(hass, existing_webhook_id)
+            except ValueError:
+                pass
             await async_unregister_webhook(hass, entry.entry_id, api_client)
 
         if scanning_api_enabled:
@@ -626,7 +644,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 CONF_SCANNING_API_VALIDATOR, DEFAULT_SCANNING_API_VALIDATOR
             )
             if validator:
-                scanning_webhook_id = entry.entry_id
+                # Use unique webhook ID for scanning API
+                scanning_webhook_id = f"{entry.entry_id}_scanning"
+
+                # Unregister any existing webhook before registering
+                try:
+                    ha_webhook.async_unregister(hass, scanning_webhook_id)
+                except ValueError:
+                    pass
+
                 ha_webhook.async_register(
                     hass,
                     DOMAIN,
@@ -682,15 +708,26 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         # Unregister Scanning API webhook
         if "scanning_webhook_id" in entry_data:
-            ha_webhook.async_unregister(hass, entry_data["scanning_webhook_id"])
-            _LOGGER.info(
-                "Unregistered Scanning API webhook: %s",
-                entry_data["scanning_webhook_id"],
-            )
+            try:
+                ha_webhook.async_unregister(hass, entry_data["scanning_webhook_id"])
+                _LOGGER.info(
+                    "Unregistered Scanning API webhook: %s",
+                    entry_data["scanning_webhook_id"],
+                )
+            except ValueError:
+                _LOGGER.debug(
+                    "Scanning API webhook already unregistered: %s",
+                    entry_data["scanning_webhook_id"],
+                )
 
         # Unregister alerts webhook and clean up Meraki HTTP servers
-        if "webhook_id" in entry.data:
-            ha_webhook.async_unregister(hass, entry.data["webhook_id"])
+        webhook_id = entry_data.get("webhook_id") or entry.data.get("webhook_id")
+        if webhook_id:
+            try:
+                ha_webhook.async_unregister(hass, webhook_id)
+                _LOGGER.info("Unregistered alerts webhook: %s", webhook_id)
+            except ValueError:
+                _LOGGER.debug("Alerts webhook already unregistered: %s", webhook_id)
             api_client = entry_data[DATA_CLIENT]
             if "webhook_manager" in entry_data:
                 await entry_data["webhook_manager"].async_unregister_webhooks()
