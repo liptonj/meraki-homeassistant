@@ -18,6 +18,12 @@ Please explore the different sections to find the information you need:
 - **[Testing](./testing/testing_plan.md)**
   Testing strategy and plans to ensure quality and reliability.
 
+- **[Lovelace Cards](./lovelace-cards.md)**
+  Documentation for the custom Lovelace cards.
+
+- **[Lovelace Cards](./lovelace-cards.md)**
+  Documentation for the custom Lovelace cards.
+
 ## Webhooks & Real-Time Updates
 
 The integration supports comprehensive webhook alerts for real-time monitoring. Key features:
