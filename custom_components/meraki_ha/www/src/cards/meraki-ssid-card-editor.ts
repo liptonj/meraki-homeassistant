@@ -2,15 +2,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, LovelaceCardEditor, fireEvent } from 'custom-card-helpers';
-import { any, object, string, number, boolean } from "superstruct";
-
-const cardConfigStruct = object({
-  network_id: string(),
-  ssid_number: number(),
-  show_psk: boolean(),
-  show_clients: boolean(),
-  show_toggle: boolean(),
-});
 
 @customElement('meraki-ssid-card-editor')
 export class MerakiSSIDCardEditor extends LitElement implements LovelaceCardEditor {
@@ -59,7 +50,7 @@ export class MerakiSSIDCardEditor extends LitElement implements LovelaceCardEdit
         .hass=${this.hass}
         .data=${this._config}
         .schema=${schema}
-        .computeLabel=${(s) => s.name}
+        .computeLabel=${(s: { name: string }) => s.name}
         @value-changed=${this._valueChanged}
       ></ha-form>
     `;

@@ -1,54 +1,45 @@
-var Y = Object.create;
+var X = Object.create;
 var L = Object.defineProperty;
-var Z = Object.getOwnPropertyDescriptor;
-var J = (e, t) => (t = Symbol[e]) ? t : Symbol.for("Symbol." + e), f = (e) => {
+var Y = Object.getOwnPropertyDescriptor;
+var H = (e, t) => (t = Symbol[e]) ? t : Symbol.for("Symbol." + e), d = (e) => {
   throw TypeError(e);
 };
-var K = (e, t, s) => t in e ? L(e, t, { enumerable: !0, configurable: !0, writable: !0, value: s }) : e[t] = s;
-var F = (e, t) => L(e, "name", { value: t, configurable: !0 });
-var N = (e) => [, , , Y((e == null ? void 0 : e[J("metadata")]) ?? null)], O = ["class", "method", "getter", "setter", "accessor", "field", "value", "get", "set"], d = (e) => e !== void 0 && typeof e != "function" ? f("Function expected") : e, E = (e, t, s, n, a) => ({ kind: O[e], name: t, metadata: n, addInitializer: (c) => s._ ? f("Already initialized") : a.push(d(c || null)) }), C = (e, t) => K(t, J("metadata"), e[3]), g = (e, t, s, n) => {
-  for (var a = 0, c = e[t >> 1], h = c && c.length; a < h; a++) t & 1 ? c[a].call(s) : n = c[a].call(s, n);
+var J = (e, t, s) => t in e ? L(e, t, { enumerable: !0, configurable: !0, writable: !0, value: s }) : e[t] = s;
+var A = (e, t) => L(e, "name", { value: t, configurable: !0 });
+var K = (e) => [, , , X((e == null ? void 0 : e[H("metadata")]) ?? null)], N = ["class", "method", "getter", "setter", "accessor", "field", "value", "get", "set"], b = (e) => e !== void 0 && typeof e != "function" ? d("Function expected") : e, Z = (e, t, s, n, a) => ({ kind: N[e], name: t, metadata: n, addInitializer: (c) => s._ ? d("Already initialized") : a.push(b(c || null)) }), E = (e, t) => J(t, H("metadata"), e[3]), r = (e, t, s, n) => {
+  for (var a = 0, c = e[t >> 1], g = c && c.length; a < g; a++) t & 1 ? c[a].call(s) : n = c[a].call(s, n);
   return n;
 }, p = (e, t, s, n, a, c) => {
-  var h, i, q, b, v, o = t & 7, y = !!(t & 8), _ = !!(t & 16), k = o > 3 ? e.length + 1 : o ? y ? 1 : 2 : 0, z = O[o + 5], A = o > 3 && (e[k - 1] = []), X = e[k] || (e[k] = []), l = o && (!_ && !y && (a = a.prototype), o < 5 && (o > 3 || !_) && Z(o < 4 ? a : { get [s]() {
-    return G(this, c);
+  var g, i, j, f, v, o = t & 7, y = !!(t & 8), _ = !!(t & 16), $ = o > 3 ? e.length + 1 : o ? y ? 1 : 2 : 0, q = N[o + 5], z = o > 3 && (e[$ - 1] = []), W = e[$] || (e[$] = []), l = o && (!_ && !y && (a = a.prototype), o < 5 && (o > 3 || !_) && Y(o < 4 ? a : { get [s]() {
+    return F(this, c);
   }, set [s](m) {
-    return H(this, c, m);
+    return G(this, c, m);
   } }, s));
-  o ? _ && o < 4 && F(c, (o > 2 ? "set " : o > 1 ? "get " : "") + s) : F(a, s);
-  for (var $ = n.length - 1; $ >= 0; $--)
-    b = E(o, s, q = {}, e[3], X), o && (b.static = y, b.private = _, v = b.access = { has: _ ? (m) => D(a, m) : (m) => s in m }, o ^ 3 && (v.get = _ ? (m) => (o ^ 1 ? G : I)(m, a, o ^ 4 ? c : l.get) : (m) => m[s]), o > 2 && (v.set = _ ? (m, x) => H(m, a, x, o ^ 4 ? c : l.set) : (m, x) => m[s] = x)), i = (0, n[$])(o ? o < 4 ? _ ? c : l[z] : o > 4 ? void 0 : { get: l.get, set: l.set } : a, b), q._ = 1, o ^ 4 || i === void 0 ? d(i) && (o > 4 ? A.unshift(i) : o ? _ ? c = i : l[z] = i : a = i) : typeof i != "object" || i === null ? f("Object expected") : (d(h = i.get) && (l.get = h), d(h = i.set) && (l.set = h), d(h = i.init) && A.unshift(h));
-  return o || C(e, a), l && L(a, s, l), _ ? o ^ 4 ? c : l : a;
-}, w = (e, t, s) => K(e, typeof t != "symbol" ? t + "" : t, s), j = (e, t, s) => t.has(e) || f("Cannot " + s), D = (e, t) => Object(t) !== t ? f('Cannot use the "in" operator on this value') : e.has(t), G = (e, t, s) => (j(e, t, "read from private field"), s ? s.call(e) : t.get(e));
-var H = (e, t, s, n) => (j(e, t, "write to private field"), n ? n.call(e, s) : t.set(e, s), s), I = (e, t, s) => (j(e, t, "access private method"), s);
-import { LitElement as M, html as P, css as S } from "lit";
-import { property as ee, state as se, customElement as te } from "lit/decorators.js";
-import { object as oe, boolean as B, number as ne, string as ae } from "superstruct";
-var Q, R;
+  o ? _ && o < 4 && A(c, (o > 2 ? "set " : o > 1 ? "get " : "") + s) : A(a, s);
+  for (var x = n.length - 1; x >= 0; x--)
+    f = Z(o, s, j = {}, e[3], W), o && (f.static = y, f.private = _, v = f.access = { has: _ ? (m) => C(a, m) : (m) => s in m }, o ^ 3 && (v.get = _ ? (m) => (o ^ 1 ? F : D)(m, a, o ^ 4 ? c : l.get) : (m) => m[s]), o > 2 && (v.set = _ ? (m, k) => G(m, a, k, o ^ 4 ? c : l.set) : (m, k) => m[s] = k)), i = (0, n[x])(o ? o < 4 ? _ ? c : l[q] : o > 4 ? void 0 : { get: l.get, set: l.set } : a, f), j._ = 1, o ^ 4 || i === void 0 ? b(i) && (o > 4 ? z.unshift(i) : o ? _ ? c = i : l[q] = i : a = i) : typeof i != "object" || i === null ? d("Object expected") : (b(g = i.get) && (l.get = g), b(g = i.set) && (l.set = g), b(g = i.init) && z.unshift(g));
+  return o || E(e, a), l && L(a, s, l), _ ? o ^ 4 ? c : l : a;
+}, w = (e, t, s) => J(e, typeof t != "symbol" ? t + "" : t, s), B = (e, t, s) => t.has(e) || d("Cannot " + s), C = (e, t) => Object(t) !== t ? d('Cannot use the "in" operator on this value') : e.has(t), F = (e, t, s) => (B(e, t, "read from private field"), s ? s.call(e) : t.get(e));
+var G = (e, t, s, n) => (B(e, t, "write to private field"), n ? n.call(e, s) : t.set(e, s), s), D = (e, t, s) => (B(e, t, "access private method"), s);
+import { LitElement as I, html as O, css as M } from "lit";
+import { property as S, state as ee, customElement as se } from "lit/decorators.js";
+var P, Q;
 (function(e) {
   e.language = "language", e.system = "system", e.comma_decimal = "comma_decimal", e.decimal_comma = "decimal_comma", e.space_comma = "space_comma", e.none = "none";
-})(Q || (Q = {})), function(e) {
+})(P || (P = {})), function(e) {
   e.language = "language", e.system = "system", e.am_pm = "12", e.twenty_four = "24";
-}(R || (R = {}));
-var ce = function(e, t, s, n) {
+}(Q || (Q = {}));
+var te = function(e, t, s, n) {
   n = n || {}, s = s ?? {};
   var a = new Event(t, { bubbles: n.bubbles === void 0 || n.bubbles, cancelable: !!n.cancelable, composed: n.composed === void 0 || n.composed });
   return a.detail = s, e.dispatchEvent(a), a;
-};
-oe({
-  network_id: ae(),
-  ssid_number: ne(),
-  show_psk: B(),
-  show_clients: B(),
-  show_toggle: B()
-});
-var T, U, V, W, r;
-W = [te("meraki-ssid-card-editor")];
-class u extends (V = M, U = [ee({ attribute: !1 })], T = [se()], V) {
+}, R, T, U, V, h;
+V = [se("meraki-ssid-card-editor")];
+class u extends (U = I, T = [S({ attribute: !1 })], R = [ee()], U) {
   constructor() {
     super(...arguments);
-    w(this, "hass", g(r, 8, this)), g(r, 11, this);
-    w(this, "_config", g(r, 12, this)), g(r, 15, this);
+    w(this, "hass", r(h, 8, this)), r(h, 11, this);
+    w(this, "_config", r(h, 12, this)), r(h, 15, this);
   }
   setConfig(s) {
     this._config = s;
@@ -75,7 +66,7 @@ class u extends (V = M, U = [ee({ attribute: !1 })], T = [se()], V) {
   }
   render() {
     if (!this.hass || !this._config)
-      return P``;
+      return O``;
     const s = [
       { name: "network_id", selector: { text: {} } },
       { name: "ssid_number", selector: { number: { min: 0, max: 14, mode: "slider" } } },
@@ -83,7 +74,7 @@ class u extends (V = M, U = [ee({ attribute: !1 })], T = [se()], V) {
       { name: "show_clients", selector: { boolean: {} } },
       { name: "show_toggle", selector: { boolean: {} } }
     ];
-    return P`
+    return O`
       <ha-form
         .hass=${this.hass}
         .data=${this._config}
@@ -95,14 +86,14 @@ class u extends (V = M, U = [ee({ attribute: !1 })], T = [se()], V) {
   }
   _valueChanged(s) {
     const n = s.detail.value;
-    ce(this, "config-changed", { config: n });
+    te(this, "config-changed", { config: n });
   }
 }
-r = N(V), p(r, 5, "hass", U, u), p(r, 5, "_config", T, u), u = p(r, 0, "MerakiSSIDCardEditor", W, u), w(u, "styles", S`
+h = K(U), p(h, 5, "hass", T, u), p(h, 5, "_config", R, u), u = p(h, 0, "MerakiSSIDCardEditor", V, u), w(u, "styles", M`
     :host {
       display: block;
     }
-  `), g(r, 1, u);
+  `), r(h, 1, u);
 export {
   u as MerakiSSIDCardEditor
 };
