@@ -41,6 +41,12 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
 
+      - name: Wait for GitHub to calculate mergeable status
+        if: github.event_name == 'push'
+        run: |
+          echo "Waiting 30 seconds for GitHub to calculate mergeable status..."
+          sleep 30
+
       - name: Find PRs with conflicts
         id: find
         env:
@@ -50,14 +56,17 @@ jobs:
             # Manual trigger with specific PR
             echo "prs=${{ github.event.inputs.pr_number }}" >> "$GITHUB_OUTPUT"
           else
-            # Scheduled run - find all PRs with conflicts
-            CONFLICTED_PRS=$(gh pr list \
+            # Find all PRs with conflicts (or UNKNOWN status which may be conflicting)
+            echo "Checking all open PRs targeting beta..."
+            ALL_PRS=$(gh pr list \
               --repo "${{ github.repository }}" \
               --state open \
               --base beta \
-              --json number,mergeable \
-              --jq '[.[] | select(.mergeable == "CONFLICTING")] | .[].number' | tr '\n' ' ')
-            echo "Found PRs with conflicts: $CONFLICTED_PRS"
+              --json number,mergeable,title)
+            echo "All PRs: $ALL_PRS"
+
+            CONFLICTED_PRS=$(echo "$ALL_PRS" | jq -r '[.[] | select(.mergeable == "CONFLICTING" or .mergeable == "UNKNOWN")] | .[].number' | tr '\n' ' ')
+            echo "Found PRs with conflicts or unknown status: $CONFLICTED_PRS"
             echo "prs=$CONFLICTED_PRS" >> "$GITHUB_OUTPUT"
           fi
 
