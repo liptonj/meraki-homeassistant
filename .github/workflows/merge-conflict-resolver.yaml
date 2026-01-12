@@ -7,13 +7,18 @@ run-name: 'Resolve merge conflicts for open PRs'
 # For complex conflicts, it comments on the PR asking for manual intervention
 
 on:
-  # Run when beta is updated (this is when PRs become conflicted)
+  # Run when beta is updated (this is when PRs targeting beta become conflicted)
   push:
     branches: [beta]
 
+  # Run after Beta CI completes (PRs may cause conflicts on other PRs)
+  workflow_run:
+    workflows: ['Beta CI']
+    types: [completed]
+
   # Run periodically to catch any missed conflicts
   schedule:
-    - cron: '0 */4 * * *' # Every 4 hours
+    - cron: '*/30 * * * *' # Every 30 minutes
 
   # Manual trigger
   workflow_dispatch:
@@ -42,7 +47,7 @@ jobs:
           token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Wait for GitHub to calculate mergeable status
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_run'
         run: |
           echo "Waiting 30 seconds for GitHub to calculate mergeable status..."
           sleep 30
