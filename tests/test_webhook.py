@@ -243,11 +243,15 @@ class TestAsyncHandleWebhook:
         coordinator = MagicMock()
         coordinator.data = {"devices": [{"serial": "AP-1234", "status": "online"}]}
         coordinator.async_update_listeners = MagicMock()
+        coordinator.async_handle_webhook_alert = AsyncMock()
 
         hass = MagicMock(spec=HomeAssistant)
-        hass.data = {
-            DOMAIN: {"wh_123": {"secret": "secret", "coordinator": coordinator}}
-        }
+        mock_entry = MagicMock()
+        mock_entry.options = {"webhook_shared_secret": "secret"}
+        hass.config_entries.async_get_entry.return_value = mock_entry
+
+        hass.data = {DOMAIN: {"wh_123": {"coordinator": coordinator}}}
+
         mock_request.json = AsyncMock(
             return_value={
                 "alertType": "APs went down",
@@ -272,11 +276,14 @@ class TestAsyncHandleWebhook:
             "clients": [{"mac": "AA:BB:CC:DD:EE:FF", "status": "Online"}],
         }
         coordinator.async_update_listeners = MagicMock()
+        coordinator.async_handle_webhook_alert = AsyncMock()
 
         hass = MagicMock(spec=HomeAssistant)
-        hass.data = {
-            DOMAIN: {"wh_123": {"secret": "secret", "coordinator": coordinator}}
-        }
+        mock_entry = MagicMock()
+        mock_entry.options = {"webhook_shared_secret": "secret"}
+        hass.config_entries.async_get_entry.return_value = mock_entry
+
+        hass.data = {DOMAIN: {"wh_123": {"coordinator": coordinator}}}
         mock_request.json = AsyncMock(
             return_value={
                 "alertType": "Client connectivity changed",
@@ -297,6 +304,7 @@ class TestAsyncHandleWebhook:
         """Test handling unknown alert type webhook."""
         coordinator = MagicMock()
         coordinator.data = {"devices": [], "clients": []}
+        coordinator.async_handle_webhook_alert = AsyncMock()
 
         hass = MagicMock(spec=HomeAssistant)
         hass.data = {
