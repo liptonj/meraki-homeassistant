@@ -2,6 +2,26 @@
 set -e
 
 # ============================================
+# Parse command line arguments
+# ============================================
+FIX_MODE=false
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --fix) FIX_MODE=true ;;
+        -h|--help)
+            echo "Usage: ./run_checks.sh [--fix]"
+            echo ""
+            echo "Options:"
+            echo "  --fix    Auto-fix formatting and linting issues before checking"
+            echo "  -h       Show this help message"
+            exit 0
+            ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+# ============================================
 # Check for uv package manager FIRST
 # ============================================
 if ! command -v uv &> /dev/null; then
@@ -39,6 +59,22 @@ RUFF="uv run ruff"
 BANDIT="uv run bandit"
 MYPY="uv run mypy"
 PYTEST="uv run pytest"
+
+# ============================================
+# Auto-fix mode: fix issues before checking
+# ============================================
+if [[ "$FIX_MODE" == "true" ]]; then
+    echo ""
+    echo "🔧 Auto-fix mode enabled - fixing issues first..."
+    echo ""
+    echo "Fixing linting issues with ruff check --fix..."
+    $RUFF check --fix custom_components/meraki_ha/ tests/ || true
+    echo ""
+    echo "Fixing formatting issues with ruff format..."
+    $RUFF format custom_components/meraki_ha/ tests/
+    echo ""
+    echo "✅ Auto-fix complete. Now running checks..."
+fi
 
 echo ""
 echo "1/5 Running ruff check..."

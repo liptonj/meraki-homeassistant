@@ -521,6 +521,34 @@ logger:
     custom_components.meraki_ha.mqtt: warning # Silence noisy MQTT
 ```
 
+### 10.3. Common CI Fixes
+
+When CI fails, use these commands to auto-fix common issues:
+
+| CI Failure | Fix Command |
+| ---------- | ----------- |
+| **Ruff format check** | `uv run ruff format .` |
+| **Ruff linting errors** | `uv run ruff check --fix .` |
+| **Both formatting and linting** | `./run_checks.sh --fix` |
+
+**Quick fix workflow:**
+```bash
+# Auto-fix all formatting and linting issues, then verify
+./run_checks.sh --fix
+
+# Or fix manually:
+uv run ruff format .           # Fix formatting
+uv run ruff check --fix .      # Fix linting
+uv run mypy custom_components/meraki_ha/ tests/  # Check types (manual fix required)
+uv run pytest                  # Run tests
+```
+
+**Important:** `ruff format` and `ruff check` are separate tools:
+- `ruff check --fix` fixes **linting** issues (unused imports, code style violations)
+- `ruff format` fixes **formatting** issues (line length, indentation, trailing commas)
+
+Both must pass for CI to succeed.
+
 ---
 
 ## 11. Security Guidelines

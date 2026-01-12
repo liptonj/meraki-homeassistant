@@ -233,14 +233,20 @@ jobs:
           Branch: $TARGET_BRANCH | Issue: #$ISSUE_NUM
           Jules attempted 3 fixes without success. Fresh perspective needed.
 
+          Quick Fixes:
+          - Ruff format failures: uv run ruff format .
+          - Ruff check failures: uv run ruff check --fix .
+          - Both: ./run_checks.sh --fix
+
           Steps:
           1. Read issue #$ISSUE_NUM comments to see what Jules tried
-          2. Read AGENTS.md for project patterns
-          3. Run ./run_checks.sh to see current errors
-          4. Fix with a different approach than Jules used
-          5. Run ./run_checks.sh - must pass
-          6. Commit: fix(cursor): resolve CI errors after Jules handoff
-          7. Update issue: gh issue comment $ISSUE_NUM --body 'Fixed: <what> because <why>'
+          2. For formatting/linting errors, run ./run_checks.sh --fix first
+          3. Read AGENTS.md section 10.3 for common CI fixes
+          4. Run ./run_checks.sh to verify errors are fixed
+          5. Fix any remaining issues manually
+          6. Run ./run_checks.sh - must pass
+          7. Commit: fix(cursor): resolve CI errors after Jules handoff
+          8. Update issue: gh issue comment $ISSUE_NUM --body 'Fixed: <what> because <why>'
 
           Constraints: Push to $TARGET_BRANCH. Don't repeat Jules' failed approaches."
 
@@ -427,14 +433,21 @@ jobs:
             ${{ steps.errors.outputs.ci_errors }}
             ```
 
+            ## Quick Fixes for Common CI Failures
+
+            - **Ruff format failures**: Run `uv run ruff format .` to auto-fix formatting
+            - **Ruff check failures**: Run `uv run ruff check --fix .` to auto-fix linting
+            - **Both**: Run `./run_checks.sh --fix` to auto-fix all issues before checking
+
             Steps:
             1. Read issue #${{ steps.check.outputs.issue_number }} comments for context from previous attempts
-            2. Run `./run_checks.sh` to reproduce errors locally
-            3. Read `AGENTS.md` for project patterns and conventions
-            4. Fix ONLY the errors shown above
-            5. Run `./run_checks.sh` again - must pass with no errors
-            6. Commit with message: `fix(jules): resolve CI errors`
-            7. Update issue: `gh issue comment ${{ steps.check.outputs.issue_number }} --body "Fixed: <what> because <why>"`
+            2. For formatting/linting errors, run `./run_checks.sh --fix` first to auto-fix
+            3. Run `./run_checks.sh` to verify all errors are fixed
+            4. If errors remain, read `AGENTS.md` section 10.3 for fix commands
+            5. Fix any remaining errors manually
+            6. Run `./run_checks.sh` again - must pass with no errors
+            7. Commit with message: `fix(jules): resolve CI errors`
+            8. Update issue: `gh issue comment ${{ steps.check.outputs.issue_number }} --body "Fixed: <what> because <why>"`
 
             Constraints:
             - Target branch: `${{ steps.check.outputs.base_branch || 'beta' }}`

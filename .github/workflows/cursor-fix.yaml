@@ -439,14 +439,20 @@ jobs:
             ${CI_ERRORS}
             \`\`\`
 
+            Quick Fixes:
+            - Ruff format failures: uv run ruff format .
+            - Ruff check failures: uv run ruff check --fix .
+            - Both: ./run_checks.sh --fix
+
             Steps:
             1. Read issue #$ISSUE_NUM comments for context from previous attempts
-            2. Run ./run_checks.sh to reproduce errors
-            3. Read AGENTS.md for project patterns
-            4. Fix ONLY the errors shown above
-            5. Run ./run_checks.sh - must pass
-            6. Commit: fix(cursor): resolve CI errors
-            7. Update issue: gh issue comment $ISSUE_NUM --body 'Fixed: <what> because <why>'
+            2. For formatting/linting errors, run ./run_checks.sh --fix first
+            3. Run ./run_checks.sh to reproduce errors
+            4. Read AGENTS.md section 10.3 for common CI fixes
+            5. Fix ONLY the errors shown above
+            6. Run ./run_checks.sh - must pass
+            7. Commit: fix(cursor): resolve CI errors
+            8. Update issue: gh issue comment $ISSUE_NUM --body 'Fixed: <what> because <why>'
 
             Constraints: Push to $BRANCH (no new PR). Don't refactor unrelated code."
 
