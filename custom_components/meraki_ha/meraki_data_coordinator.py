@@ -994,11 +994,15 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                                 net_id, clients, {}
                             )
                             _LOGGER.info(
-                                f"Auto-synced {len(clients)} new client names to network {net_id}"
+                                "Auto-synced %d new client names to network %s",
+                                len(clients),
+                                net_id,
                             )
                         except Exception as e:
                             _LOGGER.error(
-                                f"Error auto-syncing new client names to network {net_id}: {e}"
+                                "Error auto-syncing new client names to network %s: %s",
+                                net_id,
+                                e,
                             )
 
             # Process errors and update timers

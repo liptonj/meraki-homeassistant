@@ -71,12 +71,14 @@ class NetworkEndpoints:
         Get a single client by MAC or ID.
 
         Args:
+        ----
             network_id: The ID of the network.
             client_id: The ID or MAC address of the client.
 
         Returns
         -------
             A dictionary representing the client, or None if not found.
+
         """
         if self._api_client.dashboard is None:
             return None
@@ -85,7 +87,10 @@ class NetworkEndpoints:
             client = await api.getNetworkClient(
                 networkId=network_id, clientId=client_id
             )
-            return validate_response(client)
+            validated_response = validate_response(client)
+            if isinstance(validated_response, dict):
+                return validated_response
+            return None
         except AsyncAPIError as e:
             if e.response.status == 404:
                 _LOGGER.debug(
