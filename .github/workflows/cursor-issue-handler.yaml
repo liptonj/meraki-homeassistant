@@ -102,14 +102,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           ISSUE_NUM="${{ github.event.issue.number }}"
           ISSUE_TITLE="${{ github.event.issue.title }}"
           ISSUE_BODY=$(gh issue view "$ISSUE_NUM" --repo "${{ github.repository }}" --json body -q '.body' || echo "")
 
           # Pass the PAT to Cursor so it can authenticate with GitHub
-          GITHUB_PAT_VALUE="${GITHUB_PAT:-}"
+          GH_PAT_VALUE="${GH_PAT:-}"
 
           # Build a comprehensive prompt for Cursor with explicit completion checklist
           PROMPT="You are a coding agent for a Home Assistant integration (Cisco Meraki).
@@ -123,7 +123,7 @@ jobs:
           GITHUB AUTHENTICATION:
           If you need to run gh commands (issue comments, PR operations, etc.)
           and get permission errors, set this environment variable first:
-          export GH_TOKEN='${GITHUB_PAT_VALUE}'
+          export GH_TOKEN='${GH_PAT_VALUE}'
 
           Then retry the command. This token has write access to the repository.
 

@@ -451,13 +451,15 @@ tests/conftest.py → tests/const.py → custom_components/meraki_ha/types.py
 | ---------------- | --------------------------------- | --------------------------------- |
 | `JULES_API_KEY`  | jules-issue-handler, jules-ci-fix | Authenticate with Jules API       |
 | `CURSOR_API_KEY` | cursor-launcher, cursor-fix       | Authenticate with Cursor API      |
-| `GITHUB_PAT`     | All Cursor workflows              | GitHub access for Cursor agents   |
+| `GH_PAT`         | All Cursor workflows              | GitHub access for Cursor agents   |
 | `GITHUB_TOKEN`   | All workflows                     | GitHub API access (auto-provided) |
 
-### GITHUB_PAT Setup
+### GH_PAT Setup
 
 Cursor cloud agents run in their own environment and may not have GitHub access.
-The `GITHUB_PAT` secret allows Cursor to comment on issues, update PRs, etc.
+The `GH_PAT` secret allows Cursor to comment on issues, update PRs, etc.
+
+**Note:** GitHub doesn't allow secrets starting with `GITHUB_`, so we use `GH_PAT`.
 
 **To create:**
 
@@ -466,7 +468,7 @@ The `GITHUB_PAT` secret allows Cursor to comment on issues, update PRs, etc.
    - `repo` (full control of private repositories)
 3. Copy the token
 4. Add to repository: Settings → Secrets → Actions → New repository secret
-   - Name: `GITHUB_PAT`
+   - Name: `GH_PAT`
    - Value: Your token
 
 The Cursor prompts include instructions to use this token if permission errors occur.

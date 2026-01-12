@@ -164,12 +164,12 @@ jobs:
       - name: Invoke Cursor to take over
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           PR_BRANCH="${{ steps.context.outputs.pr_branch }}"
           PR_NUM="${{ steps.context.outputs.pr_number }}"
           ISSUE_NUM="${{ steps.context.outputs.issue_number }}"
-          GITHUB_PAT_VALUE="${GITHUB_PAT:-}"
+          GH_PAT_VALUE="${GH_PAT:-}"
 
           # Read saved context
           HELP_COMMENT=$(cat /tmp/help_comment.txt)
@@ -188,7 +188,7 @@ jobs:
 
           GITHUB AUTHENTICATION:
           If you need to run gh commands and get permission errors, run:
-          export GH_TOKEN='${GITHUB_PAT_VALUE}'
+          export GH_TOKEN='${GH_PAT_VALUE}'
           Then retry the command.
 
           ═══════════════════════════════════════════════════════════

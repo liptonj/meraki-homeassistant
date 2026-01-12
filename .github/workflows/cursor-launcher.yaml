@@ -137,7 +137,7 @@ jobs:
         if: steps.pr.outputs.skip != 'true'
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           JULES_BRANCH="${{ steps.pr.outputs.head_ref }}"
           CURSOR_BRANCH="cursor-review/${JULES_BRANCH}"
@@ -149,7 +149,7 @@ jobs:
 
           ISSUE_NUM="${{ steps.pr.outputs.issue_number }}"
           PR_NUM="${{ steps.pr.outputs.number }}"
-          GITHUB_PAT_VALUE="${GITHUB_PAT:-}"
+          GH_PAT_VALUE="${GH_PAT:-}"
 
           # Comprehensive code review prompt
           PROMPT="You are a code review agent for a Home Assistant integration (Cisco Meraki).
@@ -163,7 +163,7 @@ jobs:
 
           GITHUB AUTHENTICATION:
           If you need to run gh commands and get permission errors, run:
-          export GH_TOKEN='${GITHUB_PAT_VALUE}'
+          export GH_TOKEN='${GH_PAT_VALUE}'
           Then retry the command.
 
           ═══════════════════════════════════════════════════════════
