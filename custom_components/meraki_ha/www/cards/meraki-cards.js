@@ -1,11 +1,23 @@
-// This file is the main entry point for all Meraki Lovelace cards.
-// It registers all cards with Lovelace.
+/**
+ * Meraki Lovelace Cards
+ *
+ * This file is the main entry point for all Meraki Lovelace cards.
+ * It imports and registers all cards with Home Assistant.
+ */
 
-// Import shared components
+import { CARD_DEFINITIONS } from './shared/constants.js';
+
+// Import shared components (from feature branch)
 import './shared/meraki-card-base.js';
 import './shared/meraki-editor-base.js';
 
-// Import card components
+// Import all card components (from cursor-review branch)
+import './meraki-overview-card.js';
+import './meraki-device-card.js';
+import './meraki-clients-card.js';
+import './meraki-switch-ports-card.js';
+
+// Import card components (from feature branch)
 import './meraki-devices-card';
 import './meraki-mqtt-status-card';
 import './meraki-client-card/meraki-client-card.js';
@@ -13,21 +25,18 @@ import './meraki-client-card/meraki-client-card-editor.js';
 import './meraki-camera-card/meraki-camera-card.js';
 import './meraki-camera-card/meraki-camera-card-editor.js';
 
-console.info(
-  '%c MERAKI CARDS LOADED ',
-  'color: #2980b9; background: #fff; font-weight: 700;'
-);
-
+// Register cards with Home Assistant's custom cards registry
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'meraki-devices-card',
-  name: 'Meraki Devices Card',
-  preview: true,
-  description: 'A card to display Meraki network devices.',
+
+CARD_DEFINITIONS.forEach((card) => {
+  // Avoid duplicate registrations
+  if (!window.customCards.some((c) => c.type === card.type)) {
+    window.customCards.push(card);
+  }
 });
-window.customCards.push({
-  type: 'meraki-mqtt-status-card',
-  name: 'Meraki MQTT Status Card',
-  preview: true,
-  description: 'A card to display the status of the Meraki MQTT service.',
-});
+
+console.info(
+  '%c MERAKI CARDS v2.0 ',
+  'color: #fff; background: #2980b9; font-weight: 700; padding: 4px 8px; border-radius: 4px;',
+  `Loaded ${CARD_DEFINITIONS.length} cards: ${CARD_DEFINITIONS.map((c) => c.type).join(', ')}`
+);
