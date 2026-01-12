@@ -73,6 +73,12 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.last_client_update: datetime | None = None
         self.last_ssid_update: datetime | None = None
 
+        # Webhook-related state
+        self._webhooks_active: bool = bool(
+            entry.options.get(CONF_ENABLE_WEBHOOKS, DEFAULT_ENABLE_WEBHOOKS)
+        )
+        self._last_webhook_by_type: dict[str, datetime] = {}
+
         # MQTT-related state
         self._mqtt_enabled: bool = bool(
             entry.options.get(CONF_ENABLE_MQTT, DEFAULT_ENABLE_MQTT)
@@ -831,6 +837,55 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return set(enabled_network_ids)
 
+    def _get_polling_interval(self, data_type: str) -> timedelta:
+        """
+        Get the polling interval for a specific data type, reduced if webhooks are active.
+
+        Args:
+        ----
+            data_type: The type of data (e.g., "networks", "devices").
+
+        Returns
+        -------
+            The polling interval as a timedelta object.
+        """
+        base_intervals = {
+            "networks": self.config_entry.options.get(
+                CONF_NETWORK_SCAN_INTERVAL, DEFAULT_NETWORK_SCAN_INTERVAL
+            ),
+            "devices": self.config_entry.options.get(
+                CONF_DEVICE_SCAN_INTERVAL, DEFAULT_DEVICE_SCAN_INTERVAL
+            ),
+            "clients": self.config_entry.options.get(
+                CONF_CLIENT_SCAN_INTERVAL, DEFAULT_CLIENT_SCAN_INTERVAL
+            ),
+            "ssids": self.config_entry.options.get(
+                CONF_SSID_SCAN_INTERVAL, DEFAULT_SSID_SCAN_INTERVAL
+            ),
+        }
+        base_interval = timedelta(seconds=base_intervals[data_type])
+
+        if self._webhooks_active:
+            relevant_alert_types = {
+                "devices": ["gatewayDown", "switchDown", "apDown"],
+                "clients": ["clientConnectivityChanged"],
+                "ssids": ["ssidSettingsChanged"],
+            }
+            last_webhook_time = max(
+                (
+                    self._last_webhook_by_type.get(t)
+                    for t in relevant_alert_types.get(data_type, [])
+                    if self._last_webhook_by_type.get(t)
+                ),
+                default=None,
+            )
+
+            if last_webhook_time and (datetime.now() - last_webhook_time) < (
+                base_interval * 2
+            ):
+                return base_interval * 6  # e.g., 10 mins -> 1 hour
+        return base_interval
+
     @async_log_time(MerakiLoggers.COORDINATOR, slow_threshold=10.0)
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from API endpoint based on tiered polling intervals."""
@@ -840,23 +895,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not self.config_entry:
             raise UpdateFailed("Configuration entry not available.")
 
-        network_interval_seconds = self.config_entry.options.get(
-            CONF_NETWORK_SCAN_INTERVAL, DEFAULT_NETWORK_SCAN_INTERVAL
-        )
-        device_interval_seconds = self.config_entry.options.get(
-            CONF_DEVICE_SCAN_INTERVAL, DEFAULT_DEVICE_SCAN_INTERVAL
-        )
-        client_interval_seconds = self.config_entry.options.get(
-            CONF_CLIENT_SCAN_INTERVAL, DEFAULT_CLIENT_SCAN_INTERVAL
-        )
-        ssid_interval_seconds = self.config_entry.options.get(
-            CONF_SSID_SCAN_INTERVAL, DEFAULT_SSID_SCAN_INTERVAL
-        )
-
-        network_interval = timedelta(seconds=network_interval_seconds)
-        device_interval = timedelta(seconds=device_interval_seconds)
-        client_interval = timedelta(seconds=client_interval_seconds)
-        ssid_interval = timedelta(seconds=ssid_interval_seconds)
+        network_interval = self._get_polling_interval("networks")
+        device_interval = self._get_polling_interval("devices")
+        client_interval = self._get_polling_interval("clients")
+        ssid_interval = self._get_polling_interval("ssids")
 
         # Determine which data to fetch
         fetch_networks = (

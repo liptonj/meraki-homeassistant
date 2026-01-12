@@ -169,6 +169,47 @@ SCHEMA_POLLING = vol.Schema(
     }
 )
 
+SCHEMA_WEBHOOKS = vol.Schema(
+    {
+        vol.Required(
+            CONF_ENABLE_WEBHOOKS,
+            default=DEFAULT_ENABLE_WEBHOOKS,
+        ): selector.BooleanSelector(),
+        vol.Optional(
+            CONF_WEBHOOK_EXTERNAL_URL,
+            default=DEFAULT_WEBHOOK_EXTERNAL_URL,
+        ): selector.TextSelector(),
+        vol.Optional(
+            CONF_WEBHOOK_SHARED_SECRET,
+            default=DEFAULT_WEBHOOK_SHARED_SECRET,
+        ): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+        ),
+        vol.Required(
+            CONF_WEBHOOK_AUTO_REGISTER,
+            default=DEFAULT_WEBHOOK_AUTO_REGISTER,
+        ): selector.BooleanSelector(),
+        vol.Required(
+            CONF_WEBHOOK_POLLING_REDUCTION,
+            default=DEFAULT_WEBHOOK_POLLING_REDUCTION,
+        ): selector.BooleanSelector(),
+        vol.Optional(
+            CONF_WEBHOOK_ALERT_TYPES,
+            default=DEFAULT_WEBHOOK_ALERT_TYPES,
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(value=key, label=label)
+                    for key, label in WEBHOOK_ALERT_TYPES.items()
+                ],
+                multiple=True,
+                mode=selector.SelectSelectorMode.LIST,
+                translation_key="webhook_alert_types",
+            )
+        ),
+    }
+)
+
 
 # Section: Display Preferences
 SCHEMA_DISPLAY_PREFERENCES = vol.Schema(

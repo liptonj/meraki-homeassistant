@@ -207,6 +207,67 @@ CONF_WEB_UI_PORT: Final = "web_ui_port"
 DEFAULT_WEB_UI_PORT: Final = 9000
 
 # MQTT Configuration
+CONF_ENABLE_WEBHOOKS: Final = "enable_webhooks"
+"""Configuration key for enabling webhook alerts."""
+
+CONF_WEBHOOK_EXTERNAL_URL: Final = "webhook_external_url"
+"""Configuration key for custom external URL for webhooks."""
+
+CONF_WEBHOOK_SHARED_SECRET: Final = "webhook_shared_secret"
+"""Configuration key for webhook shared secret."""
+
+CONF_WEBHOOK_POLLING_REDUCTION: Final = "webhook_polling_reduction"
+"""Configuration key for enabling polling reduction with webhooks."""
+
+CONF_WEBHOOK_AUTO_REGISTER: Final = "webhook_auto_register"
+"""Configuration key for enabling automatic webhook registration."""
+
+CONF_WEBHOOK_ALERT_TYPES: Final = "webhook_alert_types"
+"""Configuration key for selecting webhook alert types."""
+
+DEFAULT_ENABLE_WEBHOOKS: Final = False
+"""Default value for webhook enable toggle."""
+
+DEFAULT_WEBHOOK_EXTERNAL_URL: Final = ""
+"""Default value for custom webhook URL (empty = use HA's external URL)."""
+
+DEFAULT_WEBHOOK_SHARED_SECRET: Final = ""
+"""Default value for webhook shared secret (empty = auto-generate)."""
+
+DEFAULT_WEBHOOK_POLLING_REDUCTION: Final = True
+"""Default value for webhook polling reduction."""
+
+DEFAULT_WEBHOOK_AUTO_REGISTER: Final = True
+"""Default value for webhook auto-registration."""
+
+DEFAULT_WEBHOOK_ALERT_TYPES: Final[list[str]] = []
+"""Default value for webhook alert types (empty = subscribe to all)."""
+
+WEBHOOK_ALERT_TYPES: Final[dict[str, str]] = {
+    "gatewayDown": "Gateways went down",
+    "switchDown": "Switches went down",
+    "apDown": "APs went down",
+    "cameraDown": "Cameras went down",
+    "sensorDown": "Sensors went down",
+    "settingsChanged": "Settings changed",
+    "ssidSettingsChanged": "SSID settings changed",
+    "vlanSettingsChanged": "VLAN settings changed",
+    "firewallRuleChanged": "Firewall rule changed",
+    "clientConnectivityChanged": "Client connectivity changed",
+    "newClientConnected": "New client connected",
+    "clientBlocked": "Client blocked",
+    "rogueApDetected": "Rogue AP detected",
+    "intrusionDetected": "Intrusion detected",
+    "malwareDetected": "Malware detected",
+    "temperatureThreshold": "Temperature threshold exceeded",
+    "humidityThreshold": "Humidity threshold exceeded",
+    "waterDetected": "Water detected",
+    "doorChanged": "Door opened/closed",
+    "powerOutageDetected": "Power outage detected",
+}
+"""Available webhook alert types."""
+
+
 CONF_ENABLE_SCANNING_API: Final = "enable_scanning_api"
 """Configuration key for enabling Scanning API receiver."""
 

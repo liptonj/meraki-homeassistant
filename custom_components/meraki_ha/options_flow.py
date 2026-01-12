@@ -82,6 +82,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             menu_options=[
                 "network_selection",
                 "polling",
+                "webhooks",
                 "camera",
                 "mqtt",
                 "scanning_api",
@@ -198,6 +199,47 @@ class MerakiOptionsFlowHandler(OptionsFlow):
         return self.async_show_form(
             step_id="polling",
             data_schema=schema_with_defaults,
+        )
+
+    async def async_step_webhooks(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle webhook settings."""
+        from .const import (
+            CONF_WEBHOOK_EXTERNAL_URL,
+            DEFAULT_WEBHOOK_EXTERNAL_URL,
+        )
+        from .core.errors import MerakiConnectionError
+        from .schemas import SCHEMA_WEBHOOKS
+        from .core.utils.webhook_utils import get_webhook_url
+
+        if user_input is not None:
+            self.options.update(user_input)
+            return self.async_create_entry(
+                title=CONF_INTEGRATION_TITLE, data=self.options
+            )
+
+        custom_url = self.options.get(
+            CONF_WEBHOOK_EXTERNAL_URL, DEFAULT_WEBHOOK_EXTERNAL_URL
+        )
+
+        try:
+            webhook_url = get_webhook_url(
+                self.hass, self.config_entry.entry_id, custom_url or None
+            )
+        except MerakiConnectionError as err:
+            webhook_url = f"⚠️ {err}"
+
+        schema_with_defaults = self._populate_schema_defaults(
+            SCHEMA_WEBHOOKS,
+            self.options,
+        )
+
+        return self.async_show_form(
+            step_id="webhooks",
+            data_schema=schema_with_defaults,
+            description_placeholders={"webhook_url": webhook_url},
         )
 
     async def async_step_camera(

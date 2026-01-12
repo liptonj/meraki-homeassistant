@@ -1,11 +1,32 @@
 """Global fixtures for meraki_ha integration."""
 
+import sys
 from collections.abc import Generator
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from tests.const import MOCK_ALL_DATA
+
+# Mock the Home Assistant modules to prevent import errors in tests
+MOCK_HA_MODULES = {
+    "homeassistant.components": MagicMock(),
+    "homeassistant.components.webhook": MagicMock(),
+    "homeassistant.config_entries": MagicMock(),
+    "homeassistant.core": MagicMock(),
+    "homeassistant.exceptions": MagicMock(),
+    "homeassistant.helpers": MagicMock(),
+    "homeassistant.helpers.device_registry": MagicMock(),
+    "homeassistant.helpers.entity_registry": MagicMock(),
+    "homeassistant.helpers.network": MagicMock(),
+    "homeassistant.helpers.update_coordinator": MagicMock(),
+}
+
+@pytest.fixture(autouse=True, scope="session")
+def mock_ha_modules():
+    """Patch sys.modules to mock Home Assistant modules."""
+    with patch.dict(sys.modules, MOCK_HA_MODULES):
+        yield
 
 
 @pytest.fixture(autouse=True)
