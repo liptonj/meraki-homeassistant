@@ -547,10 +547,11 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             webhook_url = get_webhook_url(
                 self.hass, self.config_entry.entry_id, custom_url or None
             )
-            status = "✅ Webhooks active and receiving data"  # Placeholder
         except MerakiConnectionError as err:
             webhook_url = f"⚠️ {err}"
-            status = "❌ Webhook URL not reachable"
+
+        # Get real webhook status from coordinator
+        status = self._get_webhook_status()
 
         schema_with_defaults = self._populate_schema_defaults(
             SCHEMA_WEBHOOKS,
@@ -565,6 +566,41 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                 "status": status,
             },
         )
+
+    def _get_webhook_status(self) -> str:
+        """Get the current webhook status from the coordinator."""
+        from .const import DOMAIN
+
+        try:
+            entry_data = self.hass.data.get(DOMAIN, {}).get(
+                self.config_entry.entry_id, {}
+            )
+            coordinator = entry_data.get("coordinator")
+
+            if not coordinator:
+                return "❓ Coordinator not available"
+
+            # Check if webhooks are active (received recently)
+            if hasattr(coordinator, "webhooks_active") and coordinator.webhooks_active:
+                stats = getattr(coordinator, "webhook_stats", {})
+                count = stats.get("total_received", 0)
+                return f"✅ Webhooks active ({count} received)"
+
+            # Check if webhooks were ever received
+            if hasattr(coordinator, "webhook_stats"):
+                stats = coordinator.webhook_stats
+                if stats.get("last_received"):
+                    return "⚠️ Webhooks configured but not recently active"
+
+            # Check if webhook is registered with HA
+            webhook_id = self.config_entry.data.get("webhook_id")
+            if webhook_id:
+                return "✅ Webhook registered with Home Assistant"
+
+            return "❌ Webhooks not configured"
+
+        except Exception:
+            return "❓ Unable to determine status"
 
     async def async_step_data_sync(
         self,

@@ -47,7 +47,8 @@ from .frontend import (
     async_unregister_frontend,
 )
 from .helpers.logging_helper import MerakiLoggers
-from .helpers.sync_helper import build_client_description
+
+# sync_helper is used by services/sync_client_names
 from .services.camera_service import CameraService
 from .services.device_control_service import DeviceControlService
 from .services.mqtt_relay import MqttRelayManager
@@ -460,31 +461,52 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     async def async_sync_client_names(call: ServiceCall) -> None:
-        """Service call to sync client names."""
-        clients_to_update = []
-        if coordinator.data and "clients" in coordinator.data:
-            for client in coordinator.data["clients"]:
-                mac = client.get("mac")
-                if mac:
-                    description = build_client_description(hass, mac)
-                    if description and description != client.get("description"):
-                        clients_to_update.append(
-                            {
-                                "mac": mac,
-                                "name": description,
-                                "networkId": client.get("networkId"),
-                            }
-                        )
-        if clients_to_update:
-            for network_id in {
-                c["networkId"] for c in clients_to_update if "networkId" in c
-            }:
-                network_clients = [
-                    c for c in clients_to_update if c.get("networkId") == network_id
-                ]
-                if network_clients:
+        """Service call to sync client names from HA to Meraki Dashboard.
+
+        This finds all Meraki clients that have matching Home Assistant devices
+        (by MAC address) and updates their names in the Meraki Dashboard to
+        match the HA device names.
+        """
+        from .helpers.sync_helper import get_sync_candidates
+
+        if not coordinator.data or "clients" not in coordinator.data:
+            _LOGGER.warning("No client data available for sync")
+            return
+
+        # Get candidates using config entry options for include_model/include_version
+        clients_to_update = get_sync_candidates(
+            hass, coordinator.data["clients"], entry
+        )
+
+        if not clients_to_update:
+            _LOGGER.info("No clients need name sync - all names are current")
+            return
+
+        _LOGGER.info(
+            "Syncing %d client names to Meraki Dashboard", len(clients_to_update)
+        )
+
+        # Group by network and update
+        networks = {c["networkId"] for c in clients_to_update if c.get("networkId")}
+        for network_id in networks:
+            network_clients = [
+                {"mac": c["mac"], "name": c["name"]}
+                for c in clients_to_update
+                if c.get("networkId") == network_id
+            ]
+            if network_clients:
+                try:
                     await api_client.network.provision_network_clients(
                         network_id, network_clients
+                    )
+                    _LOGGER.info(
+                        "Synced %d clients to network %s",
+                        len(network_clients),
+                        network_id,
+                    )
+                except Exception as e:
+                    _LOGGER.error(
+                        "Failed to sync clients to network %s: %s", network_id, e
                     )
 
     hass.services.async_register(DOMAIN, "sync_client_names", async_sync_client_names)
@@ -535,10 +557,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 "Scanning API enabled but no validator configured for %s",
                 entry.entry_id,
             )
-    elif "webhook_id" not in entry.data:
-        # Register legacy alerts webhook
+    else:
+        # Register legacy alerts webhook with Home Assistant
+        # Always register/re-register to ensure the webhook is current
         webhook_id = entry.entry_id
-        secret = secrets.token_hex(16)
+        # Use existing secret if available, otherwise generate a new one
+        secret = entry.data.get("secret") or secrets.token_hex(16)
+
+        # Register with Home Assistant (idempotent - will update if exists)
         ha_webhook.async_register(
             hass,
             DOMAIN,
@@ -546,13 +572,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             webhook_id,
             async_handle_webhook,
         )
-        await async_register_webhook(
+        entry_data["webhook_id"] = webhook_id
+
+        # Register with Meraki Dashboard
+        # This will create/update the HTTP server in all networks
+        webhook_registered = await async_register_webhook(
             hass, webhook_id, secret, api_client, entry, entry.entry_id
         )
-        hass.config_entries.async_update_entry(
-            entry, data={**entry.data, "webhook_id": webhook_id, "secret": secret}
-        )
-        _LOGGER.info("Registered legacy alerts webhook for config entry %s", webhook_id)
+
+        # Update entry data if this is a new setup or secret changed
+        if "webhook_id" not in entry.data or entry.data.get("secret") != secret:
+            hass.config_entries.async_update_entry(
+                entry, data={**entry.data, "webhook_id": webhook_id, "secret": secret}
+            )
+
+        if webhook_registered:
+            _LOGGER.info("Registered alerts webhook for config entry %s", webhook_id)
+        else:
+            _LOGGER.warning(
+                "Alerts webhook registration with Meraki Dashboard failed for %s. "
+                "Webhook will still receive alerts if manually configured.",
+                webhook_id,
+            )
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
