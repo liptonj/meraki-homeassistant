@@ -1,3 +1,5 @@
+"""WebSocket API for Meraki Camera Card."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -8,7 +10,10 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 
 from ..const import DOMAIN
+from ..helpers.logging_helper import MerakiLoggers
 from ..meraki_data_coordinator import MerakiDataCoordinator
+
+_LOGGER = MerakiLoggers.CAMERA
 
 
 @callback
@@ -55,7 +60,8 @@ async def ws_get_camera_snapshot(
             serial=entity.unique_id,
         )
         connection.send_result(msg["id"], snapshot)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
+        _LOGGER.error("Failed to get camera snapshot for %s: %s", entity_id, e)
         connection.send_error(msg["id"], "error", str(e))
 
 
@@ -92,7 +98,8 @@ async def ws_get_camera_stream_url(
             serial=entity.unique_id,
         )
         connection.send_result(msg["id"], stream_url)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
+        _LOGGER.error("Failed to get camera stream URL for %s: %s", entity_id, e)
         connection.send_error(msg["id"], "error", str(e))
 
 
@@ -217,8 +224,10 @@ async def ws_get_rtsp_url(
         if device and "rtspUrl" in device:
             connection.send_result(msg["id"], {"rtsp_url": device["rtspUrl"]})
         else:
+            _LOGGER.debug("RTSP URL not found for device %s", entity_id)
             connection.send_error(
                 msg["id"], "not_found", "RTSP URL not found for this device."
             )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
+        _LOGGER.error("Failed to get RTSP URL for %s: %s", entity_id, e)
         connection.send_error(msg["id"], "error", str(e))

@@ -8,5 +8,7 @@ import './shared/meraki-editor-base.js';
 // Import card components
 import './meraki-client-card/meraki-client-card.js';
 import './meraki-client-card/meraki-client-card-editor.js';
+import './meraki-camera-card/meraki-camera-card.js';
+import './meraki-camera-card/meraki-camera-card-editor.js';
 
 console.info('%c MERAKI CARDS LOADED ', 'color: #2980b9; background: #fff; font-weight: 700;');
