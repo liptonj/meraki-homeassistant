@@ -7,11 +7,23 @@
 
 import { CARD_DEFINITIONS } from './shared/constants.js';
 
-// Import all card components
+// Import shared components (from feature branch)
+import './shared/meraki-card-base.js';
+import './shared/meraki-editor-base.js';
+
+// Import all card components (from cursor-review branch)
 import './meraki-overview-card.js';
 import './meraki-device-card.js';
 import './meraki-clients-card.js';
 import './meraki-switch-ports-card.js';
+
+// Import card components (from feature branch)
+import './meraki-devices-card';
+import './meraki-mqtt-status-card';
+import './meraki-client-card/meraki-client-card.js';
+import './meraki-client-card/meraki-client-card-editor.js';
+import './meraki-camera-card/meraki-camera-card.js';
+import './meraki-camera-card/meraki-camera-card-editor.js';
 
 // Register cards with Home Assistant's custom cards registry
 window.customCards = window.customCards || [];

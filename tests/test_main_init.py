@@ -102,12 +102,7 @@ async def test_async_setup_entry_success(
         patch(
             "custom_components.meraki_ha.DeviceDiscoveryService",
         ) as mock_discovery,
-        patch(
-            "custom_components.meraki_ha.async_setup_api",
-        ),
-        patch(
-            "custom_components.meraki_ha.async_setup_websocket_api",
-        ),
+        patch("custom_components.meraki_ha.api.async_setup"),
         patch(
             "custom_components.meraki_ha.async_register_static_path",
         ),
@@ -213,12 +208,7 @@ async def test_async_setup_entry_existing_coordinator(
         patch(
             "custom_components.meraki_ha.DeviceDiscoveryService",
         ) as mock_discovery,
-        patch(
-            "custom_components.meraki_ha.async_setup_api",
-        ),
-        patch(
-            "custom_components.meraki_ha.async_setup_websocket_api",
-        ),
+        patch("custom_components.meraki_ha.api.async_setup"),
         patch(
             "custom_components.meraki_ha.async_register_static_path",
         ),
@@ -358,8 +348,7 @@ async def test_scanning_api_webhook_registered_when_enabled(
         patch("custom_components.meraki_ha.DeviceControlService"),
         patch("custom_components.meraki_ha.NetworkControlService"),
         patch("custom_components.meraki_ha.DeviceDiscoveryService") as mock_discovery,
-        patch("custom_components.meraki_ha.async_setup_api"),
-        patch("custom_components.meraki_ha.async_setup_websocket_api"),
+        patch("custom_components.meraki_ha.api.async_setup"),
         patch("custom_components.meraki_ha.async_register_static_path"),
         patch("custom_components.meraki_ha.async_register_panel"),
         patch("custom_components.meraki_ha.async_register_webhook"),
@@ -426,8 +415,7 @@ async def test_scanning_api_webhook_not_registered_when_disabled(
         patch("custom_components.meraki_ha.DeviceControlService"),
         patch("custom_components.meraki_ha.NetworkControlService"),
         patch("custom_components.meraki_ha.DeviceDiscoveryService") as mock_discovery,
-        patch("custom_components.meraki_ha.async_setup_api"),
-        patch("custom_components.meraki_ha.async_setup_websocket_api"),
+        patch("custom_components.meraki_ha.api.async_setup"),
         patch("custom_components.meraki_ha.async_register_static_path"),
         patch("custom_components.meraki_ha.async_register_panel"),
         patch("custom_components.meraki_ha.async_register_webhook"),
@@ -490,8 +478,8 @@ async def test_scanning_api_webhook_not_registered_without_validator(
         patch("custom_components.meraki_ha.DeviceControlService"),
         patch("custom_components.meraki_ha.NetworkControlService"),
         patch("custom_components.meraki_ha.DeviceDiscoveryService") as mock_discovery,
-        patch("custom_components.meraki_ha.async_setup_api"),
-        patch("custom_components.meraki_ha.async_setup_websocket_api"),
+        patch("custom_components.meraki_ha.api.async_setup"),
+        patch("custom_components.meraki_ha.api.legacy.async_setup_websocket_api"),
         patch("custom_components.meraki_ha.async_register_static_path"),
         patch("custom_components.meraki_ha.async_register_panel"),
         patch("custom_components.meraki_ha.async_register_webhook"),
