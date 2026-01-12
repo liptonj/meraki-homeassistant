@@ -11,7 +11,7 @@ from homeassistant.components import webhook as ha_webhook
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 
-from .api.websocket import async_setup_websocket_api
+from . import api
 from .const import (
     CONF_ENABLE_MQTT,
     CONF_ENABLE_SCANNING_API,
@@ -552,7 +552,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     async_setup_api(hass)
-    async_setup_websocket_api(hass)
+    api.async_setup(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
