@@ -47,6 +47,7 @@ from .frontend import (
     async_unregister_frontend,
 )
 from .helpers.logging_helper import MerakiLoggers
+from .helpers.sync_helper import build_client_description
 from .services.camera_service import CameraService
 from .services.device_control_service import DeviceControlService
 from .services.mqtt_relay import MqttRelayManager
@@ -457,6 +458,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.services.async_register(
         DOMAIN, "create_timed_access", handle_create_timed_access
     )
+
+    async def async_sync_client_names(call: ServiceCall) -> None:
+        """Service call to sync client names."""
+        clients_to_update = []
+        if coordinator.data and "clients" in coordinator.data:
+            for client in coordinator.data["clients"]:
+                mac = client.get("mac")
+                if mac:
+                    description = build_client_description(hass, mac)
+                    if description and description != client.get("description"):
+                        clients_to_update.append(
+                            {
+                                "mac": mac,
+                                "name": description,
+                                "networkId": client.get("networkId"),
+                            }
+                        )
+        if clients_to_update:
+            for network_id in {
+                c["networkId"] for c in clients_to_update if "networkId" in c
+            }:
+                network_clients = [
+                    c for c in clients_to_update if c.get("networkId") == network_id
+                ]
+                if network_clients:
+                    await api_client.network.provision_network_clients(
+                        network_id, network_clients
+                    )
+
+    hass.services.async_register(DOMAIN, "sync_client_names", async_sync_client_names)
 
     discovered_entities = await discovery_service.discover_entities()
     entry_data["entities"] = discovered_entities

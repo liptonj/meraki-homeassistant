@@ -63,6 +63,27 @@ class NetworkEndpoints:
         return validated
 
     @handle_meraki_errors
+    @async_log_time(MerakiLoggers.API)
+    async def get_network_client(
+        self,
+        network_id: str,
+        client_id: str,
+    ) -> dict[str, Any] | None:
+        """Get a single client by MAC or ID."""
+        if self._api_client.dashboard is None:
+            return None
+        api = self._api_client.dashboard.networks
+        client = await api.getNetworkClient(
+            networkId=network_id,
+            clientId=client_id,
+        )
+        validated = validate_response(client)
+        if not isinstance(validated, dict):
+            _LOGGER.warning("get_network_client did not return a dict.")
+            return None
+        return validated
+
+    @handle_meraki_errors
     @async_timed_cache(timeout=60)
     @async_log_time(slow_threshold=3.0)
     async def get_network_traffic(
@@ -364,4 +385,24 @@ class NetworkEndpoints:
         if not isinstance(validated, list):
             _LOGGER.warning("get_network_group_policies did not return a list.")
             return []
+        return validated
+
+    @handle_meraki_errors
+    async def provision_network_clients(
+        self,
+        network_id: str,
+        clients: list[dict[str, Any]],
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Provision clients in a network."""
+        if self._api_client.dashboard is None:
+            return {}
+        api = self._api_client.dashboard.networks
+        result = await api.provisionNetworkClients(
+            networkId=network_id, clients=clients, **kwargs
+        )
+        validated = validate_response(result)
+        if not isinstance(validated, dict):
+            _LOGGER.warning("provision_network_clients did not return a dict.")
+            return {}
         return validated
