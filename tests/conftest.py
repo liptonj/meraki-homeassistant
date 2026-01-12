@@ -1,6 +1,5 @@
 """Global fixtures for meraki_ha integration."""
 
-"""Global fixtures for meraki_ha integration."""
 from __future__ import annotations
 
 import sys
