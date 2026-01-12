@@ -7,6 +7,7 @@ import './shared/meraki-editor-base.js';
 
 // Import card components
 import './meraki-devices-card';
+import './meraki-mqtt-status-card';
 import './meraki-client-card/meraki-client-card.js';
 import './meraki-client-card/meraki-client-card-editor.js';
 import './meraki-camera-card/meraki-camera-card.js';
@@ -16,3 +17,17 @@ console.info(
   '%c MERAKI CARDS LOADED ',
   'color: #2980b9; background: #fff; font-weight: 700;'
 );
+
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type: 'meraki-devices-card',
+  name: 'Meraki Devices Card',
+  preview: true,
+  description: 'A card to display Meraki network devices.',
+});
+window.customCards.push({
+  type: 'meraki-mqtt-status-card',
+  name: 'Meraki MQTT Status Card',
+  preview: true,
+  description: 'A card to display the status of the Meraki MQTT service.',
+});
