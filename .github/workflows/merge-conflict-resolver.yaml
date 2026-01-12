@@ -126,33 +126,112 @@ jobs:
               *Auto-resolved by Merge Conflict Resolver*"
 
             else
-              echo "❌ Auto-merge failed - conflicts require manual resolution"
+              echo "❌ Auto-merge failed - invoking Cursor to resolve"
 
               # Abort the failed merge
               git merge --abort 2>/dev/null || true
 
-              # Comment on PR asking for manual help
-              gh pr comment "$PR_NUMBER" \
-                --repo "${{ github.repository }}" \
-                --body "## ⚠️ Merge Conflicts Detected
+              # Get conflicting files for context
+              git fetch origin beta "$HEAD_BRANCH"
+              git checkout "$HEAD_BRANCH"
+              CONFLICT_FILES=$(git merge origin/beta 2>&1 | grep "CONFLICT" | sed 's/.*in //' || echo "unknown files")
+              git merge --abort 2>/dev/null || true
 
-              This PR has conflicts with \`beta\` that cannot be automatically resolved.
-
-              **To fix manually:**
-              \`\`\`bash
-              git checkout $HEAD_BRANCH
-              git fetch origin beta
-              git merge origin/beta
-              # Resolve conflicts in your editor
-              git add .
-              git commit
-              git push
-              \`\`\`
-
-              ---
-              *Detected by Merge Conflict Resolver*"
+              # Store PR number for Cursor invocation
+              echo "$PR_NUMBER" >> /tmp/conflict_prs.txt
+              echo "$HEAD_BRANCH" >> /tmp/conflict_branches.txt
+              echo "$CONFLICT_FILES" >> /tmp/conflict_files.txt
             fi
 
             # Reset for next PR
             git checkout beta 2>/dev/null || true
           done
+
+      - name: Invoke Cursor to resolve complex conflicts
+        if: steps.find.outputs.prs != ''
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          if [[ ! -f /tmp/conflict_prs.txt ]]; then
+            echo "No complex conflicts to resolve"
+            exit 0
+          fi
+
+          # Read all PRs that need Cursor help
+          while IFS= read -r PR_NUMBER && IFS= read -r HEAD_BRANCH <&3 && IFS= read -r CONFLICT_FILES <&4; do
+            echo "=== Invoking Cursor for PR #$PR_NUMBER ==="
+
+            # Comment on PR
+            gh pr comment "$PR_NUMBER" \
+              --repo "${{ github.repository }}" \
+              --body "## 🤖 Invoking Cursor to Resolve Merge Conflicts
+
+          This PR has conflicts with \`beta\` that require intelligent resolution.
+
+          **Conflicting files:** $CONFLICT_FILES
+
+          Cursor will analyze the conflicts and create a fix.
+
+          ---
+          *Initiated by Merge Conflict Resolver*"
+
+            # Build Cursor prompt
+            PROMPT="You are resolving merge conflicts for PR #$PR_NUMBER on branch $HEAD_BRANCH.
+
+          ## Task
+          Resolve the merge conflicts between this branch and the beta branch WITHOUT breaking any functionality.
+
+          ## Instructions
+          1. Check out branch: $HEAD_BRANCH
+          2. Merge origin/beta into it
+          3. For each conflict:
+             - Understand both versions
+             - Combine changes intelligently (keep ALL features from both sides)
+             - Prefer beta's structure/formatting when in doubt
+             - NEVER delete functionality from either side
+          4. Run ./run_checks.sh to verify nothing is broken
+          5. Commit and push the resolution
+
+          ## Conflicting Files
+          $CONFLICT_FILES
+
+          ## Critical Rules
+          - Do NOT remove any imports, functions, or features
+          - Combine both versions when possible
+          - Test that the code compiles/lints after resolution
+          - If you can't resolve safely, comment on the PR explaining why
+
+          ## GitHub Access
+          Use GH_PAT environment variable for any GitHub operations if needed."
+
+            # Invoke Cursor API
+            RESPONSE=$(curl -s -X POST "https://api.cursor.com/v0/agents" \
+              -H "Authorization: Bearer $CURSOR_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"prompt\": $(echo "$PROMPT" | jq -Rs .),
+                \"repo\": \"${{ github.repository }}\",
+                \"branch\": \"$HEAD_BRANCH\",
+                \"autoCreatePr\": false,
+                \"env\": {
+                  \"GH_PAT\": \"$GH_PAT\"
+                }
+              }" 2>&1) || true
+
+            echo "Cursor API response: $RESPONSE"
+
+            # Check if successful
+            if echo "$RESPONSE" | grep -q '"id"'; then
+              AGENT_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
+              echo "✅ Cursor agent launched: $AGENT_ID"
+
+              gh pr comment "$PR_NUMBER" \
+                --repo "${{ github.repository }}" \
+                --body "🚀 Cursor agent launched to resolve conflicts. Agent ID: \`$AGENT_ID\`"
+            else
+              echo "⚠️ Cursor API call may have failed: $RESPONSE"
+            fi
+
+          done < /tmp/conflict_prs.txt 3< /tmp/conflict_branches.txt 4< /tmp/conflict_files.txt
