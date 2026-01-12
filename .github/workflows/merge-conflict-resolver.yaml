@@ -184,15 +184,16 @@ jobs:
           Resolve the merge conflicts between this branch and the beta branch WITHOUT breaking any functionality.
 
           ## Instructions
-          1. Check out branch: $HEAD_BRANCH
-          2. Merge origin/beta into it
-          3. For each conflict:
+          1. First, fetch the latest: git fetch origin beta $HEAD_BRANCH
+          2. Check out the branch: git checkout $HEAD_BRANCH
+          3. Merge origin/beta: git merge origin/beta
+          4. For each conflict:
              - Understand both versions
              - Combine changes intelligently (keep ALL features from both sides)
              - Prefer beta's structure/formatting when in doubt
              - NEVER delete functionality from either side
-          4. Run ./run_checks.sh to verify nothing is broken
-          5. Commit and push the resolution
+          5. Run ./run_checks.sh to verify nothing is broken
+          6. Commit and push the resolution: git add . && git commit -m 'fix: resolve merge conflicts with beta' && git push
 
           ## Conflicting Files
           $CONFLICT_FILES
@@ -206,19 +207,26 @@ jobs:
           ## GitHub Access
           Use GH_PAT environment variable for any GitHub operations if needed."
 
-            # Invoke Cursor API
-            RESPONSE=$(curl -s -X POST "https://api.cursor.com/v0/agents" \
-              -H "Authorization: Bearer $CURSOR_API_KEY" \
+            # Escape prompt for JSON
+            ESCAPED_PROMPT=$(echo "$PROMPT" | jq -Rs .)
+
+            # Invoke Cursor API with correct format
+            RESPONSE=$(curl -sS -X POST "https://api.cursor.com/v0/agents" \
+              -u "${CURSOR_API_KEY}:" \
               -H "Content-Type: application/json" \
               -d "{
-                \"prompt\": $(echo "$PROMPT" | jq -Rs .),
-                \"repo\": \"${{ github.repository }}\",
-                \"branch\": \"$HEAD_BRANCH\",
-                \"autoCreatePr\": false,
-                \"env\": {
-                  \"GH_PAT\": \"$GH_PAT\"
+                \"source\": {
+                  \"repository\": \"https://github.com/${{ github.repository }}\",
+                  \"ref\": \"$HEAD_BRANCH\"
+                },
+                \"prompt\": {
+                  \"text\": ${ESCAPED_PROMPT}
+                },
+                \"target\": {
+                  \"branchName\": \"$HEAD_BRANCH\",
+                  \"autoCreatePr\": false
                 }
-              }" 2>&1) || true
+              }") || true
 
             echo "Cursor API response: $RESPONSE"
 
