@@ -240,12 +240,16 @@ class MerakiOptionsFlowHandler(OptionsFlow):
         summary_text = "\n".join(association_summary) if association_summary else "None"
 
         actions = [
-            selector.SelectOptionDict(value="save", label="Save and Finish"),
-            selector.SelectOptionDict(value="add", label="Add new association"),
+            selector.SelectOptionDict(value="save", label="✓ Save and return to menu"),
+            selector.SelectOptionDict(
+                value="add", label="+ Add new client → device association"
+            ),
         ]
         if current_associations:
             actions.append(
-                selector.SelectOptionDict(value="remove", label="Remove an association")
+                selector.SelectOptionDict(
+                    value="remove", label="− Remove an existing association"
+                )
             )
 
         schema = vol.Schema(

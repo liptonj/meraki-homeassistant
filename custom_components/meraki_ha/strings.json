@@ -132,42 +132,42 @@
       },
       "device_association": {
         "title": "Device Association",
-        "description": "Link Meraki network clients to existing Home Assistant devices.\n\nCurrent associations ({association_count}):\n{associations}",
+        "description": "Link Meraki network clients to existing Home Assistant devices.\n\nThis allows client data (connection status, bandwidth usage, etc.) to appear on the linked HA device.\n\nCurrent associations ({association_count}):\n{associations}",
         "data": {
-          "action": "Action"
+          "action": "What would you like to do?"
         },
         "data_description": {
           "action": "Choose an action to manage device associations."
         }
       },
       "select_client": {
-        "title": "Select Meraki Client",
-        "description": "Choose a Meraki network client to associate with a Home Assistant device.",
+        "title": "Step 1: Select Meraki Network Client",
+        "description": "Choose a Meraki network client to associate with a Home Assistant device.\n\nClients are devices (phones, laptops, IoT devices) connected to your Meraki network. They are identified by their MAC address and may show a hostname or description.",
         "data": {
-          "client": "Meraki Client"
+          "client": "Meraki Network Client"
         },
         "data_description": {
-          "client": "Select a client from your Meraki network."
+          "client": "Select a client device from your Meraki network. Shows: Name (Manufacturer) or MAC address if no name is available."
         }
       },
       "select_device": {
-        "title": "Select Home Assistant Device",
-        "description": "Choose a Home Assistant device to link with the selected Meraki client.",
+        "title": "Step 2: Select Target Home Assistant Device",
+        "description": "Choose the Home Assistant device to link with the selected Meraki client.\n\nThe Meraki client's sensors (connection status, bandwidth, SSID, etc.) will appear as entities under this device.",
         "data": {
-          "device": "Home Assistant Device"
+          "device": "Target Home Assistant Device"
         },
         "data_description": {
-          "device": "Select a device from Home Assistant."
+          "device": "Select a device from Home Assistant to attach the Meraki client data to. This is typically the same physical device (e.g., link your phone's Meraki client to your phone's HA device)."
         }
       },
       "remove_association": {
         "title": "Remove Device Association",
-        "description": "Select associations to remove.",
+        "description": "Select one or more associations to remove.\n\nRemoving an association will stop the Meraki client data from appearing on the linked Home Assistant device.",
         "data": {
           "associations": "Associations to Remove"
         },
         "data_description": {
-          "associations": "Select one or more associations to remove."
+          "associations": "Select one or more client → device associations to remove."
         }
       },
       "polling": {
