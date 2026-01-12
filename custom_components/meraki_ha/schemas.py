@@ -476,3 +476,88 @@ SCHEMA_LOGGING = vol.Schema(
         ),
     }
 )
+
+SCHEMA_WEBHOOKS = vol.Schema(
+    {
+        vol.Required(
+            "enable_webhooks",
+            default=False,
+        ): selector.BooleanSelector(),
+        vol.Optional(
+            "webhook_external_url",
+            default="",
+        ): selector.TextSelector(),
+        vol.Optional(
+            "webhook_shared_secret",
+            default="",
+        ): selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+        ),
+        vol.Required(
+            "webhook_auto_register",
+            default=True,
+        ): selector.BooleanSelector(),
+        vol.Optional(
+            "webhook_alert_types",
+            default=[],
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    "APs went down",
+                    "APs came up",
+                    "Switches went down",
+                    "Switches came up",
+                    "Gateways went down",
+                    "Gateways came up",
+                    "Cameras went down",
+                    "Cameras came up",
+                    "Sensors went offline",
+                    "Sensors came online",
+                    "Device rebooted",
+                    "Settings changed",
+                    "SSID settings changed",
+                    "VLAN settings changed",
+                    "Firewall rule changed",
+                    "Client connectivity changed",
+                    "New client connected",
+                    "Client blocked",
+                    "Rogue AP detected",
+                    "Intrusion detected",
+                    "Malware detected",
+                    "Temperature threshold exceeded",
+                    "Humidity threshold exceeded",
+                    "Water detected",
+                    "Door opened/closed",
+                    "Power outage detected",
+                ],
+                multiple=True,
+                mode=selector.SelectSelectorMode.LIST,
+            )
+        ),
+        vol.Required(
+            "webhook_polling_reduction",
+            default=True,
+        ): selector.BooleanSelector(),
+    }
+)
+
+SCHEMA_DATA_SYNC = vol.Schema(
+    {
+        vol.Required(
+            "sync_names_to_meraki",
+            default=False,
+        ): selector.BooleanSelector(),
+        vol.Optional(
+            "sync_include_model",
+            default=True,
+        ): selector.BooleanSelector(),
+        vol.Optional(
+            "sync_include_version",
+            default=False,
+        ): selector.BooleanSelector(),
+        vol.Required(
+            "sync_on_new_client",
+            default=True,
+        ): selector.BooleanSelector(),
+    }
+)

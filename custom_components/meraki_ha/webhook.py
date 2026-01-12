@@ -12,9 +12,17 @@ from homeassistant.helpers.network import get_url
 from .const import (
     CONF_SCANNING_API_SECRET,
     CONF_SCANNING_API_VALIDATOR,
+    CONF_WEBHOOK_SHARED_SECRET,
     DOMAIN,
 )
 from .core.errors import MerakiConnectionError
+from .handlers import (
+    client_alerts,
+    device_alerts,
+    network_alerts,
+    security_alerts,
+    sensor_alerts,
+)
 from .helpers.logging_helper import MerakiLoggers
 
 if TYPE_CHECKING:
@@ -271,6 +279,62 @@ async def async_unregister_webhook(
     await api_client.unregister_webhook(config_entry_id)
 
 
+async def _validate_shared_secret(
+    request_secret: str | None,
+    config_entry: ConfigEntry,
+) -> bool:
+    """Validate the shared secret from the webhook request."""
+    configured_secret = config_entry.options.get(CONF_WEBHOOK_SHARED_SECRET)
+    if not configured_secret:
+        _LOGGER_ALERTS.warning("No webhook shared secret is configured.")
+        return False
+    if request_secret != configured_secret:
+        _LOGGER_ALERTS.warning("Webhook shared secret mismatch.")
+        return False
+    return True
+
+
+async def _route_by_alert_type(
+    coordinator: MerakiDataCoordinator,
+    alert_type: str,
+    data: dict,
+) -> None:
+    """Route webhook data to the appropriate handler based on alertType."""
+    if (
+        alert_type.startswith("APs")
+        or alert_type.startswith("Switches")
+        or alert_type.startswith("Gateways")
+        or alert_type.startswith("Cameras")
+        or alert_type.startswith("Sensors")
+        or alert_type.endswith("rebooted")
+    ):
+        await device_alerts.async_handle_device_alert(coordinator, alert_type, data)
+    elif "Client" in alert_type:
+        await client_alerts.async_handle_client_alert(coordinator, alert_type, data)
+    elif (
+        "Settings changed" in alert_type
+        or "SSID settings changed" in alert_type
+        or "VLAN settings changed" in alert_type
+        or "Firewall rule changed" in alert_type
+    ):
+        await network_alerts.async_handle_network_alert(coordinator, alert_type, data)
+    elif (
+        "Rogue AP detected" in alert_type
+        or "Intrusion detected" in alert_type
+        or "Malware detected" in alert_type
+    ):
+        await security_alerts.async_handle_security_alert(coordinator, alert_type, data)
+    elif (
+        "threshold" in alert_type
+        or "Water detected" in alert_type
+        or "Door" in alert_type
+        or "Power" in alert_type
+    ):
+        await sensor_alerts.async_handle_sensor_alert(coordinator, alert_type, data)
+    else:
+        _LOGGER_ALERTS.debug("No handler for webhook alert type: %s", alert_type)
+
+
 async def async_handle_webhook(
     hass: HomeAssistant,
     webhook_id: str,
@@ -301,63 +365,29 @@ async def async_handle_webhook(
         _LOGGER_ALERTS.warning("Received invalid JSON in webhook %s", webhook_id)
         return web.Response(status=400)
 
-    # Differentiate between Scanning API and legacy alerts webhook
-    # The Scanning API payload has a "type" field (e.g., "DevicesSeen")
-    # and a "secret" field, whereas legacy alerts have "sharedSecret".
+    # Differentiate between Scanning API and alerts webhook
     if "type" in data and "secret" in data:
-        _LOGGER_SCANNING.debug("Scanning API webhook %s received: %s", webhook_id, data)
-        # Handle Scanning API data directly (request already parsed above)
         return await _handle_scanning_api_data(hass, webhook_id, data)
 
-    # --- Legacy Alerts Webhook Handling ---
+    # --- Alerts Webhook Handling ---
     _LOGGER_ALERTS.debug("Alerts webhook %s received: %s", webhook_id, data)
 
-    entry_data = hass.data.get(DOMAIN, {}).get(webhook_id)
-    if not entry_data:
+    config_entry = hass.config_entries.async_get_entry(webhook_id)
+    if not config_entry:
         _LOGGER_ALERTS.warning(
             "Received webhook for unknown config entry: %s", webhook_id
         )
         return web.Response(status=404)
 
-    secret = entry_data.get("secret")
-    if not secret or data.get("sharedSecret") != secret:
-        _LOGGER_ALERTS.warning("Received webhook with invalid secret: %s", webhook_id)
+    if not await _validate_shared_secret(data.get("sharedSecret"), config_entry):
         return web.Response(status=401)
 
-    coordinator = entry_data.get("coordinator")
-    if not coordinator:
-        _LOGGER_ALERTS.warning("Coordinator not found for webhook: %s", webhook_id)
-        return web.Response(status=500)
-
+    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][webhook_id]["coordinator"]
     alert_type = data.get("alertType")
-    if alert_type == "APs went down":
-        device_serial = data.get("deviceSerial")
-        if device_serial and coordinator.data:
-            for i, device in enumerate(coordinator.data.get("devices", [])):
-                if device.get("serial") == device_serial:
-                    _LOGGER_ALERTS.info(
-                        "Device %s reported as down via webhook",
-                        device_serial,
-                    )
-                    coordinator.data["devices"][i]["status"] = "offline"
-                    coordinator.async_update_listeners()
-                    break
-    elif alert_type == "Client connectivity changed":
-        alert_data = data.get("alertData", {})
-        client_mac = alert_data.get("mac")
-        if client_mac and coordinator.data:
-            for i, client in enumerate(coordinator.data.get("clients", [])):
-                if client.get("mac") == client_mac:
-                    _LOGGER_ALERTS.info(
-                        "Client %s connectivity changed via webhook",
-                        client_mac,
-                    )
-                    coordinator.data["clients"][i]["status"] = (
-                        "Online" if alert_data.get("connected") else "Offline"
-                    )
-                    coordinator.async_update_listeners()
-                    break
+
+    if alert_type:
+        await _route_by_alert_type(coordinator, alert_type, data)
     else:
-        _LOGGER_ALERTS.debug("Ignoring webhook alert type: %s", alert_type)
+        _LOGGER_ALERTS.warning("Webhook received with no alertType: %s", data)
 
     return web.Response(status=200)

@@ -26,10 +26,12 @@ from .const import (
 )
 from .schemas import (
     SCHEMA_CAMERA,
+    SCHEMA_DATA_SYNC,
     SCHEMA_DISPLAY_PREFERENCES,
     SCHEMA_LOGGING,
     SCHEMA_NETWORK_SELECTION,
     SCHEMA_POLLING,
+    SCHEMA_WEBHOOKS,
 )
 
 
@@ -82,6 +84,8 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             menu_options=[
                 "network_selection",
                 "polling",
+                "webhooks",
+                "data_sync",
                 "camera",
                 "mqtt",
                 "scanning_api",
@@ -516,3 +520,67 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
             new_schema_keys[key] = value
         return vol.Schema(new_schema_keys)
+
+
+async def async_step_webhooks(
+    self,
+    user_input: dict[str, Any] | None = None,
+) -> ConfigFlowResult:
+    """Handle webhook settings."""
+    from .const import (
+        CONF_WEBHOOK_EXTERNAL_URL,
+        DEFAULT_WEBHOOK_EXTERNAL_URL,
+    )
+    from .core.errors import MerakiConnectionError
+    from .webhook import get_webhook_url
+
+    if user_input is not None:
+        self.options.update(user_input)
+        return self.async_create_entry(title=CONF_INTEGRATION_TITLE, data=self.options)
+
+    custom_url = self.options.get(
+        CONF_WEBHOOK_EXTERNAL_URL, DEFAULT_WEBHOOK_EXTERNAL_URL
+    )
+
+    try:
+        webhook_url = get_webhook_url(
+            self.hass, self.config_entry.entry_id, custom_url or None
+        )
+        status = "✅ Webhooks active and receiving data"  # Placeholder
+    except MerakiConnectionError as err:
+        webhook_url = f"⚠️ {err}"
+        status = "❌ Webhook URL not reachable"
+
+    schema_with_defaults = self._populate_schema_defaults(
+        SCHEMA_WEBHOOKS,
+        self.options,
+    )
+
+    return self.async_show_form(
+        step_id="webhooks",
+        data_schema=schema_with_defaults,
+        description_placeholders={
+            "webhook_url": webhook_url,
+            "status": status,
+        },
+    )
+
+
+async def async_step_data_sync(
+    self,
+    user_input: dict[str, Any] | None = None,
+) -> ConfigFlowResult:
+    """Handle data sync settings."""
+    if user_input is not None:
+        self.options.update(user_input)
+        return self.async_create_entry(title=CONF_INTEGRATION_TITLE, data=self.options)
+
+    schema_with_defaults = self._populate_schema_defaults(
+        SCHEMA_DATA_SYNC,
+        self.options,
+    )
+
+    return self.async_show_form(
+        step_id="data_sync",
+        data_schema=schema_with_defaults,
+    )
