@@ -85,6 +85,12 @@ DEFAULT_CAMERA_SNAPSHOT_INTERVAL: Final = 0
 CONF_CAMERA_ENTITY_MAPPINGS: Final = "camera_entity_mappings"
 """Configuration key for camera entity mappings (Meraki serial -> HA entity_id)."""
 
+CONF_MANUAL_CLIENT_ASSOCIATIONS: Final = "manual_client_associations"
+"""Configuration key for manual Meraki client to HA device associations."""
+
+DEFAULT_MANUAL_CLIENT_ASSOCIATIONS: Final[dict[str, str]] = {}
+"""Default empty dict for manual client associations (client_mac -> ha_device_id)."""
+
 CONF_MQTT_RELAY_DESTINATIONS: Final = "mqtt_relay_destinations"
 """Configuration key for MQTT relay destinations."""
 
