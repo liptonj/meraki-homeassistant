@@ -44,7 +44,7 @@ def mock_config_entry() -> MagicMock:
     return entry
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def prevent_socket_and_camera_load() -> Generator[None]:
     """Patch asyncio to prevent opening a real socket."""
     from unittest.mock import MagicMock, patch

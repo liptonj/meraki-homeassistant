@@ -30,7 +30,9 @@ def async_setup_websocket_api(hass: HomeAssistant) -> None:
 )
 @websocket_api.async_response
 async def ws_get_overview(
-    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict,
 ) -> None:
     """Get Meraki network overview data."""
     entry_id = msg["config_entry_id"]
@@ -64,7 +66,9 @@ async def ws_get_overview(
 )
 @websocket_api.async_response
 async def ws_get_device(
-    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict,
 ) -> None:
     """Get single device details."""
     entry_id = msg["config_entry_id"]
