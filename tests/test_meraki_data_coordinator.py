@@ -1058,17 +1058,17 @@ async def test_adaptive_polling_with_webhooks(hass, mock_api_client):
     # Simulate a webhook was recently received
     coord.last_webhook_received = datetime.now()
 
-    # Access the internal method for testing
-    with patch.object(coord, "_get_effective_poll_interval") as mock_get_interval:
+    # This test checks the logic inside _async_update_data that reduces
+    # polling intervals when webhooks are active. We verify this by checking
+    # for the specific debug log message that is emitted in this case.
+    mock_api_client.get_all_data.return_value = {
+        "networks": [],
+        "devices": [],
+        "appliance_traffic": {},
+        "vlans": {},
+    }
+    with patch.object(coord.logger, "debug") as mock_logger:
         await coord._async_update_data()
-
-        # This test is conceptual since _get_effective_poll_interval is not
-        # explicitly defined. Instead, we check the result of the logic inside
-        # _async_update_data. We can't directly check the interval values,
-        # but we can verify that the correct logic branch is taken.
-        # Let's check the log message.
-        with patch.object(coord.logger, "debug") as mock_logger:
-            await coord._async_update_data()
-            mock_logger.assert_any_call(
-                "Webhooks are active, using reduced polling intervals"
-            )
+        mock_logger.assert_any_call(
+            "Webhooks are active, using reduced polling intervals"
+        )

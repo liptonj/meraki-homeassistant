@@ -31,11 +31,11 @@ class WebhookManager:
         server_name = "Home Assistant Meraki Integration"
 
         try:
+            webhooks_api = self.api_client.dashboard.webhooks
+
             # Step 1: Find or Create HTTP Server
-            existing_servers = (
-                await self.api_client.dashboard.webhooks.getNetworkWebhooksHttpServers(
-                    self.network_id
-                )
+            existing_servers = await webhooks_api.getNetworkWebhooksHttpServers(
+                self.network_id
             )
             server = next(
                 (s for s in existing_servers if s["name"] == server_name), None
@@ -47,7 +47,7 @@ class WebhookManager:
                     server.get("url") != webhook_url
                     or server.get("sharedSecret") != shared_secret
                 ):
-                    await self.api_client.dashboard.webhooks.updateNetworkWebhooksHttpServer(
+                    await webhooks_api.updateNetworkWebhooksHttpServer(
                         networkId=self.network_id,
                         httpServerId=self.http_server_id,
                         url=webhook_url,
@@ -58,7 +58,7 @@ class WebhookManager:
                         self.network_id,
                     )
             else:
-                new_server = await self.api_client.dashboard.webhooks.createNetworkWebhooksHttpServer(
+                new_server = await webhooks_api.createNetworkWebhooksHttpServer(
                     networkId=self.network_id,
                     url=webhook_url,
                     sharedSecret=shared_secret,
