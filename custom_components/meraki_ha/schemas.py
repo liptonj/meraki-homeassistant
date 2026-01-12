@@ -29,6 +29,7 @@ from .const import (
     CONF_LOG_LEVEL_SCANNING_API,
     CONF_LOG_LEVEL_SENSOR,
     CONF_LOG_LEVEL_SWITCH,
+    CONF_MANUAL_CLIENT_ASSOCIATIONS,
     CONF_MERAKI_API_KEY,
     CONF_MERAKI_ORG_ID,
     CONF_NETWORK_SCAN_INTERVAL,
@@ -559,5 +560,16 @@ SCHEMA_DATA_SYNC = vol.Schema(
             "sync_on_new_client",
             default=True,
         ): selector.BooleanSelector(),
+    }
+)
+
+# Section: Device Association Settings
+# Note: The actual selectors for client and device are built dynamically
+# in the options flow based on available clients and devices
+SCHEMA_DEVICE_ASSOCIATION = vol.Schema(
+    {
+        vol.Optional(
+            CONF_MANUAL_CLIENT_ASSOCIATIONS,
+        ): vol.Schema({str: str}),
     }
 )

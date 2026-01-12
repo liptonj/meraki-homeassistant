@@ -104,6 +104,7 @@
         "description": "Select a category to configure:",
         "menu_options": {
           "network_selection": "Network Selection",
+          "device_association": "Device Association",
           "polling": "Polling & Refresh",
           "webhooks": "Webhooks",
           "data_sync": "Data Sync",
@@ -127,6 +128,46 @@
           "enabled_networks": "Select which networks to monitor. Leave empty for all networks.",
           "enable_device_tracker": "Enable tracking of clients connected to the network.",
           "enable_vlan_management": "Enable VLAN management features."
+        }
+      },
+      "device_association": {
+        "title": "Device Association",
+        "description": "Link Meraki network clients to existing Home Assistant devices.\n\nCurrent associations ({association_count}):\n{associations}",
+        "data": {
+          "action": "Action"
+        },
+        "data_description": {
+          "action": "Choose an action to manage device associations."
+        }
+      },
+      "select_client": {
+        "title": "Select Meraki Client",
+        "description": "Choose a Meraki network client to associate with a Home Assistant device.",
+        "data": {
+          "client": "Meraki Client"
+        },
+        "data_description": {
+          "client": "Select a client from your Meraki network."
+        }
+      },
+      "select_device": {
+        "title": "Select Home Assistant Device",
+        "description": "Choose a Home Assistant device to link with the selected Meraki client.",
+        "data": {
+          "device": "Home Assistant Device"
+        },
+        "data_description": {
+          "device": "Select a device from Home Assistant."
+        }
+      },
+      "remove_association": {
+        "title": "Remove Device Association",
+        "description": "Select associations to remove.",
+        "data": {
+          "associations": "Associations to Remove"
+        },
+        "data_description": {
+          "associations": "Select one or more associations to remove."
         }
       },
       "polling": {
@@ -345,7 +386,9 @@
     "error": {
       "host_required": "Broker hostname is required.",
       "name_required": "Destination name is required.",
-      "invalid_port": "Invalid port number. Must be between 1 and 65535."
+      "invalid_port": "Invalid port number. Must be between 1 and 65535.",
+      "no_clients": "No unassociated Meraki clients available. All clients are either already associated or no clients are connected.",
+      "no_devices": "No Home Assistant devices available to associate with."
     }
   },
   "entity": {
