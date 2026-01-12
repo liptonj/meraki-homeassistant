@@ -1,41 +1,7 @@
 """Global fixtures for meraki_ha integration."""
 
-from __future__ import annotations
-
-import sys
 from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock
-
-# Mock the homeassistant modules to prevent ImportError. This must be done before
-# any other imports from the custom component.
-# We create mock classes with a common base to avoid metaclass conflicts during testing.
-MockEntity = type("Entity", (object,), {})
-MockSensorEntity = type("SensorEntity", (MockEntity,), {})
-MockCoordinatorEntity = type("CoordinatorEntity", (MockEntity,), {})
-
-
-MOCK_MODULES = {
-    # Modules that need specific mock classes for inheritance
-    "homeassistant.components.sensor": MagicMock(SensorEntity=MockSensorEntity),
-    "homeassistant.helpers.update_coordinator": MagicMock(
-        CoordinatorEntity=MockCoordinatorEntity
-    ),
-    "homeassistant.helpers.entity": MagicMock(Entity=MockEntity),
-    # Modules that can be simple MagicMock instances
-    "homeassistant.config_entries": MagicMock(),
-    "homeassistant.const": MagicMock(),
-    "homeassistant.core": MagicMock(),
-    "homeassistant.exceptions": MagicMock(),
-    "homeassistant.helpers": MagicMock(),
-    "homeassistant.helpers.aiohttp_client": MagicMock(),
-    "homeassistant.helpers.device_registry": MagicMock(),
-    "homeassistant.helpers.entity_platform": MagicMock(),
-    "homeassistant.components.webhook": MagicMock(),
-}
-
-for module, mock_obj in MOCK_MODULES.items():
-    sys.modules[module] = mock_obj
-
 
 import pytest
 
