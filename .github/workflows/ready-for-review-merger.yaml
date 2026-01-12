@@ -155,5 +155,14 @@ jobs:
 
           PR #$PR_NUMBER merged into beta. Issue resolved."
 
+          # Clean up all agent/workflow labels before closing
+          gh issue edit "$ISSUE_NUM" \
+            --repo "${{ github.repository }}" \
+            --remove-label "in-progress" \
+            --remove-label "pr-pending" \
+            --remove-label "cursor-working" \
+            --remove-label "cursor-reviewing" \
+            --remove-label "jules-working" 2>/dev/null || true
+
           # Close issue if not already closed
           gh issue close "$ISSUE_NUM" --repo "${{ github.repository }}" 2>/dev/null || true

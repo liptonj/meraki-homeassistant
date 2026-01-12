@@ -39,7 +39,7 @@ jobs:
             --repo "${{ github.repository }}" \
             --head "$HEAD_BRANCH" \
             --state open \
-            --json number,title,body,author,headRefName,comments \
+            --json number,title,body,author,headRefName,comments,labels \
             --limit 1)
 
           PR_NUMBER=$(echo "$PR_JSON" | jq -r '.[0].number // empty')
@@ -54,8 +54,16 @@ jobs:
           PR_AUTHOR=$(echo "$PR_JSON" | jq -r '.[0].author.login // empty')
           PR_BODY=$(echo "$PR_JSON" | jq -r '.[0].body // empty')
           PR_HEAD_REF=$(echo "$PR_JSON" | jq -r '.[0].headRefName // empty')
+          PR_LABELS=$(echo "$PR_JSON" | jq -r '[.[0].labels[].name] | join(" ")' 2>/dev/null || echo "")
 
-          echo "Found PR #$PR_NUMBER by $PR_AUTHOR"
+          echo "Found PR #$PR_NUMBER by $PR_AUTHOR (labels: $PR_LABELS)"
+
+          # Skip if Cursor is already working on this PR
+          if echo "$PR_LABELS" | grep -q "cursor-working"; then
+            echo "⏭️ Cursor already working on PR #$PR_NUMBER, skipping to avoid duplicate"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           # Check if this is a Jules PR
           if [[ "$PR_AUTHOR" != *"jules"* && "$PR_AUTHOR" != "github-actions[bot]" ]]; then
@@ -128,7 +136,9 @@ jobs:
           ---
           *Escalated by Cursor Code Review workflow*"
 
-          gh pr edit ${{ steps.pr.outputs.pr_number }} --add-label "needs-human-review"
+          gh pr edit ${{ steps.pr.outputs.pr_number }} \
+            --remove-label "cursor-working" \
+            --add-label "needs-human-review" 2>/dev/null || true
 
           # Comment on Issue
           if [[ -n "${{ steps.pr.outputs.issue_number }}" ]]; then
@@ -179,7 +189,9 @@ jobs:
           ---
           *Verified by Cursor Code Review workflow*"
 
-          gh pr edit ${{ steps.pr.outputs.number }} --add-label "cursor-approved" 2>/dev/null || true
+          gh pr edit ${{ steps.pr.outputs.number }} \
+            --remove-label "cursor-working" \
+            --add-label "cursor-approved" 2>/dev/null || true
 
           # Comment on Issue
           if [[ -n "${{ steps.pr.outputs.issue_number }}" ]]; then
@@ -274,6 +286,16 @@ jobs:
           gh issue comment ${{ steps.pr.outputs.issue_number }} \
             --repo "${{ github.repository }}" \
             --body "$COMMENT"
+
+      - name: Add cursor-working label
+        if: steps.pr.outputs.skip != 'true' && steps.pr.outputs.review_mode != 'final_verification'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Add cursor-working label to prevent duplicate agents
+          gh pr edit ${{ steps.pr.outputs.number }} \
+            --repo "${{ github.repository }}" \
+            --add-label "cursor-working" 2>/dev/null || true
 
       - name: Launch Cursor Agent
         id: cursor
