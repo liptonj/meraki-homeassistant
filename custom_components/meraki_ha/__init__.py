@@ -539,10 +539,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await async_register_panel(hass, entry)
 
     # Register custom cards
-    hass.http.register_static_path(  # type: ignore[attr-defined]
-        "/meraki_cards",
-        hass.config.path("custom_components/meraki_ha/www/cards"),
-        cache_headers=False,
+    from homeassistant.components.http import StaticPathConfig
+
+    await hass.http.async_register_static_paths(
+        [
+            StaticPathConfig(
+                url_path="/meraki_cards",
+                path=hass.config.path("custom_components/meraki_ha/www/cards"),
+                cache_headers=False,
+            )
+        ]
     )
 
     async_setup_api(hass)

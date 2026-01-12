@@ -25,6 +25,7 @@ def mock_hass() -> MagicMock:
     hass.config_entries.async_forward_entry_setups = AsyncMock()
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
     hass.states = MagicMock()
+    hass.http = AsyncMock()
     return hass
 
 
@@ -79,6 +80,7 @@ async def test_async_setup_entry_success(
             "custom_components.meraki_ha.meraki_data_coordinator.MerakiDataCoordinator",
             return_value=mock_coordinator,
         ),
+        patch("homeassistant.core.HomeAssistant.http", new_callable=AsyncMock),
         patch(
             "custom_components.meraki_ha.MerakiRepository",
         ),
