@@ -1,4 +1,23 @@
 """Global fixtures for meraki_ha integration."""
+import sys
+from unittest.mock import MagicMock
+
+# Mock the homeassistant modules to prevent ImportError
+MOCK_MODULES = [
+    "homeassistant.config_entries",
+    "homeassistant.const",
+    "homeassistant.core",
+    "homeassistant.exceptions",
+    "homeassistant.helpers",
+    "homeassistant.helpers.aiohttp_client",
+    "homeassistant.helpers.device_registry",
+    "homeassistant.helpers.entity",
+    "homeassistant.helpers.entity_platform",
+    "homeassistant.helpers.update_coordinator",
+    "homeassistant.components.webhook",
+]
+for module in MOCK_MODULES:
+    sys.modules[module] = MagicMock()
 
 from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock
