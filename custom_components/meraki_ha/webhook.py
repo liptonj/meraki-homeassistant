@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
@@ -344,6 +345,9 @@ async def _route_by_alert_type(
     - Security: rogue AP, intrusion, malware
     - Sensor: temperature, humidity, water, door, power thresholds
     """
+    # Track processing start time for metrics
+    start_time = datetime.now()
+
     # Mark that we received a valid webhook - enables polling reduction
     # Also handles deduplication via alertId
     alert_id = data.get("alertId")
@@ -351,6 +355,11 @@ async def _route_by_alert_type(
     if not is_new:
         # This is a duplicate alert, skip processing
         return
+
+    # Track webhook count by alert type (for metrics)
+    webhook_counts = getattr(coordinator, "_webhook_counts_by_type", {})
+    webhook_counts[alert_type] = webhook_counts.get(alert_type, 0) + 1
+    coordinator._webhook_counts_by_type = webhook_counts
 
     alert_lower = alert_type.lower()
 
@@ -412,6 +421,15 @@ async def _route_by_alert_type(
 
     else:
         _LOGGER_ALERTS.debug("No handler for webhook alert type: %s", alert_type)
+
+    # Track processing duration for metrics
+    duration_ms = (datetime.now() - start_time).total_seconds() * 1000
+    durations = getattr(coordinator, "_webhook_processing_durations", [])
+    durations.append(duration_ms)
+    # Keep only last 1000 samples to avoid memory growth
+    if len(durations) > 1000:
+        durations = durations[-1000:]
+    coordinator._webhook_processing_durations = durations
 
 
 async def async_handle_webhook(

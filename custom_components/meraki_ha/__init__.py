@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import secrets
+from collections.abc import Awaitable, Callable
 from datetime import timedelta
+from typing import Any
 
 from homeassistant.components import webhook as ha_webhook
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryNotReady
 
 from .api.websocket import async_setup_websocket_api
 from .const import (
@@ -75,17 +76,19 @@ async_register_webhook = (
 )
 
 
-def _create_scanning_api_handler(config_entry_id: str):
+def _create_scanning_api_handler(
+    config_entry_id: str,
+) -> Callable[[HomeAssistant, str, Any], Awaitable[Any]]:
     """Create a webhook handler closure for the Scanning API.
 
     This creates a handler function that captures the config_entry_id,
     allowing proper routing of webhook requests to the correct integration instance.
     """
-    from aiohttp import web
+    from aiohttp import web  # pylint: disable=import-outside-toplevel
 
     async def handler(
         hass: HomeAssistant,
-        webhook_id: str,
+        _webhook_id: str,  # Required by HA webhook API, not used here
         request: web.Request,
     ) -> web.Response:
         """Handle incoming Scanning API webhook requests."""
@@ -101,9 +104,13 @@ def _register_organization_device(
     org_name: str,
 ) -> None:
     """Register the organization device as the top-level hub."""
+    # pylint: disable=import-outside-toplevel
+    # Deferred imports to avoid blocking startup
     from homeassistant.helpers import device_registry as dr
 
     from .const import DOMAIN
+
+    # pylint: enable=import-outside-toplevel
 
     try:
         device_registry = dr.async_get(hass)
@@ -142,11 +149,14 @@ def _cleanup_orphaned_devices(
         Used to identify client devices that are actually Meraki hardware.
 
     """
+    # Deferred imports to avoid blocking startup
+    # pylint: disable=import-outside-toplevel
     from homeassistant.helpers import device_registry as dr
     from homeassistant.helpers import entity_registry as er
     from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 
     from .const import DOMAIN
+    # pylint: enable=import-outside-toplevel
 
     try:
         device_registry = dr.async_get(hass)
@@ -271,6 +281,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry_data = hass.data.setdefault(DOMAIN, {}).setdefault(entry.entry_id, {})
 
     # Apply user-configured log levels for feature loggers
+    # pylint: disable-next=import-outside-toplevel
     from .helpers.logging_helper import apply_log_levels
 
     apply_log_levels(dict(entry.options))
@@ -299,6 +310,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         scan_interval = DEFAULT_SCAN_INTERVAL
 
     if "coordinator" not in entry_data:
+        # pylint: disable-next=import-outside-toplevel
         from .meraki_data_coordinator import MerakiDataCoordinator
 
         entry_data["coordinator"] = MerakiDataCoordinator(
@@ -306,10 +318,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             api_client=api_client,
             entry=entry,
         )
-        try:
-            await entry_data["coordinator"].async_config_entry_first_refresh()
-        except ConfigEntryNotReady:
-            raise
+        # Let ConfigEntryNotReady propagate to signal HA to retry setup
+        await entry_data["coordinator"].async_config_entry_first_refresh()
     else:
         entry_data["coordinator"].update_interval = timedelta(seconds=scan_interval)
         await entry_data["coordinator"].async_refresh()
@@ -469,13 +479,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DOMAIN, "create_timed_access", handle_create_timed_access
     )
 
-    async def async_sync_client_names(call: ServiceCall) -> None:
+    async def async_sync_client_names(_call: ServiceCall) -> None:
         """Service call to sync client names from HA to Meraki Dashboard.
 
         This finds all Meraki clients that have matching Home Assistant devices
         (by MAC address) and updates their names in the Meraki Dashboard to
         match the HA device names.
         """
+        # pylint: disable-next=import-outside-toplevel
         from .helpers.sync_helper import get_sync_candidates
 
         if not coordinator.data or "clients" not in coordinator.data:
@@ -513,7 +524,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         len(network_clients),
                         network_id,
                     )
-                except Exception as e:
+                except (TimeoutError, OSError) as e:
                     _LOGGER.error(
                         "Failed to sync clients to network %s: %s", network_id, e
                     )

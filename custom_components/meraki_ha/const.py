@@ -196,6 +196,14 @@ WEBHOOK_DEVICE_SCAN_INTERVAL: Final = 3600  # 1 hour
 WEBHOOK_CLIENT_SCAN_INTERVAL: Final = 600  # 10 minutes
 WEBHOOK_SSID_SCAN_INTERVAL: Final = 3600  # 1 hour
 
+# Entity chunking configuration (performance tuning)
+# These control how entities are registered in batches to avoid overwhelming HA
+ENTITY_CHUNK_SIZE: Final = 50
+"""Number of entities to register per chunk."""
+
+ENTITY_CHUNK_DELAY: Final = 0.5
+"""Delay in seconds between entity chunks (reduced from 1.0 for better performance)."""
+
 
 # Defaults for new options
 DEFAULT_ENABLE_DEVICE_STATUS: Final = True

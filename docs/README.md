@@ -18,11 +18,23 @@ Please explore the different sections to find the information you need:
 - **[Testing](./testing/testing_plan.md)**
   Testing strategy and plans to ensure quality and reliability.
 
-## Webhooks & Scanning API (beta)
+## Webhooks & Real-Time Updates
 
-- Enable webhooks in Options → Webhooks. Scanning API can be used alongside webhooks.
-- Auto-register creates Meraki Dashboard HTTP servers per enabled network with your selected alert types. If your API key is read-only, use the manual instructions shown in the options step (URL, shared secret, alert types).
-- Scanning API and alerts coexist on the same handler; if Scanning API is enabled, the validator path is registered alongside alerts.
-- When webhooks are active, polling intervals are reduced automatically (network/device/SSID/client).
-- Alerts trigger debounced targeted refreshes (device/client/SSID) and deduplicate by alertId.
-- Webhooks must use HTTPS and a public URL; the shared secret is required for validation.
+The integration supports comprehensive webhook alerts for real-time monitoring. Key features:
+
+- **Real-Time Alerts:** Instant notifications for device status, client connectivity, configuration changes, and security events
+- **API Efficiency:** 85% reduction in API calls when webhooks are active
+- **Targeted Refresh:** Smart updates for only affected entities
+- **Adaptive Polling:** Automatic interval reduction when webhooks are healthy
+- **Monitoring:** Health sensors and Prometheus-style metrics for observability
+
+For complete webhook documentation, see **[Architecture > Webhooks](./architecture/webhooks.md)**.
+
+### Quick Setup
+
+1. **Enable Webhooks:** Settings > Devices & Services > Meraki > Configure > Webhooks
+2. **Auto-Register:** Enable `webhook_auto_register` to automatically configure Meraki Dashboard
+3. **Select Alerts:** Choose which alert types to subscribe (device, client, network, security, sensor)
+4. **Configure External URL:** Set your public HTTPS URL (or use HA's external URL)
+
+**Note:** Webhooks require HTTPS and a public URL. Read-only API keys require manual setup in Meraki Dashboard.

@@ -1,4 +1,5 @@
 """Data update coordinator for the Meraki HA integration."""
+# pylint: disable=too-many-lines
 
 import asyncio
 from datetime import datetime, timedelta
@@ -6,9 +7,6 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import device_registry as dr
-
-if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -39,6 +37,9 @@ from .core.api.client import MerakiAPIClient as ApiClient
 from .core.errors import ApiClientCommunicationError
 from .helpers.logging_helper import MerakiLoggers
 from .types import MerakiDevice, MerakiNetwork
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
 
 # Use feature-specific logger - can be configured independently via:
 # logger:
@@ -99,6 +100,13 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Event deduplication: track recently processed alert IDs
         self._processed_alert_ids: dict[str, datetime] = {}  # alertId -> processed time
         self._alert_dedup_ttl_seconds: int = 300  # 5 minutes TTL for dedup cache
+
+        # Prometheus-style metrics for monitoring
+        self._webhook_counts_by_type: dict[str, int] = {}  # alert_type -> count
+        self._webhook_processing_durations: list[float] = []  # milliseconds
+        self._targeted_refresh_counts_by_type: dict[str, int] = {}  # type -> count
+        self._targeted_refresh_success_count: int = 0
+        self._targeted_refresh_failure_count: int = 0
 
         # Set a short update interval for the coordinator to run frequently
         super().__init__(
@@ -1443,6 +1451,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     ) -> None:
         """Fetch single client details after a webhook alert."""
         await asyncio.sleep(delay)
+
+        # Track metrics
+        self._increment_targeted_refresh_count("client")
+
         try:
             client = await self.api.network.get_network_client(network_id, client_mac)
             if client:
@@ -1455,11 +1467,14 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             _LOGGER.info(
                                 "Targeted refresh successful for client %s", client_mac
                             )
+                            self._targeted_refresh_success_count += 1
                             return
-        except Exception as e:
+            self._targeted_refresh_success_count += 1
+        except (ApiClientCommunicationError, TimeoutError, OSError) as e:
             _LOGGER.error(
                 "Error during targeted client refresh for %s: %s", client_mac, e
             )
+            self._targeted_refresh_failure_count += 1
 
     async def _targeted_device_refresh(
         self,
@@ -1468,6 +1483,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     ) -> None:
         """Fetch single device details after a webhook alert."""
         await asyncio.sleep(delay)
+
+        # Track metrics
+        self._increment_targeted_refresh_count("device")
+
         try:
             device = await self.api.devices.get_device(serial)
             if device:
@@ -1480,9 +1499,12 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             _LOGGER.info(
                                 "Targeted refresh successful for device %s", serial
                             )
+                            self._targeted_refresh_success_count += 1
                             return
-        except Exception as e:
+            self._targeted_refresh_success_count += 1
+        except (ApiClientCommunicationError, TimeoutError, OSError) as e:
             _LOGGER.error("Error during targeted device refresh for %s: %s", serial, e)
+            self._targeted_refresh_failure_count += 1
 
     async def _targeted_ssid_refresh(
         self,
@@ -1491,8 +1513,12 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     ) -> None:
         """Fetch SSIDs for a network after a settings change webhook alert."""
         await asyncio.sleep(delay)
+
+        # Track metrics
+        self._increment_targeted_refresh_count("ssid")
+
         try:
-            ssids = await self.api.wireless.get_wireless_ssids(network_id)
+            ssids = await self.api.wireless.get_network_ssids(network_id)
             if ssids:
                 # Update SSIDs in the coordinator data
                 if self.data and "ssids" in self.data:
@@ -1507,10 +1533,12 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     _LOGGER.info(
                         "Targeted SSID refresh successful for network %s", network_id
                     )
-        except Exception as e:
+            self._targeted_refresh_success_count += 1
+        except (ApiClientCommunicationError, TimeoutError, OSError) as e:
             _LOGGER.error(
                 "Error during targeted SSID refresh for network %s: %s", network_id, e
             )
+            self._targeted_refresh_failure_count += 1
 
     async def _targeted_network_refresh(
         self,
@@ -1519,6 +1547,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     ) -> None:
         """Fetch network details after a settings change webhook alert."""
         await asyncio.sleep(delay)
+
+        # Track metrics
+        self._increment_targeted_refresh_count("network")
+
         try:
             # Re-fetch the network's data
             networks = await self.api.organization.get_organization_networks()
@@ -1535,11 +1567,26 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                                         "Targeted network refresh successful for %s",
                                         network_id,
                                     )
+                                    self._targeted_refresh_success_count += 1
                                     return
-        except Exception as e:
+            self._targeted_refresh_success_count += 1
+        except (ApiClientCommunicationError, TimeoutError, OSError) as e:
             _LOGGER.error(
                 "Error during targeted network refresh for %s: %s", network_id, e
             )
+            self._targeted_refresh_failure_count += 1
+
+    def _increment_targeted_refresh_count(self, refresh_type: str) -> None:
+        """Increment the targeted refresh counter for a specific type.
+
+        Args:
+        ----
+            refresh_type: Type of refresh (device, client, network, ssid).
+
+        """
+        counts = getattr(self, "_targeted_refresh_counts_by_type", {})
+        counts[refresh_type] = counts.get(refresh_type, 0) + 1
+        self._targeted_refresh_counts_by_type = counts
 
     def _update_device_status_immediate(self, serial: str, is_online: bool) -> None:
         """Update device status in coordinator data without an API call."""
