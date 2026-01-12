@@ -79,6 +79,7 @@ jobs:
               --remove-label "ready-for-review" \
               --remove-label "cursor-reviewed" \
               --remove-label "cursor-reviewing" \
+              --remove-label "cursor-working" \
               --remove-label "in-progress" \
               --add-label "released-beta" 2>/dev/null || true
 

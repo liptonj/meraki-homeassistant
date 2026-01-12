@@ -193,6 +193,7 @@ jobs:
               gh pr edit "$JULES_PR" \
                 --repo "${{ github.repository }}" \
                 --remove-label "cursor-reviewing" \
+                --remove-label "cursor-working" \
                 --add-label "cursor-reviewed" \
                 --add-label "ready-for-review" 2>/dev/null || true
 
@@ -417,6 +418,7 @@ jobs:
             gh pr edit "$PR_NUMBER" \
               --repo "${{ github.repository }}" \
               --remove-label "cursor-reviewing" \
+              --remove-label "cursor-working" \
               --add-label "needs-human-review" 2>/dev/null || true
 
             if [[ -n "$ISSUE_NUM" ]]; then
@@ -439,7 +441,19 @@ jobs:
 
           # Both handoff and cursor-review/* branches need to invoke Cursor
           else
+            # Check if Cursor is already working on this PR
+            LABELS=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json labels -q '.labels[].name' 2>/dev/null || echo "")
+            if echo "$LABELS" | grep -q "cursor-working"; then
+              echo "⏭️ Cursor already working on PR #$PR_NUMBER, skipping to avoid duplicate agent"
+              exit 0
+            fi
+
             echo "🔄 Invoking Cursor to fix (attempt $((FIX_ATTEMPTS + 1)), handoff=$IS_HANDOFF)"
+
+            # Add cursor-working label to prevent duplicates
+            gh pr edit "$PR_NUMBER" \
+              --repo "${{ github.repository }}" \
+              --add-label "cursor-working" 2>/dev/null || true
 
             # Comment on PR
             gh pr comment "$PR_NUMBER" \

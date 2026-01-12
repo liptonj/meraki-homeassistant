@@ -42,7 +42,30 @@ jobs:
       github.event_name == 'repository_dispatch'
     # Inherits permissions from workflow level
     steps:
+      - name: Check if Cursor already working
+        id: check-cursor
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get PR number from either event type
+          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            PR_NUM="${{ github.event.client_payload.pr_number }}"
+          else
+            PR_NUM="${{ github.event.pull_request.number }}"
+          fi
+
+          # Check if cursor-working label already exists
+          LABELS=$(gh pr view "$PR_NUM" --repo "${{ github.repository }}" --json labels -q '.labels[].name' 2>/dev/null || echo "")
+
+          if echo "$LABELS" | grep -q "cursor-working"; then
+            echo "Cursor agent already working on PR #$PR_NUM, skipping to avoid duplicate"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Gather context from Jules
+        if: steps.check-cursor.outputs.skip != 'true'
         id: context
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -140,16 +163,18 @@ jobs:
           *Cursor handoff initiated*"
 
       - name: Update labels
+        if: steps.check-cursor.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr edit ${{ steps.context.outputs.pr_number }} \
             --repo "${{ github.repository }}" \
             --remove-label "jules-needs-help" \
-            --add-label "cursor-reviewing" 2>/dev/null || true
+            --add-label "cursor-reviewing" \
+            --add-label "cursor-working" 2>/dev/null || true
 
       - name: Update issue with handoff status
-        if: steps.context.outputs.issue_number != ''
+        if: steps.check-cursor.outputs.skip != 'true' && steps.context.outputs.issue_number != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -162,6 +187,7 @@ jobs:
           Cursor will provide detailed updates."
 
       - name: Invoke Cursor to take over
+        if: steps.check-cursor.outputs.skip != 'true'
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           GH_PAT: ${{ secrets.GH_PAT }}
@@ -343,4 +369,5 @@ jobs:
           gh pr edit "$PR_NUM" \
             --repo "${{ github.repository }}" \
             --remove-label "cursor-reviewing" \
+            --remove-label "cursor-working" \
             --add-label "needs-human-review" 2>/dev/null || true

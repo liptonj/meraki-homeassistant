@@ -167,7 +167,21 @@ jobs:
 
           # Read all PRs that need Cursor help
           while IFS= read -r PR_NUMBER && IFS= read -r HEAD_BRANCH <&3 && IFS= read -r BASE_BRANCH <&4 && IFS= read -r CONFLICT_FILES <&5; do
-            echo "=== Invoking Cursor for PR #$PR_NUMBER ==="
+            echo "=== Checking PR #$PR_NUMBER ==="
+
+            # Check if Cursor is already working on this PR
+            LABELS=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json labels -q '.labels[].name' 2>/dev/null || echo "")
+            if echo "$LABELS" | grep -q "cursor-working"; then
+              echo "⏭️ Cursor already working on PR #$PR_NUMBER, skipping"
+              continue
+            fi
+
+            echo "Invoking Cursor for PR #$PR_NUMBER"
+
+            # Add cursor-working label to prevent duplicates
+            gh pr edit "$PR_NUMBER" \
+              --repo "${{ github.repository }}" \
+              --add-label "cursor-working" 2>/dev/null || true
 
             # Comment on PR
             gh pr comment "$PR_NUMBER" \
