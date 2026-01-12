@@ -244,7 +244,7 @@ def _find_existing_device(
     return None
 
 
-class MerakiClientSensorBase(CoordinatorEntity, SensorEntity):
+class MerakiClientSensorBase(SensorEntity, CoordinatorEntity):
     """Base class for Meraki client sensor entities.
 
     Provides common functionality for linking sensors to the appropriate
