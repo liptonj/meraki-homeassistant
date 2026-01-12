@@ -3,16 +3,52 @@
 import sys
 from unittest.mock import MagicMock
 
-# Mock the Home Assistant modules to prevent import errors in tests
+# -- START Metaclass Conflict Fix --
+# The original code mocked entire Home Assistant modules with a single MagicMock
+# instance. This causes a `TypeError: metaclass conflict` when a class in the
+# integration inherits from two different Home Assistant base classes (e.g.,
+# SensorEntity and CoordinatorEntity), because both base classes resolve to
+# MagicMock instances, which have incompatible metaclasses for multiple inheritance.
+#
+# The solution is to create mock *classes* with a shared, compatible base class
+# and then inject them into the mocked modules. This ensures that the base
+# classes are actual types, allowing Python's multiple inheritance to work
+# correctly during test collection.
+
+
+# 1. Define mock classes with a compatible inheritance structure.
+class MockEntity:
+    """Mock base class for HA entities to resolve metaclass conflicts."""
+
+    pass
+
+
+class MockSensorEntity(MockEntity):
+    """Mock SensorEntity that inherits from the common mock base."""
+
+    pass
+
+
+class MockCoordinatorEntity:
+    """Mock CoordinatorEntity. It's a mixin, so it doesn't need the base."""
+
+    def __init__(self, coordinator):
+        """Init."""
+        self.coordinator = coordinator
+
+
+# 2. Mock the modules, but then assign the mock classes to them.
 MOCK_MODULES = [
     "homeassistant",
     "homeassistant.components",
     "homeassistant.components.http",
     "homeassistant.components.http.view",
+    "homeassistant.components.sensor",  # Add sensor component
     "homeassistant.components.webhook",
     "homeassistant.config_entries",
     "homeassistant.const",
     "homeassistant.core",
+    "homeassistant.exceptions",
     "homeassistant.helpers",
     "homeassistant.helpers.aiohttp_client",
     "homeassistant.helpers.device_registry",
@@ -22,10 +58,18 @@ MOCK_MODULES = [
     "homeassistant.helpers.storage",
     "homeassistant.helpers.typing",
     "homeassistant.helpers.update_coordinator",
-    "homeassistant.exceptions",
 ]
 for module in MOCK_MODULES:
     sys.modules[module] = MagicMock()
+
+# 3. Inject the mock classes into the mocked modules.
+sys.modules["homeassistant.helpers.entity"].Entity = MockEntity  # type: ignore[attr-defined]
+sys.modules["homeassistant.components.sensor"].SensorEntity = MockSensorEntity  # type: ignore[attr-defined]
+sys.modules[
+    "homeassistant.helpers.update_coordinator"
+].CoordinatorEntity = MockCoordinatorEntity  # type: ignore[attr-defined]
+
+# -- END Metaclass Conflict Fix --
 
 from collections.abc import Generator  # noqa: E402
 from unittest.mock import AsyncMock, MagicMock  # noqa: E402
