@@ -20,8 +20,7 @@ def mock_config_entry() -> ConfigEntry:
 @pytest.fixture
 def mock_options_flow(mock_config_entry: ConfigEntry) -> MerakiOptionsFlowHandler:
     """Fixture for a MerakiOptionsFlowHandler."""
-    flow = MerakiOptionsFlowHandler()
-    flow.config_entry = mock_config_entry
+    flow = MerakiOptionsFlowHandler(mock_config_entry)
     flow.hass = MagicMock(spec=HomeAssistant)
     return flow
 

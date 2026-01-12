@@ -19,22 +19,16 @@ def create_options_flow_handler(
     hass: MagicMock | None = None,
     entry_id: str = "test_entry_id",
 ) -> MerakiOptionsFlowHandler:
-    """Create an options flow handler with mocked config entry.
-
-    This helper simulates how Home Assistant sets up the options flow:
-    1. Creates the handler without passing config_entry
-    2. Sets up hass and handler properties as the framework would
-    3. Mocks config_entry property to return a mock with the given options
-    """
+    """Create an options flow handler with mocked config entry."""
     if options is None:
         options = {"scan_interval": 30}
-
-    handler = MerakiOptionsFlowHandler()
 
     # Create mock config entry
     mock_entry = MagicMock()
     mock_entry.entry_id = entry_id
     mock_entry.options = options
+
+    handler = MerakiOptionsFlowHandler(mock_entry)
 
     # Set up hass mock if not provided
     if hass is None:
@@ -54,18 +48,7 @@ def create_options_flow_handler(
                 }
             }
         }
-        # Mock config_entries.async_get_known_entry to return our mock entry
-        hass.config_entries.async_get_known_entry.return_value = mock_entry
-
     handler.hass = hass
-
-    # Set the handler property (this is what the framework sets - it's the entry ID)
-    handler.handler = entry_id
-
-    # Mock the config_entry property to return our mock
-    # We need to patch it on the instance
-    handler._config_entry = mock_entry
-
     return handler
 
 
@@ -99,15 +82,6 @@ def mock_hass_with_coordinator() -> MagicMock:
         }
     }
     return hass
-
-
-def test_options_flow_init() -> None:
-    """Test options flow initialization with the new pattern."""
-    handler = MerakiOptionsFlowHandler()
-
-    # Initially options should be empty (lazy loading)
-    assert handler._options == {}
-    assert handler._options_initialized is False
 
 
 def test_options_flow_init_with_config_entry() -> None:
@@ -505,10 +479,8 @@ async def test_network_selection_with_empty_coordinator_data() -> None:
     }
     hass.config_entries.async_get_known_entry.return_value = mock_entry
 
-    handler = MerakiOptionsFlowHandler()
+    handler = MerakiOptionsFlowHandler(mock_entry)
     handler.hass = hass
-    handler.handler = "test_entry_id"
-    handler._config_entry = mock_entry
 
     result: ConfigFlowResult = await handler.async_step_network_selection()
 
@@ -516,37 +488,12 @@ async def test_network_selection_with_empty_coordinator_data() -> None:
     assert result["step_id"] == "network_selection"
 
 
-# --- Tests for async_get_options_flow ---
-
-
-def test_async_get_options_flow_returns_handler() -> None:
-    """Test that async_get_options_flow returns a MerakiOptionsFlowHandler."""
-    from custom_components.meraki_ha.config_flow import MerakiConfigFlow
-
-    mock_entry = MagicMock()
-    mock_entry.entry_id = "test_entry_id"
-    mock_entry.options = {"scan_interval": 30}
-
-    handler = MerakiConfigFlow.async_get_options_flow(mock_entry)
-
-    assert isinstance(handler, MerakiOptionsFlowHandler)
-    # Verify it was created without passing config_entry
-    assert handler._options == {}
-    assert handler._options_initialized is False
-
-
 # --- Integration test that simulates real HA behavior ---
 
 
 @pytest.mark.asyncio
 async def test_options_flow_simulates_real_ha_behavior() -> None:
-    """Test that options flow works when set up like HA does.
-
-    This test simulates the actual HA flow:
-    1. async_get_options_flow() is called with config_entry
-    2. Framework sets flow.hass and flow.handler after creation
-    3. async_step_init is called
-    """
+    """Test that options flow works when set up like HA does."""
     from custom_components.meraki_ha.config_flow import MerakiConfigFlow
 
     # Step 1: Create mock config entry
@@ -568,13 +515,7 @@ async def test_options_flow_simulates_real_ha_behavior() -> None:
             }
         }
     }
-    mock_hass.config_entries.async_get_known_entry.return_value = mock_entry
-
     handler.hass = mock_hass
-    handler.handler = "test_entry_id"
-    # In real HA, the config_entry property uses handler to look up the entry
-    # For testing, we set _config_entry directly
-    handler._config_entry = mock_entry
 
     # Step 4: Now the flow should work
     result = await handler.async_step_init()
