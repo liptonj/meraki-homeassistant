@@ -330,34 +330,9 @@ async def async_handle_webhook(
         return web.Response(status=500)
 
     alert_type = data.get("alertType")
-    if alert_type == "APs went down":
-        device_serial = data.get("deviceSerial")
-        if device_serial and coordinator.data:
-            for i, device in enumerate(coordinator.data.get("devices", [])):
-                if device.get("serial") == device_serial:
-                    _LOGGER_ALERTS.info(
-                        "Device %s reported as down via webhook",
-                        device_serial,
-                    )
-                    coordinator.data["devices"][i]["status"] = "offline"
-                    coordinator.async_update_listeners()
-                    break
-    elif alert_type == "Client connectivity changed":
-        alert_data = data.get("alertData", {})
-        client_mac = alert_data.get("mac")
-        if client_mac and coordinator.data:
-            for i, client in enumerate(coordinator.data.get("clients", [])):
-                if client.get("mac") == client_mac:
-                    _LOGGER_ALERTS.info(
-                        "Client %s connectivity changed via webhook",
-                        client_mac,
-                    )
-                    coordinator.data["clients"][i]["status"] = (
-                        "Online" if alert_data.get("connected") else "Offline"
-                    )
-                    coordinator.async_update_listeners()
-                    break
+    if alert_type:
+        await coordinator.async_handle_webhook_alert(alert_type, data)
     else:
-        _LOGGER_ALERTS.debug("Ignoring webhook alert type: %s", alert_type)
+        _LOGGER_ALERTS.debug("Ignoring webhook with no alert type")
 
     return web.Response(status=200)

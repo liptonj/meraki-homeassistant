@@ -39,3 +39,14 @@ create_timed_access:
       description: The ID of an existing Meraki Group Policy to apply.
       selector:
         text:
+
+sync_client_names:
+  name: Sync Client Names to Meraki
+  description: Pushes Home Assistant device names to the Meraki Dashboard for easier client identification.
+  fields:
+    network_id:
+      name: Network ID
+      description: The ID of the Meraki network to sync clients for. If omitted, all networks will be synced.
+      required: false
+      selector:
+        text:

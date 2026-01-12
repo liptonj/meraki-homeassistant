@@ -26,10 +26,12 @@ from .const import (
 )
 from .schemas import (
     SCHEMA_CAMERA,
+    SCHEMA_DATA_SYNC,
     SCHEMA_DISPLAY_PREFERENCES,
     SCHEMA_LOGGING,
     SCHEMA_NETWORK_SELECTION,
     SCHEMA_POLLING,
+    SCHEMA_WEBHOOKS,
 )
 
 
@@ -82,6 +84,8 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             menu_options=[
                 "network_selection",
                 "polling",
+                "webhooks",
+                "data_sync",
                 "camera",
                 "mqtt",
                 "scanning_api",
@@ -89,6 +93,98 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                 "notifications",
                 "logging",
             ],
+        )
+
+    async def async_step_webhooks(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle webhooks settings."""
+        from .const import (
+            CONF_WEBHOOK_ALERT_TYPES,
+            CONF_WEBHOOK_AUTO_REGISTER,
+            CONF_WEBHOOK_EXTERNAL_URL,
+            CONF_WEBHOOK_SHARED_SECRET,
+            DEFAULT_WEBHOOK_ALERT_TYPES,
+            DEFAULT_WEBHOOK_AUTO_REGISTER,
+            DEFAULT_WEBHOOK_EXTERNAL_URL,
+        )
+        from .core.errors import MerakiConnectionError
+        from .webhook import get_webhook_url
+        from .webhook_manager import WebhookManager
+
+        if user_input is not None:
+            self.options.update(user_input)
+            if self.options.get(
+                CONF_WEBHOOK_AUTO_REGISTER, DEFAULT_WEBHOOK_AUTO_REGISTER
+            ):
+                api_client = self.hass.data[DOMAIN][self.config_entry.entry_id][
+                    "client"
+                ]
+                for network in self.hass.data[DOMAIN][self.config_entry.entry_id][
+                    "coordinator"
+                ].data.get("networks", []):
+                    manager = WebhookManager(self.hass, api_client, network["id"])
+                    await manager.async_register_webhooks(
+                        get_webhook_url(self.hass, self.config_entry.entry_id),
+                        self.options.get(CONF_WEBHOOK_SHARED_SECRET),
+                        self.options.get(
+                            CONF_WEBHOOK_ALERT_TYPES, DEFAULT_WEBHOOK_ALERT_TYPES
+                        ),
+                    )
+            return self.async_create_entry(
+                title=CONF_INTEGRATION_TITLE, data=self.options
+            )
+
+        try:
+            webhook_url = get_webhook_url(
+                self.hass,
+                self.config_entry.entry_id,
+                self.options.get(
+                    CONF_WEBHOOK_EXTERNAL_URL, DEFAULT_WEBHOOK_EXTERNAL_URL
+                ),
+            )
+            webhook_status = "✅ Webhooks active and receiving data"
+        except MerakiConnectionError as e:
+            webhook_url = f"⚠️ {e}"
+            webhook_status = "❌ Webhook URL not reachable"
+
+        shared_secret = self.options.get(CONF_WEBHOOK_SHARED_SECRET, "●●●●●●●●")
+
+        schema_with_defaults = self._populate_schema_defaults(
+            SCHEMA_WEBHOOKS,
+            self.options,
+        )
+
+        return self.async_show_form(
+            step_id="webhooks",
+            data_schema=schema_with_defaults,
+            description_placeholders={
+                "webhook_url": webhook_url,
+                "shared_secret": shared_secret,
+                "webhook_status": webhook_status,
+            },
+        )
+
+    async def async_step_data_sync(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle data sync settings."""
+        if user_input is not None:
+            self.options.update(user_input)
+            return self.async_create_entry(
+                title=CONF_INTEGRATION_TITLE, data=self.options
+            )
+
+        schema_with_defaults = self._populate_schema_defaults(
+            SCHEMA_DATA_SYNC,
+            self.options,
+        )
+
+        return self.async_show_form(
+            step_id="data_sync",
+            data_schema=schema_with_defaults,
         )
 
     async def async_step_scanning_api(

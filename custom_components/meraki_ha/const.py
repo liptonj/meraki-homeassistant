@@ -278,6 +278,41 @@ MERAKI_MQTT_TOPIC_PREFIX: Final = "meraki/v1"
 MERAKI_MQTT_MT_TOPIC_PATTERN: Final = "meraki/v1/mt/#"
 """Topic pattern for MT sensor data."""
 
+# Webhook configuration
+CONF_ENABLE_WEBHOOKS: Final = "enable_webhooks"
+CONF_WEBHOOK_EXTERNAL_URL: Final = "webhook_external_url"
+CONF_WEBHOOK_SHARED_SECRET: Final = "webhook_shared_secret"
+CONF_WEBHOOK_AUTO_REGISTER: Final = "webhook_auto_register"
+CONF_WEBHOOK_ALERT_TYPES: Final = "webhook_alert_types"
+
+# Polling reduction
+CONF_WEBHOOK_POLLING_REDUCTION: Final = "webhook_polling_reduction"
+
+# Bidirectional sync
+CONF_SYNC_NAMES_TO_MERAKI: Final = "sync_names_to_meraki"
+CONF_SYNC_INCLUDE_MODEL: Final = "sync_include_model"
+CONF_SYNC_INCLUDE_VERSION: Final = "sync_include_version"
+CONF_SYNC_ON_NEW_CLIENT: Final = "sync_on_new_client"
+
+# Default values for webhook and sync settings
+DEFAULT_ENABLE_WEBHOOKS: Final = False
+DEFAULT_WEBHOOK_EXTERNAL_URL: Final = ""
+DEFAULT_WEBHOOK_SHARED_SECRET: Final = ""
+DEFAULT_WEBHOOK_AUTO_REGISTER: Final = True
+DEFAULT_WEBHOOK_ALERT_TYPES: Final[list[str]] = []
+DEFAULT_WEBHOOK_POLLING_REDUCTION: Final = True
+DEFAULT_SYNC_NAMES_TO_MERAKI: Final = False
+DEFAULT_SYNC_INCLUDE_MODEL: Final = True
+DEFAULT_SYNC_INCLUDE_VERSION: Final = False
+DEFAULT_SYNC_ON_NEW_CLIENT: Final = True
+
+# Polling intervals when webhooks are active
+WEBHOOK_DEVICE_POLL_INTERVAL: Final = 3600  # 1 hour
+WEBHOOK_CLIENT_POLL_INTERVAL: Final = 600  # 10 minutes
+WEBHOOK_NETWORK_POLL_INTERVAL: Final = 21600  # 6 hours
+WEBHOOK_SSID_POLL_INTERVAL: Final = 3600  # 1 hour
+WEBHOOK_DETAIL_REFRESH_DELAY: Final = 5  # seconds
+
 # Logging Configuration
 CONF_LOG_LEVEL_MQTT: Final = "log_level_mqtt"
 """Configuration key for MQTT log level."""

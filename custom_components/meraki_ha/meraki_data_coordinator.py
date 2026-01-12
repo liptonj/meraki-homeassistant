@@ -1,5 +1,6 @@
 """Data update coordinator for the Meraki HA integration."""
 
+import asyncio
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -17,15 +18,23 @@ from .const import (
     CONF_DASHBOARD_DEVICE_TYPE_FILTER,
     CONF_DEVICE_SCAN_INTERVAL,
     CONF_ENABLE_MQTT,
+    CONF_ENABLE_WEBHOOKS,
     CONF_ENABLED_NETWORKS,
     CONF_NETWORK_SCAN_INTERVAL,
     CONF_SSID_SCAN_INTERVAL,
+    CONF_WEBHOOK_POLLING_REDUCTION,
     DEFAULT_CLIENT_SCAN_INTERVAL,
     DEFAULT_DEVICE_SCAN_INTERVAL,
     DEFAULT_ENABLE_MQTT,
+    DEFAULT_ENABLE_WEBHOOKS,
     DEFAULT_NETWORK_SCAN_INTERVAL,
     DEFAULT_SSID_SCAN_INTERVAL,
+    DEFAULT_WEBHOOK_POLLING_REDUCTION,
     DOMAIN,
+    WEBHOOK_CLIENT_POLL_INTERVAL,
+    WEBHOOK_DEVICE_POLL_INTERVAL,
+    WEBHOOK_NETWORK_POLL_INTERVAL,
+    WEBHOOK_SSID_POLL_INTERVAL,
 )
 from .core.api.client import MerakiAPIClient as ApiClient
 from .core.errors import ApiClientCommunicationError
@@ -78,6 +87,17 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             entry.options.get(CONF_ENABLE_MQTT, DEFAULT_ENABLE_MQTT)
         )
         self._mqtt_last_updates: dict[str, datetime] = {}  # serial -> last MQTT update
+
+        # Webhook-related state
+        self.webhooks_enabled: bool = bool(
+            entry.options.get(CONF_ENABLE_WEBHOOKS, DEFAULT_ENABLE_WEBHOOKS)
+        )
+        self.webhooks_polling_reduction: bool = bool(
+            entry.options.get(
+                CONF_WEBHOOK_POLLING_REDUCTION, DEFAULT_WEBHOOK_POLLING_REDUCTION
+            )
+        )
+        self.last_webhook_received: datetime | None = None
 
         # Set a short update interval for the coordinator to run frequently
         super().__init__(
@@ -840,18 +860,31 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not self.config_entry:
             raise UpdateFailed("Configuration entry not available.")
 
-        network_interval_seconds = self.config_entry.options.get(
-            CONF_NETWORK_SCAN_INTERVAL, DEFAULT_NETWORK_SCAN_INTERVAL
+        webhooks_active = (
+            self.webhooks_enabled
+            and self.webhooks_polling_reduction
+            and self.last_webhook_received is not None
         )
-        device_interval_seconds = self.config_entry.options.get(
-            CONF_DEVICE_SCAN_INTERVAL, DEFAULT_DEVICE_SCAN_INTERVAL
-        )
-        client_interval_seconds = self.config_entry.options.get(
-            CONF_CLIENT_SCAN_INTERVAL, DEFAULT_CLIENT_SCAN_INTERVAL
-        )
-        ssid_interval_seconds = self.config_entry.options.get(
-            CONF_SSID_SCAN_INTERVAL, DEFAULT_SSID_SCAN_INTERVAL
-        )
+
+        if webhooks_active:
+            network_interval_seconds = WEBHOOK_NETWORK_POLL_INTERVAL
+            device_interval_seconds = WEBHOOK_DEVICE_POLL_INTERVAL
+            client_interval_seconds = WEBHOOK_CLIENT_POLL_INTERVAL
+            ssid_interval_seconds = WEBHOOK_SSID_POLL_INTERVAL
+            _LOGGER.debug("Webhooks are active, using reduced polling intervals")
+        else:
+            network_interval_seconds = self.config_entry.options.get(
+                CONF_NETWORK_SCAN_INTERVAL, DEFAULT_NETWORK_SCAN_INTERVAL
+            )
+            device_interval_seconds = self.config_entry.options.get(
+                CONF_DEVICE_SCAN_INTERVAL, DEFAULT_DEVICE_SCAN_INTERVAL
+            )
+            client_interval_seconds = self.config_entry.options.get(
+                CONF_CLIENT_SCAN_INTERVAL, DEFAULT_CLIENT_SCAN_INTERVAL
+            )
+            ssid_interval_seconds = self.config_entry.options.get(
+                CONF_SSID_SCAN_INTERVAL, DEFAULT_SSID_SCAN_INTERVAL
+            )
 
         network_interval = timedelta(seconds=network_interval_seconds)
         device_interval = timedelta(seconds=device_interval_seconds)
@@ -881,6 +914,17 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return self.last_successful_data
 
         try:
+            from .const import CONF_SYNC_ON_NEW_CLIENT, DEFAULT_SYNC_ON_NEW_CLIENT
+
+            if self.config_entry.options.get(
+                CONF_SYNC_ON_NEW_CLIENT, DEFAULT_SYNC_ON_NEW_CLIENT
+            ):
+                existing_clients = {
+                    client["mac"] for client in self.data.get("clients", [])
+                }
+            else:
+                existing_clients = None
+
             enabled_network_ids = self._get_enabled_network_ids()
 
             data = await self.api.get_all_data(
@@ -907,6 +951,55 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._filter_enabled_networks(data)
             self._filter_device_types(data)
             await self._async_remove_disabled_devices(data)
+            if existing_clients is not None:
+                from .const import (
+                    CONF_SYNC_INCLUDE_MODEL,
+                    CONF_SYNC_INCLUDE_VERSION,
+                    DEFAULT_SYNC_INCLUDE_MODEL,
+                    DEFAULT_SYNC_INCLUDE_VERSION,
+                )
+                from .helpers.sync_helper import build_client_description
+
+                new_clients = [
+                    client
+                    for client in data.get("clients", [])
+                    if client["mac"] not in existing_clients
+                ]
+                if new_clients:
+                    _LOGGER.info(f"Found {len(new_clients)} new clients to sync.")
+                    include_model = self.config_entry.options.get(
+                        CONF_SYNC_INCLUDE_MODEL, DEFAULT_SYNC_INCLUDE_MODEL
+                    )
+                    include_version = self.config_entry.options.get(
+                        CONF_SYNC_INCLUDE_VERSION, DEFAULT_SYNC_INCLUDE_VERSION
+                    )
+                    clients_to_update_by_net = {}
+                    for client in new_clients:
+                        description = build_client_description(
+                            self.hass,
+                            client["mac"],
+                            include_model,
+                            include_version,
+                        )
+                        if description:
+                            net_id = client["networkId"]
+                            if net_id not in clients_to_update_by_net:
+                                clients_to_update_by_net[net_id] = []
+                            clients_to_update_by_net[net_id].append(
+                                {"mac": client["mac"], "name": description}
+                            )
+                    for net_id, clients in clients_to_update_by_net.items():
+                        try:
+                            await self.api.network.provision_network_clients(
+                                net_id, clients, {}
+                            )
+                            _LOGGER.info(
+                                f"Auto-synced {len(clients)} new client names to network {net_id}"
+                            )
+                        except Exception as e:
+                            _LOGGER.error(
+                                f"Error auto-syncing new client names to network {net_id}: {e}"
+                            )
 
             # Process errors and update timers
             for nid, traffic in data.get("appliance_traffic", {}).items():
@@ -1184,3 +1277,116 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if updated_clients > 0:
             _LOGGER.info("Updated %d client(s) from Scanning API data", updated_clients)
             self.async_update_listeners()
+
+    async def async_handle_webhook_alert(
+        self, alert_type: str, data: dict[str, Any]
+    ) -> None:
+        """Handle webhook with targeted refresh."""
+        self.last_webhook_received = datetime.now()
+
+        if alert_type == "Client connectivity changed":
+            mac = data.get("alertData", {}).get("mac")
+            connected = data.get("alertData", {}).get("connected")
+            self._update_client_status_immediate(mac, connected)
+            self.async_update_listeners()
+
+            self.hass.async_create_task(
+                self._targeted_client_refresh(
+                    network_id=data.get("networkId"),
+                    client_mac=mac,
+                )
+            )
+
+        elif alert_type in (
+            "APs went down",
+            "APs came up",
+            "Switches went down",
+            "Switches came up",
+            "Gateways went down",
+            "Gateways came up",
+            "Cameras went down",
+            "Cameras came up",
+        ):
+            serial = data.get("deviceSerial")
+            is_up = "came up" in alert_type or "Up" in alert_type
+            self._update_device_status_immediate(serial, is_up)
+            self.async_update_listeners()
+
+            self.hass.async_create_task(self._targeted_device_refresh(serial))
+
+    def _update_client_status_immediate(self, mac: str | None, connected: bool) -> None:
+        """Perform an immediate client status update from a webhook."""
+        if not mac or not self.data or "clients" not in self.data:
+            return
+        for client in self.data["clients"]:
+            if client.get("mac") == mac:
+                client["status"] = "Online" if connected else "Offline"
+                _LOGGER.debug(
+                    "Immediate client update for %s: %s",
+                    mac,
+                    "Online" if connected else "Offline",
+                )
+                break
+
+    def _update_device_status_immediate(self, serial: str | None, is_up: bool) -> None:
+        """Perform an immediate device status update from a webhook."""
+        if not serial:
+            return
+        device = self.devices_by_serial.get(serial)
+        if device:
+            device["status"] = "online" if is_up else "offline"
+            _LOGGER.debug(
+                "Immediate device update for %s: %s",
+                serial,
+                "online" if is_up else "offline",
+            )
+
+    async def _targeted_client_refresh(self, network_id: str, client_mac: str) -> None:
+        """Fetch single client details after webhook."""
+        from .const import WEBHOOK_DETAIL_REFRESH_DELAY
+
+        await asyncio.sleep(WEBHOOK_DETAIL_REFRESH_DELAY)
+
+        try:
+            client = await self.api.network.get_network_client(network_id, client_mac)
+            if client:
+                self._merge_client_data(client_mac, client)
+                self.async_update_listeners()
+        except Exception as e:
+            _LOGGER.warning(
+                f"Error during targeted client refresh for {client_mac}: {e}"
+            )
+
+    async def _targeted_device_refresh(self, serial: str) -> None:
+        """Fetch single device details after webhook."""
+        from .const import WEBHOOK_DETAIL_REFRESH_DELAY
+
+        await asyncio.sleep(WEBHOOK_DETAIL_REFRESH_DELAY)
+
+        try:
+            device = await self.api.devices.get_device(serial)
+            if device:
+                self._merge_device_data(serial, device)
+                self.async_update_listeners()
+        except Exception as e:
+            _LOGGER.warning(f"Error during targeted device refresh for {serial}: {e}")
+
+    def _merge_client_data(self, client_mac: str, client_data: dict[str, Any]) -> None:
+        """Merge updated client data into the coordinator's data."""
+        if not self.data or "clients" not in self.data:
+            return
+        for i, client in enumerate(self.data["clients"]):
+            if client.get("mac") == client_mac:
+                self.data["clients"][i] = client_data
+                _LOGGER.info(f"Merged targeted client update for {client_mac}")
+                break
+        else:
+            self.data["clients"].append(client_data)
+            _LOGGER.info(f"Added new client from targeted refresh: {client_mac}")
+
+    def _merge_device_data(self, serial: str, device_data: dict[str, Any]) -> None:
+        """Merge updated device data into the coordinator's data."""
+        device = self.devices_by_serial.get(serial)
+        if device:
+            device.update(device_data)
+            _LOGGER.info(f"Merged targeted device update for {serial}")

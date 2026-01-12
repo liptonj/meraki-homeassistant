@@ -63,6 +63,62 @@ class NetworkEndpoints:
         return validated
 
     @handle_meraki_errors
+    @async_log_time(slow_threshold=1.0)
+    async def get_network_client(
+        self, network_id: str, client_id: str
+    ) -> dict[str, Any] | None:
+        """
+        Get a single client by MAC or ID.
+
+        Args:
+            network_id: The ID of the network.
+            client_id: The ID or MAC address of the client.
+
+        Returns
+        -------
+            A dictionary representing the client, or None if not found.
+        """
+        if self._api_client.dashboard is None:
+            return None
+        api = self._api_client.dashboard.networks
+        try:
+            client = await api.getNetworkClient(
+                networkId=network_id, clientId=client_id
+            )
+            return validate_response(client)
+        except AsyncAPIError as e:
+            if e.response.status == 404:
+                _LOGGER.debug(
+                    "Client %s not found in network %s", client_id, network_id
+                )
+                return None
+            raise
+
+    @handle_meraki_errors
+    async def provision_network_clients(
+        self,
+        network_id: str,
+        clients: list[dict[str, Any]],
+        policies_by_group_id: dict[str, Any],
+    ) -> None:
+        """
+        Provision clients in a network.
+
+        Args:
+            network_id: The ID of the network.
+            clients: A list of clients to provision.
+            policies_by_group_id: A dictionary of policies by group ID.
+        """
+        if self._api_client.dashboard is None:
+            return
+        api = self._api_client.dashboard.networks
+        await api.provisionNetworkClients(
+            networkId=network_id,
+            clients=clients,
+            policiesBySecurityAppliance=policies_by_group_id,
+        )
+
+    @handle_meraki_errors
     @async_timed_cache(timeout=60)
     @async_log_time(slow_threshold=3.0)
     async def get_network_traffic(

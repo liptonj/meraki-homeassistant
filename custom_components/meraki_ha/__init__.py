@@ -458,6 +458,72 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DOMAIN, "create_timed_access", handle_create_timed_access
     )
 
+    async def async_sync_client_names(call: ServiceCall) -> None:
+        """Handle the sync_client_names service call."""
+        from .const import (
+            CONF_SYNC_INCLUDE_MODEL,
+            CONF_SYNC_INCLUDE_VERSION,
+            CONF_SYNC_NAMES_TO_MERAKI,
+            DEFAULT_SYNC_INCLUDE_MODEL,
+            DEFAULT_SYNC_INCLUDE_VERSION,
+        )
+        from .helpers.sync_helper import build_client_description
+
+        if not coordinator.config_entry.options.get(CONF_SYNC_NAMES_TO_MERAKI):
+            _LOGGER.info("Client name sync is disabled in options.")
+            return
+
+        network_id = call.data.get("network_id")
+        networks_to_sync = (
+            [coordinator.get_network(network_id)]
+            if network_id
+            else coordinator.data.get("networks", [])
+        )
+        if not networks_to_sync:
+            _LOGGER.warning("No networks found to sync.")
+            return
+
+        include_model = coordinator.config_entry.options.get(
+            CONF_SYNC_INCLUDE_MODEL, DEFAULT_SYNC_INCLUDE_MODEL
+        )
+        include_version = coordinator.config_entry.options.get(
+            CONF_SYNC_INCLUDE_VERSION, DEFAULT_SYNC_INCLUDE_VERSION
+        )
+
+        for network in networks_to_sync:
+            clients_to_update = []
+            for client in coordinator.data.get("clients", []):
+                if client.get("networkId") == network.get("id"):
+                    description = build_client_description(
+                        hass,
+                        client.get("mac"),
+                        include_model,
+                        include_version,
+                    )
+                    if description and description != client.get("description"):
+                        clients_to_update.append(
+                            {"mac": client.get("mac"), "name": description}
+                        )
+
+            if clients_to_update:
+                try:
+                    await api_client.network.provision_network_clients(
+                        network.get("id"), clients_to_update, {}
+                    )
+                    _LOGGER.info(
+                        "Synced %s client names to network %s",
+                        len(clients_to_update),
+                        network.get("name"),
+                    )
+                except Exception as e:
+                    _LOGGER.error(
+                        "Error syncing client names to network %s: %s",
+                        network.get("name"),
+                        e,
+                    )
+
+    hass.services.async_register(DOMAIN, "sync_client_names", async_sync_client_names)
+
     discovered_entities = await discovery_service.discover_entities()
     entry_data["entities"] = discovered_entities
 
