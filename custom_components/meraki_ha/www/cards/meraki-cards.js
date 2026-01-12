@@ -1,4 +1,10 @@
-// This file is the main entry point for all Meraki Lovelace cards.
-// It can be used to register all cards with Lovelace.
-// For now, it's a placeholder.
-console.info('%c MERAKI CARDS LOADED ', 'color: #2980b9; background: #fff; font-weight: 700;');
+
+import "./shared/meraki-card-base.js";
+import "./shared/meraki-editor-base.js";
+import "./meraki-camera-card.ts";
+
+console.info(
+  `%c MERAKI-CAMERA-CARD %c ${"1.0.0"} `,
+  "color: #fff; background: #2980b9; font-weight: 700;",
+  "color: #2980b9; background: #fff; font-weight: 700;"
+);
