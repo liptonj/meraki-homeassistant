@@ -11,12 +11,15 @@
 | Integration entry point | `custom_components/meraki_ha/__init__.py`                |
 | API client              | `custom_components/meraki_ha/core/meraki_api_client.py`  |
 | Data coordinator        | `custom_components/meraki_ha/meraki_data_coordinator.py` |
+| WebSocket API           | `custom_components/meraki_ha/api/websocket.py`           |
+| WebSocket API docs      | `docs/architecture/websocket_api.md`                     |
 | Constants               | `custom_components/meraki_ha/const.py`                   |
 | Config flow             | `custom_components/meraki_ha/config_flow.py`             |
 | Options flow            | `custom_components/meraki_ha/options_flow.py`            |
 | Logging helper          | `custom_components/meraki_ha/helpers/logging_helper.py`  |
 | Frontend source         | `custom_components/meraki_ha/www/src/`                   |
 | Frontend build output   | `custom_components/meraki_ha/www/meraki-panel.js`        |
+| Lovelace card base      | `custom_components/meraki_ha/www/cards/shared/`          |
 | Tests                   | `tests/` (mirrors source structure)                      |
 | Tool configurations     | `pyproject.toml` (ruff, mypy, pytest, bandit)            |
 
