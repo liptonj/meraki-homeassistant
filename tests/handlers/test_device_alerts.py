@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 """Tests for the device alert handler."""
 
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
