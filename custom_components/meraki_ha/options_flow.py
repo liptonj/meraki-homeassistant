@@ -553,6 +553,20 @@ class MerakiOptionsFlowHandler(OptionsFlow):
         # Get real webhook status from coordinator
         status = self._get_webhook_status()
 
+        # Provide manual setup guidance if available from WebhookManager
+        manual_setup = ""
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id, {})
+        webhook_manager = entry_data.get("webhook_manager")
+        if webhook_manager:
+            manual = webhook_manager.get_manual_setup_instructions()
+            url = manual.get("webhook_url", "N/A")
+            secret = manual.get("shared_secret", "N/A")
+            alert_types = ", ".join(manual.get("alert_types", [])) or "None"
+            manual_setup = (
+                "Manual setup (use if auto-register fails):\n"
+                f"URL: {url}\nSecret: {secret}\nAlerts: {alert_types}"
+            )
+
         schema_with_defaults = self._populate_schema_defaults(
             SCHEMA_WEBHOOKS,
             self.options,
@@ -564,6 +578,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             description_placeholders={
                 "webhook_url": webhook_url,
                 "status": status,
+                "manual_setup": manual_setup,
             },
         )
 
@@ -575,6 +590,23 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             entry_data = self.hass.data.get(DOMAIN, {}).get(
                 self.config_entry.entry_id, {}
             )
+            # Prefer WebhookManager status if available
+            webhook_manager = entry_data.get("webhook_manager")
+            if webhook_manager:
+                status = webhook_manager.webhook_status
+                base_msg = status.get("message", "❓ Unable to determine status")
+                # Include manual setup hint if auto-registration failed
+                if status.get("status") == "error":
+                    manual = webhook_manager.get_manual_setup_instructions()
+                    url = manual.get("webhook_url", "N/A")
+                    secret = manual.get("shared_secret", "N/A")
+                    alert_types = ", ".join(manual.get("alert_types", [])) or "None"
+                    return (
+                        f"{base_msg}\nManual setup:\nURL: {url}\nSecret: {secret}\n"
+                        f"Alerts: {alert_types}"
+                    )
+                return base_msg
+
             coordinator = entry_data.get("coordinator")
 
             if not coordinator:

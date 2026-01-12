@@ -7,13 +7,22 @@ Welcome to the central documentation for the Meraki Home Assistant Integration. 
 Please explore the different sections to find the information you need:
 
 - **[Requirements](./requirements/README.md)**
-  This section outlines the functional and technical requirements for the integration. It details what the integration should do, from core API communication to specific features for different Meraki device types.
+  Functional and technical requirements for the integration across device types.
 
 - **[Design](./design/README.md)**
-  This section provides high-level design documents, explaining the overall architecture and outlining the design for specific features like the event log viewer and guest Wi-Fi management.
+  High-level design documents (event log viewer, guest Wi‑Fi, more).
 
 - **[Architecture & Development](./architecture/README.md)**
-  This section contains in-depth architectural documents, refactoring plans, and developer setup guides. It's the best place to find information about the codebase's structure, development environment, and plans for future improvements.
+  Architecture overviews, refactoring plans, and developer setup guides.
 
 - **[Testing](./testing/testing_plan.md)**
-  This section contains the testing plan for the integration, outlining the strategy for ensuring code quality and reliability.
+  Testing strategy and plans to ensure quality and reliability.
+
+## Webhooks & Scanning API (beta)
+
+- Enable webhooks in Options → Webhooks. Scanning API can be used alongside webhooks.
+- Auto-register creates Meraki Dashboard HTTP servers per enabled network with your selected alert types. If your API key is read-only, use the manual instructions shown in the options step (URL, shared secret, alert types).
+- Scanning API and alerts coexist on the same handler; if Scanning API is enabled, the validator path is registered alongside alerts.
+- When webhooks are active, polling intervals are reduced automatically (network/device/SSID/client).
+- Alerts trigger debounced targeted refreshes (device/client/SSID) and deduplicate by alertId.
+- Webhooks must use HTTPS and a public URL; the shared secret is required for validation.
