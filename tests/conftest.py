@@ -1,4 +1,5 @@
 """Global fixtures for meraki_ha integration."""
+
 import sys
 from unittest.mock import MagicMock
 
@@ -26,12 +27,12 @@ MOCK_MODULES = [
 for module in MOCK_MODULES:
     sys.modules[module] = MagicMock()
 
-from collections.abc import Generator
-from unittest.mock import AsyncMock, MagicMock
+from collections.abc import Generator  # noqa: E402
+from unittest.mock import AsyncMock, MagicMock  # noqa: E402
 
-import pytest
+import pytest  # noqa: E402
 
-from tests.const import MOCK_ALL_DATA
+from tests.const import MOCK_ALL_DATA  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
