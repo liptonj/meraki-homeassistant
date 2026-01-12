@@ -37,14 +37,15 @@ async def async_handle_device_alert(
     is_rebooted = "rebooted" in alert_type
 
     if is_up or is_down or is_rebooted:
-        status = "online" if is_up or is_rebooted else "offline"
+        is_online = is_up or is_rebooted
+        status = "online" if is_online else "offline"
         _LOGGER.info(
             "Device %s changed status to %s via webhook (%s)",
             serial,
             status,
             alert_type,
         )
-        coordinator._update_device_status_immediate(serial, is_up)
+        coordinator._update_device_status_immediate(serial, is_online)
         coordinator.async_update_listeners()
 
         coordinator.hass.async_create_task(
