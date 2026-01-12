@@ -1,18 +1,17 @@
 name: Merge Conflict Resolver
 
-run-name: 'Resolve conflicts on PR #${{ github.event.pull_request.number }}'
+run-name: 'Resolve merge conflicts for open PRs'
 
 # Automatically resolves merge conflicts by merging beta into the PR branch
 # Only handles simple conflicts that can be auto-resolved
 # For complex conflicts, it comments on the PR asking for manual intervention
 
 on:
-  # Run when a PR becomes unmergeable
-  pull_request_target:
-    types: [opened, synchronize]
+  # Run when beta is updated (this is when PRs become conflicted)
+  push:
     branches: [beta]
 
-  # Also run periodically to catch PRs that became conflicted
+  # Run periodically to catch any missed conflicts
   schedule:
     - cron: '0 */4 * * *' # Every 4 hours
 
@@ -29,7 +28,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: conflict-resolver-${{ github.event.pull_request.number || github.run_id }}
+  group: conflict-resolver-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -47,11 +46,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
-            # Single PR from event
-            PR_NUMBER="${{ github.event.pull_request.number }}"
-            echo "prs=$PR_NUMBER" >> "$GITHUB_OUTPUT"
-          elif [[ -n "${{ github.event.inputs.pr_number }}" ]]; then
+          if [[ -n "${{ github.event.inputs.pr_number }}" ]]; then
             # Manual trigger with specific PR
             echo "prs=${{ github.event.inputs.pr_number }}" >> "$GITHUB_OUTPUT"
           else
