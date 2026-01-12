@@ -49,7 +49,8 @@ async def test_async_handle_device_alert_rebooted():
 
     # Verify the device status was updated immediately - rebooted means online
     coordinator._update_device_status_immediate.assert_called_once_with(
-        "Q234-ABCD-5678", True  # Rebooted devices should be marked as online
+        "Q234-ABCD-5678",
+        True,  # Rebooted devices should be marked as online
     )
     coordinator.async_update_listeners.assert_called_once()
     coordinator._targeted_device_refresh.assert_called_once_with(
