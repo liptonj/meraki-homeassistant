@@ -237,12 +237,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           PR_NUMBER="${{ steps.check.outputs.pr_number }}"
           BRANCH="${{ steps.check.outputs.cursor_branch }}"
           ISSUE_NUM="${{ steps.check.outputs.issue_number }}"
-          GITHUB_PAT_VALUE="${GITHUB_PAT:-}"
+          GH_PAT_VALUE="${GH_PAT:-}"
 
           echo "🔍 Launching Cursor code review after CI fix"
 
@@ -265,7 +265,7 @@ jobs:
 
           GITHUB AUTHENTICATION:
           If you need to run gh commands and get permission errors, run:
-          export GH_TOKEN='${GITHUB_PAT_VALUE}'
+          export GH_TOKEN='${GH_PAT_VALUE}'
           Then retry the command.
 
           ═══════════════════════════════════════════════════════════
@@ -389,7 +389,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           PR_NUMBER="${{ steps.check.outputs.pr_number }}"
           BRANCH="${{ steps.check.outputs.cursor_branch }}"
@@ -458,7 +458,7 @@ jobs:
               CI_ERRORS=$(gh run view "$RUN_ID" --repo "${{ github.repository }}" --log-failed 2>/dev/null | tail -150 || echo "Could not retrieve error logs")
             fi
 
-            GITHUB_PAT_VALUE="${GITHUB_PAT:-}"
+            GH_PAT_VALUE="${GH_PAT:-}"
 
             # Invoke Cursor API with error context
             PROMPT="You are a CI fix agent for a Home Assistant integration (Cisco Meraki).
@@ -471,7 +471,7 @@ jobs:
 
             GITHUB AUTHENTICATION:
             If you need to run gh commands and get permission errors, run:
-            export GH_TOKEN='${GITHUB_PAT_VALUE}'
+            export GH_TOKEN='${GH_PAT_VALUE}'
             Then retry the command.
 
             ═══════════════════════════════════════════════════════════
