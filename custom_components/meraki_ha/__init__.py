@@ -165,9 +165,7 @@ async def _async_create_lovelace_dashboard(
             _LOGGER.debug("Could not check existing dashboards: %s", check_err)
 
         if dashboard_exists:
-            _LOGGER.info(
-                "Dashboard %s already exists, skipping creation", dashboard_id
-            )
+            _LOGGER.info("Dashboard %s already exists, skipping creation", dashboard_id)
             return True
 
         # Create dashboard via storage collection

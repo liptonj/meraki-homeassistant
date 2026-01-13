@@ -60,35 +60,25 @@ async def test_dashboard_strategy_generate(mock_hass, mock_coordinator):
         "coordinator": mock_coordinator,
     }
 
-    with patch("custom_components.meraki_ha.dashboard.dr") as mock_dr:
-        # Mock device registry
-        mock_device_registry = MagicMock()
-        mock_dr.async_get.return_value = mock_device_registry
+    strategy = MerakiDashboardStrategy()
+    result = await strategy.async_generate(mock_hass, config_entry_id)
 
-        # Mock device lookup
-        mock_device = MagicMock()
-        mock_device.id = "device_id_123"
-        mock_device_registry.async_get_device.return_value = mock_device
+    assert result is not None
+    assert "title" in result
+    assert result["title"] == "Meraki Network"
+    assert "views" in result
+    assert len(result["views"]) > 0
 
-        strategy = MerakiDashboardStrategy()
-        result = await strategy.async_generate(mock_hass, config_entry_id)
+    # Check overview view
+    overview_view = result["views"][0]
+    assert overview_view["title"] == "Overview"
+    assert "badges" in overview_view
+    assert len(overview_view["badges"]) == 3  # Status, Clients, Alerts
 
-        assert result is not None
-        assert "title" in result
-        assert result["title"] == "Meraki Network"
-        assert "views" in result
-        assert len(result["views"]) > 0
-
-        # Check overview view
-        overview_view = result["views"][0]
-        assert overview_view["title"] == "Overview"
-        assert "badges" in overview_view
-        assert len(overview_view["badges"]) == 3  # Status, Clients, Alerts
-
-        # Check device view
-        devices_view = result["views"][1]
-        assert devices_view["title"] == "Devices"
-        assert "cards" in devices_view
+    # Check device view
+    devices_view = result["views"][1]
+    assert devices_view["title"] == "Devices"
+    assert "cards" in devices_view
 
 
 async def test_dashboard_strategy_no_coordinator(mock_hass):
@@ -111,17 +101,13 @@ async def test_dashboard_strategy_no_devices(mock_hass):
         "coordinator": coordinator,
     }
 
-    with patch("custom_components.meraki_ha.dashboard.dr") as mock_dr:
-        mock_device_registry = MagicMock()
-        mock_dr.async_get.return_value = mock_device_registry
+    strategy = MerakiDashboardStrategy()
+    result = await strategy.async_generate(mock_hass, config_entry_id)
 
-        strategy = MerakiDashboardStrategy()
-        result = await strategy.async_generate(mock_hass, config_entry_id)
-
-        assert result is not None
-        assert "views" in result
-        # Should still have overview view
-        assert len(result["views"]) >= 1
+    assert result is not None
+    assert "views" in result
+    # Should still have overview view
+    assert len(result["views"]) >= 1
 
 
 @pytest.mark.skip(reason="Complex mocking of lovelace module - integration test needed")
@@ -154,14 +140,13 @@ async def test_regenerate_dashboard_service(mock_hass):
         ),
         "lovelace",
     ) as mock_lovelace_module:
-        with patch("custom_components.meraki_ha.dashboard.dr"):
-            mock_lovelace_module.async_save_config = AsyncMock()
+        mock_lovelace_module.async_save_config = AsyncMock()
 
-            # Call the service
-            await async_regenerate_dashboard(mock_hass, call)
+        # Call the service
+        await async_regenerate_dashboard(mock_hass, call)
 
-            # Verify notification was sent (service completed without error)
-            assert mock_hass.services.async_call.called
+        # Verify notification was sent (service completed without error)
+        assert mock_hass.services.async_call.called
 
 
 async def test_regenerate_dashboard_no_entry(mock_hass):

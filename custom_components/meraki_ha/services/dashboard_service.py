@@ -72,7 +72,8 @@ async def async_regenerate_dashboard(hass: HomeAssistant, call: ServiceCall) -> 
                 "message": (
                     f"Your Meraki dashboard has been regenerated!\n\n"
                     f"[Open Dashboard](/{dashboard_id})\n\n"
-                    f"All cards and views have been updated based on your current devices."
+                    f"All cards and views have been updated based on "
+                    f"your current devices."
                 ),
                 "title": "Meraki Dashboard Regenerated",
                 "notification_id": f"meraki_dashboard_regen_{config_entry_id}",

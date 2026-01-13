@@ -65,7 +65,7 @@ module = "tests.*"
 disable_error_code = ["method-assign"]
 
 [tool.ruff]
-exclude = [".pyenv"]
+exclude = [".pyenv", "scripts/"]
 line-length = 88
 
 [tool.ruff.lint]

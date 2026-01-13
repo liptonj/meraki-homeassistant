@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -91,12 +91,7 @@ async def test_strategy_generate_dashboard(
     }
 
     strategy = MerakiDashboardStrategy()
-
-    with patch(
-        "custom_components.meraki_ha.dashboard.dr.async_get",
-        return_value=mock_device_registry,
-    ):
-        config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
+    config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
 
     assert config is not None
     assert config["title"] == "Meraki Network"
@@ -185,12 +180,7 @@ async def test_strategy_generate_empty_devices(
     }
 
     strategy = MerakiDashboardStrategy()
-
-    with patch(
-        "custom_components.meraki_ha.dashboard.dr.async_get",
-        return_value=mock_device_registry,
-    ):
-        config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
+    config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
 
     assert config is not None
     # Devices view should still have the devices-by-type card
@@ -220,12 +210,7 @@ async def test_strategy_devices_view_card_config(
     }
 
     strategy = MerakiDashboardStrategy()
-
-    with patch(
-        "custom_components.meraki_ha.dashboard.dr.async_get",
-        return_value=mock_device_registry,
-    ):
-        config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
+    config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
 
     assert config is not None
     devices_view = config["views"][1]
@@ -258,15 +243,8 @@ async def test_strategy_has_all_views(
         }
     }
 
-    registry = MagicMock()
-
     strategy = MerakiDashboardStrategy()
-
-    with patch(
-        "custom_components.meraki_ha.dashboard.dr.async_get",
-        return_value=registry,
-    ):
-        config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
+    config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
 
     assert config is not None
     # Should have 6 views: Overview, Devices, Clients, Events, Guest Access, Settings
