@@ -74,4 +74,7 @@ def async_unregister_frontend(hass: HomeAssistant) -> None:
         hass: The Home Assistant instance.
 
     """
-    frontend.async_remove_panel(hass, "meraki")
+    try:
+        frontend.async_remove_panel(hass, "meraki")
+    except (KeyError, ValueError):
+        _LOGGER.debug("Meraki panel was not registered, skipping unregister")

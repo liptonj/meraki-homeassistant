@@ -9,6 +9,19 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+# UI Mode Configuration
+CONF_UI_MODE: Final = "ui_mode"
+"""Configuration key for UI mode selection."""
+
+UI_MODE_LOVELACE: Final = "lovelace"
+"""UI mode for native Lovelace dashboard."""
+
+UI_MODE_LEGACY_PANEL: Final = "legacy_panel"
+"""UI mode for legacy React panel."""
+
+DEFAULT_UI_MODE: Final = UI_MODE_LOVELACE
+"""Default UI mode."""
+
 DOMAIN: Final = "meraki_ha"
 """Domain for the component."""
 

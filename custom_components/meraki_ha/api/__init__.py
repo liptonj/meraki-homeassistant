@@ -10,7 +10,8 @@ if TYPE_CHECKING:
 
 def async_setup(hass: HomeAssistant) -> None:
     """Set up the Meraki API for the frontend."""
-    from . import camera, legacy
+    from . import camera, dashboard, legacy
 
     camera.async_setup(hass)
+    dashboard.async_setup(hass)
     legacy.async_setup_websocket_api(hass)

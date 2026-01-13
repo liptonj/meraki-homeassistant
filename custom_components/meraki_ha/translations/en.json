@@ -100,6 +100,7 @@
           "mqtt": "MQTT Configuration",
           "scanning_api": "Scanning API",
           "display_preferences": "Display Preferences",
+          "ui_mode": "UI Mode",
           "notifications": "Notifications",
           "logging": "Debug Logging"
         }
@@ -210,6 +211,13 @@
           "sync_include_model": "Include device model information when syncing names.",
           "sync_include_version": "Include firmware version when syncing names.",
           "sync_on_new_client": "Automatically sync when a new client is detected on the network."
+        }
+      },
+      "ui_mode": {
+        "title": "User Interface Mode",
+        "description": "Choose the primary user interface for this integration.\n\n**Native Lovelace Dashboard (Recommended)**: A modern, fast, and integrated Home Assistant dashboard experience.\n\n**Legacy Panel (React)**: The original iframe-based panel. This option will be removed in a future version.",
+        "data": {
+          "ui_mode": "UI Mode"
         }
       },
       "display_preferences": {

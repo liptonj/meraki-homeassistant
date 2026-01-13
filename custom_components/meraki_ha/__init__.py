@@ -22,6 +22,7 @@ from .const import (
     CONF_MQTT_RELAY_DESTINATIONS,
     CONF_SCAN_INTERVAL,
     CONF_SCANNING_API_VALIDATOR,
+    CONF_UI_MODE,
     CONF_WEB_UI_PORT,
     CONF_WEBHOOK_SHARED_SECRET,
     DATA_CLIENT,
@@ -32,9 +33,11 @@ from .const import (
     DEFAULT_MQTT_RELAY_DESTINATIONS,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SCANNING_API_VALIDATOR,
+    DEFAULT_UI_MODE,
     DEFAULT_WEB_UI_PORT,
     DOMAIN,
     PLATFORMS,
+    UI_MODE_LOVELACE,
 )
 from .core.api.client import MerakiAPIClient
 from .core.coordinators.ssid_firewall_coordinator import SsidFirewallCoordinator
@@ -535,8 +538,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry_data["entities"] = discovered_entities
 
     # Register frontend panel and WebSocket API
-    await async_register_static_path(hass)
-    await async_register_panel(hass, entry)
+    ui_mode = entry.options.get(CONF_UI_MODE, DEFAULT_UI_MODE)
+    if ui_mode == UI_MODE_LOVELACE:
+        # When Lovelace mode is selected, generate the dashboard configuration
+        # and store it for the frontend to use. The legacy React panel is not shown.
+        from .dashboard import MerakiDashboardStrategy
+
+        strategy = MerakiDashboardStrategy()
+        dashboard_config = await strategy.async_generate(hass, entry.entry_id)
+
+        if dashboard_config:
+            # Store the generated dashboard config for later retrieval
+            entry_data["dashboard_config"] = dashboard_config
+            _LOGGER.info(
+                "Generated Meraki Lovelace dashboard configuration with %d views",
+                len(dashboard_config.get("views", [])),
+            )
+
+        # Register static path for custom cards
+        await async_register_static_path(hass)
+
+        # Don't register the legacy React panel in Lovelace mode
+        async_unregister_frontend(hass)
+    else:
+        # Legacy panel mode - register the React-based panel
+        await async_register_static_path(hass)
+        await async_register_panel(hass, entry)
 
     # Register custom cards
     from homeassistant.components.http import StaticPathConfig
@@ -747,6 +774,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 await entry_data["webhook_manager"].async_unregister_webhooks()
             else:
                 await async_unregister_webhook(hass, entry.entry_id, api_client)
+
+        # Clean up dashboard config if it exists
+        entry_data.pop("dashboard_config", None)
 
         async_unregister_frontend(hass)
 
