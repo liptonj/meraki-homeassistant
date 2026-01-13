@@ -540,23 +540,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register frontend panel and WebSocket API
     ui_mode = entry.options.get(CONF_UI_MODE, DEFAULT_UI_MODE)
     if ui_mode == UI_MODE_LOVELACE:
-        from homeassistant.components.lovelace import (
-            dashboard as lovelace_dashboard,
-        )
-
+        # When Lovelace mode is selected, generate the dashboard configuration
+        # and store it for the frontend to use. The legacy React panel is not shown.
         from .dashboard import MerakiDashboardStrategy
 
         strategy = MerakiDashboardStrategy()
         dashboard_config = await strategy.async_generate(hass, entry.entry_id)
 
         if dashboard_config:
-            lovelace_dashboard.async_register_strategy(  # type: ignore[attr-defined]
-                hass, f"meraki-dashboard-{entry.entry_id}", strategy.async_generate
+            # Store the generated dashboard config for later retrieval
+            entry_data["dashboard_config"] = dashboard_config
+            _LOGGER.info(
+                "Generated Meraki Lovelace dashboard configuration with %d views",
+                len(dashboard_config.get("views", [])),
             )
-            # You might want to automatically create a dashboard instance here
-            # For now, we'll just register the strategy
-        async_unregister_frontend(hass)  # Ensure legacy panel is not shown
+
+        # Register static path for custom cards
+        await async_register_static_path(hass)
+
+        # Don't register the legacy React panel in Lovelace mode
+        async_unregister_frontend(hass)
     else:
+        # Legacy panel mode - register the React-based panel
         await async_register_static_path(hass)
         await async_register_panel(hass, entry)
 
@@ -770,14 +775,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             else:
                 await async_unregister_webhook(hass, entry.entry_id, api_client)
 
-        # Unregister dashboard strategy if it exists
-        from homeassistant.components.lovelace import (
-            dashboard as lovelace_dashboard,
-        )
-
-        lovelace_dashboard.async_unregister_strategy(  # type: ignore[attr-defined]
-            hass, f"meraki-dashboard-{entry.entry_id}"
-        )
+        # Clean up dashboard config if it exists
+        entry_data.pop("dashboard_config", None)
 
         async_unregister_frontend(hass)
 
