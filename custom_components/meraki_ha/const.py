@@ -19,7 +19,8 @@ UI_MODE_LOVELACE: Final = "lovelace"
 UI_MODE_LEGACY_PANEL: Final = "legacy_panel"
 """UI mode for legacy React panel."""
 
-DEFAULT_UI_MODE: Final = UI_MODE_LOVELACE
+DEFAULT_UI_MODE: Final = UI_MODE_LEGACY_PANEL
+"""Default UI mode - use legacy panel for better out-of-box experience."""
 """Default UI mode."""
 
 DOMAIN: Final = "meraki_ha"
