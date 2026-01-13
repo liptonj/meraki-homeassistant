@@ -185,7 +185,7 @@ async def _async_create_lovelace_dashboard(
         # Save dashboard configuration
         num_views = len(dashboard_config.get("views", []))
         _LOGGER.debug("Saving dashboard configuration with %d views", num_views)
-        await lovelace.async_save_config(hass, dashboard_id, dashboard_config)
+        await lovelace.async_save_config(hass, dashboard_id, dashboard_config)  # type: ignore[attr-defined]
 
         _LOGGER.info(
             "Created editable Lovelace dashboard: %s at /%s",

@@ -60,7 +60,7 @@ async def async_regenerate_dashboard(hass: HomeAssistant, call: ServiceCall) -> 
         )
 
         # Save new configuration
-        await lovelace.async_save_config(hass, dashboard_id, dashboard_config)
+        await lovelace.async_save_config(hass, dashboard_id, dashboard_config)  # type: ignore[attr-defined]
 
         _LOGGER.info("Regenerated dashboard %s successfully", dashboard_id)
 
