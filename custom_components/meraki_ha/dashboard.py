@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
 
 from .const import DOMAIN
 
@@ -20,9 +19,6 @@ class MerakiDashboardStrategy:
         coordinator = hass.data[DOMAIN][config_entry_id].get("coordinator")
         if not coordinator or not coordinator.data:
             return None
-
-        devices = coordinator.data.get("devices", [])
-        device_registry = dr.async_get(hass)
 
         # Create a devices card that groups devices by type with collapsible tables
         # This replaces individual device cards with a unified table view

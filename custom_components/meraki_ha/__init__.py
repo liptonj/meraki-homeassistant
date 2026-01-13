@@ -24,7 +24,6 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SCANNING_API_VALIDATOR,
     CONF_SHOW_REACT_PANEL,
-    CONF_UI_MODE,
     CONF_WEB_UI_PORT,
     CONF_WEBHOOK_SHARED_SECRET,
     DATA_CLIENT,
@@ -37,11 +36,9 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SCANNING_API_VALIDATOR,
     DEFAULT_SHOW_REACT_PANEL,
-    DEFAULT_UI_MODE,
     DEFAULT_WEB_UI_PORT,
     DOMAIN,
     PLATFORMS,
-    UI_MODE_LOVELACE,
 )
 from .core.api.client import MerakiAPIClient
 from .core.coordinators.ssid_firewall_coordinator import SsidFirewallCoordinator
@@ -136,17 +133,44 @@ async def _async_create_lovelace_dashboard(
 
         # Check if lovelace data is initialized
         if "lovelace" not in hass.data:
-            _LOGGER.warning("Lovelace not initialized, cannot create dashboard")
+            _LOGGER.warning(
+                "Lovelace not initialized yet. "
+                "Dashboard will be created on next reload."
+            )
             return False
 
-        # Check if dashboard already exists
-        dashboards = hass.data["lovelace"].get("dashboards", {})
-        if dashboard_id in dashboards:
+        lovelace_data = hass.data["lovelace"]
+        _LOGGER.debug("Lovelace data keys: %s", list(lovelace_data.keys()))
+
+        # Check if dashboards collection exists
+        if "dashboards" not in lovelace_data:
+            _LOGGER.warning("Lovelace dashboards collection not available")
+            return False
+
+        dashboards_collection = lovelace_data["dashboards"]
+
+        # Check if dashboard already exists by iterating through items
+        dashboard_exists = False
+        try:
+            # The dashboards collection might be a StorageCollection
+            if hasattr(dashboards_collection, "async_items"):
+                async for item in dashboards_collection.async_items():
+                    if item.get("id") == dashboard_id:
+                        dashboard_exists = True
+                        break
+            elif hasattr(dashboards_collection, "data"):
+                # Direct dictionary access
+                dashboard_exists = dashboard_id in dashboards_collection.data
+        except (AttributeError, TypeError) as check_err:
+            _LOGGER.debug("Could not check existing dashboards: %s", check_err)
+
+        if dashboard_exists:
             _LOGGER.info("Dashboard %s already exists, skipping creation", dashboard_id)
             return True
 
         # Create dashboard via storage collection
-        await hass.data["lovelace"]["dashboards"].async_create_item(
+        _LOGGER.debug("Creating dashboard with ID: %s", dashboard_id)
+        await dashboards_collection.async_create_item(
             {
                 "id": dashboard_id,
                 "url_path": dashboard_id,
@@ -159,7 +183,9 @@ async def _async_create_lovelace_dashboard(
         )
 
         # Save dashboard configuration
-        await lovelace.async_save_config(hass, dashboard_id, dashboard_config)
+        num_views = len(dashboard_config.get("views", []))
+        _LOGGER.debug("Saving dashboard configuration with %d views", num_views)
+        await lovelace.async_save_config(hass, dashboard_id, dashboard_config)  # type: ignore[attr-defined]
 
         _LOGGER.info(
             "Created editable Lovelace dashboard: %s at /%s",
@@ -185,6 +211,12 @@ async def _async_create_lovelace_dashboard(
 
         return True
 
+    except AttributeError as err:
+        _LOGGER.error(
+            "Lovelace API not available (HA version compatibility issue): %s",
+            err,
+        )
+        return False
     except Exception as err:  # pylint: disable=broad-except
         _LOGGER.error(
             "Failed to create Lovelace dashboard: %s",
@@ -706,18 +738,88 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 exc_info=True,
             )
 
-    # Register custom cards
+    # Register custom cards at HACS-standard path
+    # Per HA custom card docs:
+    # https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/
+    # Cards are built to www/meraki_ha/ at repo root
+    # We register them at /local/community/<domain>/ which is the HACS standard
+    from pathlib import Path
+
     from homeassistant.components.http import StaticPathConfig
 
-    await hass.http.async_register_static_paths(
-        [
-            StaticPathConfig(
-                url_path="/meraki_cards",
-                path=hass.config.path("custom_components/meraki_ha/www/cards"),
-                cache_headers=False,
+    # Cards are at ../../www/meraki_ha/ relative to this integration
+    # This path is: custom_components/meraki_ha/ -> ../../www/meraki_ha/
+    integration_path = Path(__file__).parent
+    cards_path = integration_path.parent.parent / "www" / DOMAIN
+
+    # Fallback to HACS community path if repo-relative path doesn't exist
+    if not cards_path.exists():
+        cards_path = Path(hass.config.path("www", "community", DOMAIN))
+        _LOGGER.debug("Using HACS community path for cards: %s", cards_path)
+
+    if cards_path.exists():
+        await hass.http.async_register_static_paths(
+            [
+                StaticPathConfig(
+                    url_path=f"/local/community/{DOMAIN}",
+                    path=str(cards_path),
+                    cache_headers=False,
+                )
+            ]
+        )
+        _LOGGER.debug(
+            "Registered custom cards at /local/community/%s -> %s", DOMAIN, cards_path
+        )
+
+        # Register cards as Lovelace resources for automatic loading
+        # This makes the cards available in the Lovelace UI picker
+        cards_url = f"/local/community/{DOMAIN}/meraki-cards.js"
+        try:
+            # pylint: disable=import-outside-toplevel
+            from homeassistant.components.lovelace.resources import (
+                ResourceStorageCollection,
             )
-        ]
-    )
+
+            # Access lovelace resources via hass.data
+            if "lovelace" in hass.data and "resources" in hass.data["lovelace"]:
+                resources = hass.data["lovelace"]["resources"]
+                if isinstance(resources, ResourceStorageCollection):
+                    # Check if resource already exists
+                    existing = False
+                    async for item in resources.async_items():
+                        if item.get("url") == cards_url:
+                            existing = True
+                            break
+
+                    if not existing:
+                        await resources.async_create_item(
+                            {"res_type": "module", "url": cards_url}
+                        )
+                        _LOGGER.info(
+                            "Registered Meraki cards as Lovelace resource: %s",
+                            cards_url,
+                        )
+                    else:
+                        _LOGGER.debug("Meraki cards resource already registered")
+                else:
+                    _LOGGER.debug(
+                        "Lovelace using YAML mode - add resource manually: %s",
+                        cards_url,
+                    )
+            else:
+                _LOGGER.debug(
+                    "Lovelace not initialized - add resource manually: %s",
+                    cards_url,
+                )
+        except ImportError:
+            _LOGGER.debug("Lovelace resources API not available")
+        except Exception as err:  # pylint: disable=broad-except
+            _LOGGER.debug("Could not auto-register Lovelace resource: %s", err)
+    else:
+        _LOGGER.warning(
+            "Custom cards directory not found at %s - cards will not be available",
+            cards_path,
+        )
 
     async_setup_api(hass)
     api.async_setup(hass)

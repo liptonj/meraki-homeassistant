@@ -3,7 +3,7 @@ import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
 import 'lovelace-player';
 
-import MerakiCameraCard from '../../custom_components/meraki_ha/www/src/cards/meraki-camera-card';
+import MerakiCameraCard from '../../www/meraki_ha/src/cards/meraki-camera-card';
 
 describe('MerakiCameraCard', () => {
   let element;

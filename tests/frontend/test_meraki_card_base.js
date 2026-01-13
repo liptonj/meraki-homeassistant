@@ -1,6 +1,6 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { MerakiCardBase } from '../../custom_components/meraki_ha/www/cards/shared/meraki-card-base.js';
+import { MerakiCardBase } from '../../www/meraki_ha/shared/meraki-card-base.js';
 
 customElements.define('meraki-card-base-test', MerakiCardBase);
 

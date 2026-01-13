@@ -560,20 +560,20 @@ def main():
     <div class="view-header">{view["title"]}</div>
     {badges_html}
     <div class="cards-container">{cards_html}</div>
-    <script type="module" src="/cards/shared/meraki-card-base.js"></script>
+    <script type="module" src="/local/community/meraki_ha/shared/meraki-card-base.js"></script>
     <script type="module">
-        import '/cards/meraki-overview-card.js';
-        import '/cards/meraki-device-card.js';
-        import '/cards/meraki-devices-by-type-card.js';
-        import '/cards/meraki-clients-card.js';
-        import '/cards/meraki-client-card/meraki-client-card.js';
-        import '/cards/meraki-ssids-list-card.js';
-        import '/cards/meraki-events-card.js';
-        import '/cards/meraki-guest-access-card.js';
-        import '/cards/meraki-mqtt-status-card.js';
-        import '/cards/badges/meraki-status-badge.js';
-        import '/cards/badges/meraki-clients-badge.js';
-        import '/cards/badges/meraki-alerts-badge.js';
+        import '/local/community/meraki_ha/meraki-overview-card.js';
+        import '/local/community/meraki_ha/meraki-device-card.js';
+        import '/local/community/meraki_ha/meraki-devices-by-type-card.js';
+        import '/local/community/meraki_ha/meraki-clients-card.js';
+        import '/local/community/meraki_ha/meraki-client-card/meraki-client-card.js';
+        import '/local/community/meraki_ha/meraki-ssids-list-card.js';
+        import '/local/community/meraki_ha/meraki-events-card.js';
+        import '/local/community/meraki_ha/meraki-guest-access-card.js';
+        import '/local/community/meraki_ha/meraki-mqtt-status-card.js';
+        import '/local/community/meraki_ha/badges/meraki-status-badge.js';
+        import '/local/community/meraki_ha/badges/meraki-clients-badge.js';
+        import '/local/community/meraki_ha/badges/meraki-alerts-badge.js';
 
         // Wait for card elements
         await Promise.all(['meraki-overview-card', 'meraki-devices-by-type-card', 'meraki-clients-card', 'meraki-client-card', 'meraki-ssids-list-card', 'meraki-events-card', 'meraki-guest-access-card', 'meraki-mqtt-status-card', 'meraki-status-badge', 'meraki-clients-badge', 'meraki-alerts-badge'].map(t => customElements.whenDefined(t)));

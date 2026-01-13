@@ -1,6 +1,6 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { MerakiSSIDsListCard } from '../../custom_components/meraki_ha/www/cards/meraki-ssids-list-card.js';
+import { MerakiSSIDsListCard } from '../../www/meraki_ha/meraki-ssids-list-card.js';
 
 describe('MerakiSSIDsListCard', () => {
   let element;

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -91,16 +91,12 @@ async def test_strategy_generate_dashboard(
     }
 
     strategy = MerakiDashboardStrategy()
-
-    with patch(
-        "custom_components.meraki_ha.dashboard.dr.async_get",
-        return_value=mock_device_registry,
-    ):
-        config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
+    config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
 
     assert config is not None
     assert config["title"] == "Meraki Network"
-    assert len(config["views"]) == 4
+    # Views: Overview, Devices, Clients, Events, Guest Access, Settings
+    assert len(config["views"]) == 6
 
     # Verify Overview view
     overview = config["views"][0]
@@ -116,28 +112,35 @@ async def test_strategy_generate_dashboard(
     assert overview["cards"][1]["limit"] == 10
     assert overview["cards"][2]["type"] == "custom:meraki-ssids-list-card"
 
-    # Verify Devices view has cards for each device
+    # Verify Devices view has devices card
     devices_view = config["views"][1]
     assert devices_view["title"] == "Devices"
     assert devices_view["path"] == "devices"
-    assert len(devices_view["cards"]) == 2  # Two devices
-    for card in devices_view["cards"]:
-        assert card["type"] == "custom:meraki-device-card"
-        assert "device_id" in card
+    assert len(devices_view["cards"]) >= 1  # At least one devices card
+
+    # Verify Clients view
+    clients_view = config["views"][2]
+    assert clients_view["title"] == "Clients"
+    assert clients_view["path"] == "clients"
 
     # Verify Events view
-    events_view = config["views"][2]
+    events_view = config["views"][3]
     assert events_view["title"] == "Events"
     assert events_view["path"] == "events"
     assert len(events_view["cards"]) == 1
     assert events_view["cards"][0]["type"] == "custom:meraki-events-card"
 
     # Verify Guest Access view
-    guest_view = config["views"][3]
+    guest_view = config["views"][4]
     assert guest_view["title"] == "Guest Access"
     assert guest_view["path"] == "guest"
     assert len(guest_view["cards"]) == 1
     assert guest_view["cards"][0]["type"] == "custom:meraki-guest-access-card"
+
+    # Verify Settings view
+    settings_view = config["views"][5]
+    assert settings_view["title"] == "Settings"
+    assert settings_view["path"] == "settings"
 
 
 async def test_strategy_generate_no_coordinator_data(
@@ -177,24 +180,20 @@ async def test_strategy_generate_empty_devices(
     }
 
     strategy = MerakiDashboardStrategy()
-
-    with patch(
-        "custom_components.meraki_ha.dashboard.dr.async_get",
-        return_value=mock_device_registry,
-    ):
-        config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
+    config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
 
     assert config is not None
-    # Devices view should have empty cards list
+    # Devices view should still have the devices-by-type card
     devices_view = config["views"][1]
-    assert devices_view["cards"] == []
+    assert len(devices_view["cards"]) == 1
+    assert devices_view["cards"][0]["type"] == "custom:meraki-devices-by-type-card"
 
 
-async def test_strategy_devices_sorted_by_name(
+async def test_strategy_devices_view_card_config(
     hass: HomeAssistant, mock_device_registry
 ):
-    """Test that device cards are sorted by device name."""
-    # Create coordinator with unsorted devices
+    """Test that devices view has the proper devices-by-type card configuration."""
+    # Create coordinator with devices
     coordinator = AsyncMock()
     coordinator.data = {
         "devices": [
@@ -210,42 +209,26 @@ async def test_strategy_devices_sorted_by_name(
         }
     }
 
-    # Return devices in order they're queried (we'll verify by checking order)
-    device_map = {
-        "aa:bb:cc:dd:ee:ff": MagicMock(id="zulu_device"),
-        "11:22:33:44:55:66": MagicMock(id="alpha_device"),
-        "99:88:77:66:55:44": MagicMock(id="mike_device"),
-    }
-
-    def get_device(identifiers):
-        for _domain, mac in identifiers:
-            if mac in device_map:
-                return device_map[mac]
-        return None
-
-    mock_device_registry.async_get_device = MagicMock(side_effect=get_device)
-
     strategy = MerakiDashboardStrategy()
-
-    with patch(
-        "custom_components.meraki_ha.dashboard.dr.async_get",
-        return_value=mock_device_registry,
-    ):
-        config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
+    config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
 
     assert config is not None
     devices_view = config["views"][1]
-    # Devices should be sorted: Alpha AP, Mike AP, Zulu AP
-    assert len(devices_view["cards"]) == 3
-    assert devices_view["cards"][0]["device_id"] == "alpha_device"
-    assert devices_view["cards"][1]["device_id"] == "mike_device"
-    assert devices_view["cards"][2]["device_id"] == "zulu_device"
+    # Should have a single devices-by-type card
+    assert len(devices_view["cards"]) == 1
+    devices_card = devices_view["cards"][0]
+    assert devices_card["type"] == "custom:meraki-devices-by-type-card"
+    assert devices_card["show_switches"] is True
+    assert devices_card["show_wireless"] is True
+    assert devices_card["show_cameras"] is True
+    assert devices_card["show_sensors"] is True
+    assert devices_card["show_appliances"] is True
 
 
-async def test_strategy_skips_devices_not_in_registry(
+async def test_strategy_has_all_views(
     hass: HomeAssistant,
 ):
-    """Test that devices not in HA registry are skipped."""
+    """Test that dashboard has all expected views."""
     coordinator = AsyncMock()
     coordinator.data = {
         "devices": [
@@ -260,27 +243,18 @@ async def test_strategy_skips_devices_not_in_registry(
         }
     }
 
-    mock_device = MagicMock()
-    mock_device.id = "known_device"
-
-    registry = MagicMock()
-    # Only return a device for the first MAC
-    registry.async_get_device = MagicMock(
-        side_effect=lambda identifiers: (
-            mock_device if (DOMAIN, "aa:bb:cc:dd:ee:ff") in identifiers else None
-        )
-    )
-
     strategy = MerakiDashboardStrategy()
-
-    with patch(
-        "custom_components.meraki_ha.dashboard.dr.async_get",
-        return_value=registry,
-    ):
-        config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
+    config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
 
     assert config is not None
-    devices_view = config["views"][1]
-    # Only one device should have a card
-    assert len(devices_view["cards"]) == 1
-    assert devices_view["cards"][0]["device_id"] == "known_device"
+    # Should have 6 views: Overview, Devices, Clients, Events, Guest Access, Settings
+    assert len(config["views"]) == 6
+    view_titles = [v["title"] for v in config["views"]]
+    assert view_titles == [
+        "Overview",
+        "Devices",
+        "Clients",
+        "Events",
+        "Guest Access",
+        "Settings",
+    ]

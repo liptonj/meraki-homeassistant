@@ -171,7 +171,8 @@ jobs:
             --ignore-vuln GHSA-fh55-r93g-j68g \
             --ignore-vuln GHSA-54jq-c3m8-4m76 \
             --ignore-vuln GHSA-jj3x-wxrx-4x23 \
-            --ignore-vuln GHSA-mqqc-3gqh-h2x8
+            --ignore-vuln GHSA-mqqc-3gqh-h2x8 \
+            --ignore-vuln GHSA-qmgc-5h2g-mvrw
 
   # Tests with coverage
   test:

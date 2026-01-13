@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run postbuild",
-    "postbuild": "cp build/meraki-panel.js . && (cp build/style.css . 2>/dev/null || true)",
+    "build": "vite build",
+    "build:panel": "vite build --config vite.panel.config.js",
+    "build:all": "npm run build && npm run build:panel",
     "lint": "eslint . --ext js,jsx,ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
