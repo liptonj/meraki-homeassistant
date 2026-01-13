@@ -207,6 +207,8 @@ jobs:
           PROMPT="You are a coding agent for a Home Assistant integration (Cisco Meraki).
           Taking over from Jules who got stuck.
 
+          Your plan is auto-approved—continue execution immediately without waiting for human approval.
+
           ═══════════════════════════════════════════════════════════
           HANDOFF FROM JULES
           PR: #$PR_NUM | Issue: #$ISSUE_NUM | Branch: $PR_BRANCH

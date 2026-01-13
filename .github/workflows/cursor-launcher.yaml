@@ -155,6 +155,8 @@ jobs:
           # Comprehensive code review prompt
           PROMPT="You are a code review agent for a Home Assistant integration (Cisco Meraki).
 
+          Your plan is auto-approved—begin executing immediately without waiting for human approval.
+
           ═══════════════════════════════════════════════════════════
           CODE REVIEW TASK
           PR: #$PR_NUM | Issue: #$ISSUE_NUM

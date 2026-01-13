@@ -18,7 +18,7 @@ on:
 
   # Run periodically to catch any missed conflicts
   schedule:
-    - cron: '*/30 * * * *' # Every 30 minutes
+    - cron: '0 */6 * * *' # Every 6 hours (reduced from 30 min)
 
   # Manual trigger
   workflow_dispatch:
@@ -69,8 +69,8 @@ jobs:
               --json number,mergeable,title,baseRefName)
             echo "All PRs: $ALL_PRS"
 
-            CONFLICTED_PRS=$(echo "$ALL_PRS" | jq -r '[.[] | select(.mergeable == "CONFLICTING" or .mergeable == "UNKNOWN")] | .[].number' | tr '\n' ' ')
-            echo "Found PRs with conflicts or unknown status: $CONFLICTED_PRS"
+            CONFLICTED_PRS=$(echo "$ALL_PRS" | jq -r '[.[] | select(.mergeable == "CONFLICTING")] | .[].number' | tr '\n' ' ')
+            echo "Found PRs with merge conflicts: $CONFLICTED_PRS"
             echo "prs=$CONFLICTED_PRS" >> "$GITHUB_OUTPUT"
           fi
 

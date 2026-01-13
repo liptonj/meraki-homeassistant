@@ -61,6 +61,7 @@ from .services.device_control_service import DeviceControlService
 from .services.mqtt_relay import MqttRelayManager
 from .services.mqtt_service import MerakiMqttService
 from .services.network_control_service import NetworkControlService
+from .services.panel_diagnostics import async_register_diagnostic_service
 from .web_api import async_setup_api
 from .web_server import MerakiWebServer
 from .webhook import (
@@ -534,6 +535,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.services.async_register(DOMAIN, "sync_client_names", async_sync_client_names)
 
+    # Register diagnostic service
+    async_register_diagnostic_service(hass)
+
     discovered_entities = await discovery_service.discover_entities()
     entry_data["entities"] = discovered_entities
 
@@ -556,14 +560,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
         # Register static path for custom cards
-        await async_register_static_path(hass)
+        _LOGGER.info("Registering static path for Lovelace mode")
+        try:
+            await async_register_static_path(hass)
+            _LOGGER.info("Static path registration completed (Lovelace mode)")
+        except Exception as err:
+            _LOGGER.error(
+                "Failed to register static path: %s",
+                err,
+                exc_info=True,
+            )
 
         # Don't register the legacy React panel in Lovelace mode
         async_unregister_frontend(hass)
     else:
         # Legacy panel mode - register the React-based panel
-        await async_register_static_path(hass)
-        await async_register_panel(hass, entry)
+        _LOGGER.info("Registering Meraki frontend panel and static paths (legacy mode)")
+        try:
+            await async_register_static_path(hass)
+            await async_register_panel(hass, entry)
+            _LOGGER.info("Frontend panel registration completed")
+        except Exception as err:
+            _LOGGER.error(
+                "Failed to register frontend panel: %s. Panel will not be available.",
+                err,
+                exc_info=True,
+            )
 
     # Register custom cards
     from homeassistant.components.http import StaticPathConfig

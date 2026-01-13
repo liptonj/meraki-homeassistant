@@ -121,6 +121,8 @@ jobs:
           # Build a comprehensive prompt for Cursor with explicit completion checklist
           PROMPT="You are a coding agent for a Home Assistant integration (Cisco Meraki).
 
+          Your plan is auto-approved—start executing immediately; no human approval is required.
+
           ═══════════════════════════════════════════════════════════
           TASK: ${ISSUE_TITLE}
           ISSUE: #${ISSUE_NUM}

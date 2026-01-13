@@ -71,11 +71,8 @@ jobs:
             exit 0
           fi
 
-          # Check if it has the ready-for-review or cursor-reviewed label
-          HAS_READY_LABEL=$(echo "$PR_JSON" | jq -r '.[0].labels | map(.name) | any(. == "ready-for-review")')
-          HAS_REVIEWED_LABEL=$(echo "$PR_JSON" | jq -r '.[0].labels | map(.name) | any(. == "cursor-reviewed")')
-
-          # Also check for agent PRs (Jules or Cursor) - they can be auto-merged when CI passes
+          # CRITICAL: Only auto-merge agent PRs, NEVER human PRs
+          # Check if this is from an AI agent
           IS_JULES_PR=false
           IS_CURSOR_PR=false
           if [[ "$PR_AUTHOR" == *"jules"* ]] || [[ "$PR_AUTHOR" == *"google-labs"* ]]; then
@@ -85,14 +82,26 @@ jobs:
             IS_CURSOR_PR=true
           fi
 
-          # Auto-merge if: has labels OR is a review branch (starts with review/)
+          # Check for review branch pattern
           IS_REVIEW_BRANCH=false
           if [[ "$HEAD_BRANCH" == review/* ]]; then
             IS_REVIEW_BRANCH=true
           fi
 
+          # Skip if not from an agent and not a review branch
+          if [[ "$IS_JULES_PR" != "true" && "$IS_CURSOR_PR" != "true" && "$IS_REVIEW_BRANCH" != "true" ]]; then
+            echo "⛔ Human PR detected - skipping auto-merge (author: $PR_AUTHOR)"
+            echo "   Human PRs require manual merge even with ready-for-review labels"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Check if it has the ready-for-review or cursor-reviewed label
+          HAS_READY_LABEL=$(echo "$PR_JSON" | jq -r '.[0].labels | map(.name) | any(. == "ready-for-review")')
+          HAS_REVIEWED_LABEL=$(echo "$PR_JSON" | jq -r '.[0].labels | map(.name) | any(. == "cursor-reviewed")')
+
           if [[ "$HAS_READY_LABEL" != "true" && "$HAS_REVIEWED_LABEL" != "true" && "$IS_REVIEW_BRANCH" != "true" ]]; then
-            echo "PR not ready for merge (no labels, not a review branch) - skipping"
+            echo "Agent PR not ready for merge (no labels, not a review branch) - skipping"
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi

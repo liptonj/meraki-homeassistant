@@ -477,6 +477,8 @@ jobs:
             # Invoke Cursor API with error context
             PROMPT="You are a CI fix agent for a Home Assistant integration (Cisco Meraki).
 
+            Your plan is auto-approved—start fixing immediately; no human approval is needed.
+
             ═══════════════════════════════════════════════════════════
             CI FIX TASK
             Branch: $BRANCH | Issue: #$ISSUE_NUM | Attempt: #$((FIX_ATTEMPTS + 1))

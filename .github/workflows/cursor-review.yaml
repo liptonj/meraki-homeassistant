@@ -1,16 +1,21 @@
-name: Cursor Code Review & Fix
+name: Cursor Code Review & Fix (Deprecated)
 
-run-name: 'Cursor Review: ${{ github.event.workflow_run.head_branch }}'
+run-name: 'Cursor Review (deprecated)'
 
-# Triggers AFTER Beta CI completes (success or failure)
-# - On success after Jules: Initial review & fix
-# - On failure after Cursor changes: Re-fix attempt
-# - On success after Cursor changes: Final verification
+# DEPRECATED:
+# This repo's active agent flow is now:
+# - cursor-launcher.yaml (launch review PRs)
+# - cursor-fix.yaml (handle Cursor PRs + CI fix loops)
+# - ready-for-review-merger.yaml (merge when ready)
+#
+# Keeping this workflow ONLY as a manual safety tool to avoid duplicate Cursor agents.
 on:
-  workflow_run:
-    workflows: ['Beta CI']
-    types:
-      - completed
+  workflow_dispatch:
+    inputs:
+      note:
+        description: 'Deprecated. Use Manual Fix Trigger instead.'
+        required: false
+        type: string
 
 jobs:
   cursor-review:
@@ -21,6 +26,12 @@ jobs:
       issues: write
       actions: read
     steps:
+      - name: Deprecated workflow notice
+        run: |
+          echo "This workflow is deprecated and intentionally does not run automated agent work."
+          echo "Use '.github/workflows/manual-fix-trigger.yaml' to manually invoke Jules/Cursor actions."
+          echo "Use '.github/workflows/cursor-launcher.yaml' + '.github/workflows/cursor-fix.yaml' for the automated pipeline."
+          exit 0
       - name: Get PR details from workflow run
         id: pr
         env:
