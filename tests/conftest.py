@@ -1,5 +1,5 @@
 import sys
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 
 # --- Start of new mocking logic ---
@@ -102,10 +102,63 @@ mock_modules = {
         "homeassistant.helpers.entity_platform",
         "homeassistant.helpers.entity_registry",
         "homeassistant.helpers.restore_state",
-        "homeassistant.helpers.storage",
         "homeassistant.helpers.update_coordinator",
     ]
 }
+
+# Create a more specific mock for homeassistant.helpers.storage
+# This is needed to avoid conflicts with autospeccing in tests
+storage_mock = MagicMock()
+mock_store_instance = MagicMock()
+mock_store_instance._async_load = AsyncMock(return_value=None)
+mock_store_instance.async_save = AsyncMock()
+storage_mock.Store = MagicMock(return_value=mock_store_instance)
+mock_modules["homeassistant.helpers.storage"] = storage_mock
+
+# Create a more specific mock for homeassistant.helpers.storage
+# This is needed to avoid conflicts with autospeccing in tests
+storage_mock = MagicMock()
+mock_store_instance = MagicMock()
+mock_store_instance._async_load = AsyncMock(return_value=None)
+mock_store_instance.async_save = AsyncMock()
+storage_mock.Store = MagicMock(return_value=mock_store_instance)
+mock_modules["homeassistant.helpers.storage"] = storage_mock
+
+# Create a more specific mock for homeassistant.helpers.storage
+# This is needed to avoid conflicts with autospeccing in tests
+storage_mock = MagicMock()
+mock_store_instance = MagicMock()
+mock_store_instance._async_load = AsyncMock(return_value=None)
+mock_store_instance.async_save = AsyncMock()
+storage_mock.Store = MagicMock(return_value=mock_store_instance)
+mock_modules["homeassistant.helpers.storage"] = storage_mock
+
+# Create a more specific mock for homeassistant.helpers.storage
+# This is needed to avoid conflicts with autospeccing in tests
+storage_mock = MagicMock()
+mock_store_instance = MagicMock()
+mock_store_instance._async_load = AsyncMock(return_value=None)
+mock_store_instance.async_save = AsyncMock()
+storage_mock.Store = MagicMock(return_value=mock_store_instance)
+mock_modules["homeassistant.helpers.storage"] = storage_mock
+
+# Create a more specific mock for homeassistant.helpers.storage
+# This is needed to avoid conflicts with autospeccing in tests
+storage_mock = MagicMock()
+mock_store_instance = MagicMock()
+mock_store_instance._async_load = AsyncMock(return_value=None)
+mock_store_instance.async_save = AsyncMock()
+storage_mock.Store = MagicMock(return_value=mock_store_instance)
+mock_modules["homeassistant.helpers.storage"] = storage_mock
+
+# Create a more specific mock for homeassistant.helpers.storage
+# This is needed to avoid conflicts with autospeccing in tests
+storage_mock = MagicMock()
+mock_store_instance = MagicMock()
+mock_store_instance._async_load = AsyncMock(return_value=None)
+mock_store_instance.async_save = AsyncMock()
+storage_mock.Store = MagicMock(return_value=mock_store_instance)
+mock_modules["homeassistant.helpers.storage"] = storage_mock
 
 # Overwrite specific modules/classes that need custom class mocks
 mock_modules["homeassistant.helpers.entity"].Entity = MockEntity
