@@ -581,9 +581,7 @@ SCHEMA_DEVICE_ASSOCIATION = vol.Schema(
 # Section: UI Mode
 SCHEMA_UI_MODE = vol.Schema(
     {
-        vol.Required(
-            CONF_UI_MODE, default=DEFAULT_UI_MODE
-        ): selector.SelectSelector(
+        vol.Required(CONF_UI_MODE, default=DEFAULT_UI_MODE): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=[
                     selector.SelectOptionDict(

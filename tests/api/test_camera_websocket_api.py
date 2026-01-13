@@ -95,6 +95,7 @@ async def test_ws_get_camera_snapshot(hass_ws_client, mock_hass, mock_entity_reg
     with patch(
         "custom_components.meraki_ha.api.camera.er.async_get",
         return_value=mock_entity_registry,
+        autospec=False,
     ):
         client = await hass_ws_client(mock_hass)
         await client.send_json(
@@ -116,6 +117,7 @@ async def test_ws_get_camera_snapshot_entity_not_found(
     with patch(
         "custom_components.meraki_ha.api.camera.er.async_get",
         return_value=mock_entity_registry,
+        autospec=False,
     ):
         client = await hass_ws_client(mock_hass)
         await client.send_json(
@@ -137,6 +139,7 @@ async def test_ws_get_available_cameras(
     with patch(
         "custom_components.meraki_ha.api.camera.er.async_get",
         return_value=mock_entity_registry,
+        autospec=False,
     ):
         client = await hass_ws_client(mock_hass)
         await client.send_json(
@@ -215,6 +218,7 @@ async def test_ws_get_rtsp_url(
     with patch(
         "custom_components.meraki_ha.api.camera.er.async_get",
         return_value=mock_entity_registry,
+        autospec=False,
     ):
         client = await hass_ws_client(mock_hass)
         await client.send_json(

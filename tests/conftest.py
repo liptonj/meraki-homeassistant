@@ -27,6 +27,48 @@ class MockCoordinatorEntity(MockEntity):
     pass
 
 
+class MockRestoreEntity(MockEntity):
+    """Mock for RestoreEntity."""
+
+    pass
+
+
+class MockButtonEntity(MockEntity):
+    """Mock for ButtonEntity."""
+
+    pass
+
+
+class MockCamera(MockEntity):
+    """Mock for Camera."""
+
+    pass
+
+
+class MockSwitchEntity(MockEntity):
+    """Mock for SwitchEntity."""
+
+    pass
+
+
+class MockTextEntity(MockEntity):
+    """Mock for TextEntity."""
+
+    pass
+
+
+class MockNumberEntity(MockEntity):
+    """Mock for NumberEntity."""
+
+    pass
+
+
+class MockSelectEntity(MockEntity):
+    """Mock for SelectEntity."""
+
+    pass
+
+
 # Mock the Home Assistant modules to allow for standalone testing
 # Create a dictionary of mocks
 # For most, a simple MagicMock is fine.
@@ -74,6 +116,17 @@ mock_modules[
 mock_modules[
     "homeassistant.helpers.update_coordinator"
 ].CoordinatorEntity = MockCoordinatorEntity
+mock_modules["homeassistant.components.camera"].Camera = MockCamera
+mock_modules["homeassistant.components.text"].TextEntity = MockTextEntity
+mock_modules["homeassistant.components.number"].NumberEntity = MockNumberEntity
+mock_modules["homeassistant.components.select"].SelectEntity = MockSelectEntity
+mock_modules["homeassistant.components.switch"].SwitchEntity = MockSwitchEntity
+mock_modules["homeassistant.components.button"].ButtonEntity = MockButtonEntity
+mock_modules["homeassistant.helpers.restore_state"].RestoreEntity = MockRestoreEntity
+# Add attributes to the dashboard mock to satisfy mypy
+dashboard_mock = mock_modules["homeassistant.components.lovelace.dashboard"]
+dashboard_mock.async_register_strategy = MagicMock()
+dashboard_mock.async_unregister_strategy = MagicMock()
 
 # Apply all mocks to sys.modules
 sys.modules.update(mock_modules)
