@@ -103,9 +103,14 @@ async def async_diagnose_panel(hass: HomeAssistant, call: ServiceCall) -> None:
 
 def async_register_diagnostic_service(hass: HomeAssistant) -> None:
     """Register the diagnostic service."""
+
+    async def _diagnose_panel_handler(call: ServiceCall) -> None:
+        """Handle the diagnose_panel service call."""
+        await async_diagnose_panel(hass, call)
+
     hass.services.async_register(
         DOMAIN,
         "diagnose_panel",
-        async_diagnose_panel,
+        _diagnose_panel_handler,
     )
     _LOGGER.info("Registered meraki_ha.diagnose_panel service")
