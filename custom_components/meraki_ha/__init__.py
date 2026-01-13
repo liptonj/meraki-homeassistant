@@ -133,17 +133,46 @@ async def _async_create_lovelace_dashboard(
 
         # Check if lovelace data is initialized
         if "lovelace" not in hass.data:
-            _LOGGER.warning("Lovelace not initialized, cannot create dashboard")
+            _LOGGER.warning(
+                "Lovelace not initialized yet. "
+                "Dashboard will be created on next reload."
+            )
             return False
 
-        # Check if dashboard already exists
-        dashboards = hass.data["lovelace"].get("dashboards", {})
-        if dashboard_id in dashboards:
-            _LOGGER.info("Dashboard %s already exists, skipping creation", dashboard_id)
+        lovelace_data = hass.data["lovelace"]
+        _LOGGER.debug("Lovelace data keys: %s", list(lovelace_data.keys()))
+
+        # Check if dashboards collection exists
+        if "dashboards" not in lovelace_data:
+            _LOGGER.warning("Lovelace dashboards collection not available")
+            return False
+
+        dashboards_collection = lovelace_data["dashboards"]
+
+        # Check if dashboard already exists by iterating through items
+        dashboard_exists = False
+        try:
+            # The dashboards collection might be a StorageCollection
+            if hasattr(dashboards_collection, "async_items"):
+                async for item in dashboards_collection.async_items():
+                    if item.get("id") == dashboard_id:
+                        dashboard_exists = True
+                        break
+            elif hasattr(dashboards_collection, "data"):
+                # Direct dictionary access
+                dashboard_exists = dashboard_id in dashboards_collection.data
+        except (AttributeError, TypeError) as check_err:
+            _LOGGER.debug("Could not check existing dashboards: %s", check_err)
+
+        if dashboard_exists:
+            _LOGGER.info(
+                "Dashboard %s already exists, skipping creation", dashboard_id
+            )
             return True
 
         # Create dashboard via storage collection
-        await hass.data["lovelace"]["dashboards"].async_create_item(
+        _LOGGER.debug("Creating dashboard with ID: %s", dashboard_id)
+        await dashboards_collection.async_create_item(
             {
                 "id": dashboard_id,
                 "url_path": dashboard_id,
@@ -156,6 +185,8 @@ async def _async_create_lovelace_dashboard(
         )
 
         # Save dashboard configuration
+        num_views = len(dashboard_config.get("views", []))
+        _LOGGER.debug("Saving dashboard configuration with %d views", num_views)
         await lovelace.async_save_config(hass, dashboard_id, dashboard_config)
 
         _LOGGER.info(
@@ -182,6 +213,12 @@ async def _async_create_lovelace_dashboard(
 
         return True
 
+    except AttributeError as err:
+        _LOGGER.error(
+            "Lovelace API not available (HA version compatibility issue): %s",
+            err,
+        )
+        return False
     except Exception as err:  # pylint: disable=broad-except
         _LOGGER.error(
             "Failed to create Lovelace dashboard: %s",
@@ -738,30 +775,44 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         # Register cards as Lovelace resources for automatic loading
         # This makes the cards available in the Lovelace UI picker
+        cards_url = f"/local/community/{DOMAIN}/meraki-cards.js"
         try:
             # pylint: disable=import-outside-toplevel
-            from homeassistant.components.lovelace import (  # type: ignore[attr-defined]
-                async_get_resources,
-            )
             from homeassistant.components.lovelace.resources import (
                 ResourceStorageCollection,
             )
 
-            resources = await async_get_resources(hass)
-            cards_url = f"/local/community/{DOMAIN}/meraki-cards.js"
+            # Access lovelace resources via hass.data
+            if "lovelace" in hass.data and "resources" in hass.data["lovelace"]:
+                resources = hass.data["lovelace"]["resources"]
+                if isinstance(resources, ResourceStorageCollection):
+                    # Check if resource already exists
+                    existing = False
+                    async for item in resources.async_items():
+                        if item.get("url") == cards_url:
+                            existing = True
+                            break
 
-            # Check if resource is already registered
-            existing = [r for r in resources if r.get("url") == cards_url]
-            is_storage = isinstance(resources, ResourceStorageCollection)
-            if not existing and is_storage:
-                await resources.async_create_item(
-                    {"res_type": "module", "url": cards_url}
+                    if not existing:
+                        await resources.async_create_item(
+                            {"res_type": "module", "url": cards_url}
+                        )
+                        _LOGGER.info(
+                            "Registered Meraki cards as Lovelace resource: %s",
+                            cards_url,
+                        )
+                    else:
+                        _LOGGER.debug("Meraki cards resource already registered")
+                else:
+                    _LOGGER.debug(
+                        "Lovelace using YAML mode - add resource manually: %s",
+                        cards_url,
+                    )
+            else:
+                _LOGGER.debug(
+                    "Lovelace not initialized - add resource manually: %s",
+                    cards_url,
                 )
-                _LOGGER.info(
-                    "Registered Meraki cards as Lovelace resource: %s", cards_url
-                )
-            elif existing:
-                _LOGGER.debug("Meraki cards resource already registered")
         except ImportError:
             _LOGGER.debug("Lovelace resources API not available")
         except Exception as err:  # pylint: disable=broad-except
