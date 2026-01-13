@@ -24,7 +24,6 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SCANNING_API_VALIDATOR,
     CONF_SHOW_REACT_PANEL,
-    CONF_UI_MODE,
     CONF_WEB_UI_PORT,
     CONF_WEBHOOK_SHARED_SECRET,
     DATA_CLIENT,
@@ -37,11 +36,9 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SCANNING_API_VALIDATOR,
     DEFAULT_SHOW_REACT_PANEL,
-    DEFAULT_UI_MODE,
     DEFAULT_WEB_UI_PORT,
     DOMAIN,
     PLATFORMS,
-    UI_MODE_LOVELACE,
 )
 from .core.api.client import MerakiAPIClient
 from .core.coordinators.ssid_firewall_coordinator import SsidFirewallCoordinator
@@ -707,11 +704,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
     # Register custom cards at HACS-standard path
-    # Per HA custom card docs: https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/
-    # Cards are built to www/meraki_ha/ at repo root (../../www/meraki_ha/ from integration)
+    # Per HA custom card docs:
+    # https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/
+    # Cards are built to www/meraki_ha/ at repo root
     # We register them at /local/community/<domain>/ which is the HACS standard
-    from homeassistant.components.http import StaticPathConfig
     from pathlib import Path
+
+    from homeassistant.components.http import StaticPathConfig
 
     # Cards are at ../../www/meraki_ha/ relative to this integration
     # This path is: custom_components/meraki_ha/ -> ../../www/meraki_ha/
@@ -740,7 +739,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Register cards as Lovelace resources for automatic loading
         # This makes the cards available in the Lovelace UI picker
         try:
-            from homeassistant.components.lovelace import (
+            # pylint: disable=import-outside-toplevel
+            from homeassistant.components.lovelace import (  # type: ignore[attr-defined]
                 async_get_resources,
             )
             from homeassistant.components.lovelace.resources import (
@@ -751,13 +751,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             cards_url = f"/local/community/{DOMAIN}/meraki-cards.js"
 
             # Check if resource is already registered
-            existing_resources = [r for r in resources if r.get("url") == cards_url]
-            if not existing_resources and isinstance(resources, ResourceStorageCollection):
+            existing = [r for r in resources if r.get("url") == cards_url]
+            is_storage = isinstance(resources, ResourceStorageCollection)
+            if not existing and is_storage:
                 await resources.async_create_item(
                     {"res_type": "module", "url": cards_url}
                 )
-                _LOGGER.info("Registered Meraki cards as Lovelace resource: %s", cards_url)
-            elif existing_resources:
+                _LOGGER.info(
+                    "Registered Meraki cards as Lovelace resource: %s", cards_url
+                )
+            elif existing:
                 _LOGGER.debug("Meraki cards resource already registered")
         except ImportError:
             _LOGGER.debug("Lovelace resources API not available")
