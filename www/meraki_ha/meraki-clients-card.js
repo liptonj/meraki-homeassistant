@@ -330,6 +330,19 @@ export class MerakiClientsCard extends MerakiCardBase {
     this._expandedClient = this._expandedClient === mac ? null : mac;
   }
 
+  _navigateToClient(mac) {
+    // Navigate to client detail page
+    const path = `client_${mac.replace(/:/g, '').toLowerCase()}`;
+    window.history.pushState(null, '', `#${path}`);
+    // Fire event to trigger view change
+    this.dispatchEvent(
+      new CustomEvent('location-changed', {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   async _handleBlock(client) {
     try {
       await this._callMerakiApi('meraki/block_client', { mac: client.mac });
@@ -493,6 +506,10 @@ export class MerakiClientsCard extends MerakiCardBase {
               </div>
             </div>
             <div class="actions-row">
+              <ha-button @click=${() => this._navigateToClient(client.mac)}>
+                <ha-icon icon="mdi:open-in-new"></ha-icon>
+                View Full Details
+              </ha-button>
               <ha-button @click=${() => this._handleBlock(client)}>
                 <ha-icon icon="mdi:block-helper"></ha-icon>
                 Block

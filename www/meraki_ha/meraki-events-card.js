@@ -17,6 +17,7 @@ export class MerakiEventsCard extends MerakiCardBase {
       _filterType: { type: String, state: true },
       _filterSeverity: { type: String, state: true },
       _limit: { type: Number, state: true },
+      _currentPage: { type: Number, state: true },
     };
   }
 
@@ -197,6 +198,41 @@ export class MerakiEventsCard extends MerakiCardBase {
         .load-more-button:hover {
           opacity: 0.9;
         }
+
+        .pagination {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 16px;
+          padding: 12px 16px;
+          border-top: 1px solid var(--divider-color);
+        }
+
+        .pagination-button {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.2s;
+        }
+
+        .pagination-button:hover:not(:disabled) {
+          background: var(--secondary-background-color);
+        }
+
+        .pagination-button:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+
+        .pagination-info {
+          font-size: 0.875rem;
+          color: var(--secondary-text-color);
+        }
       `,
     ];
   }
@@ -207,6 +243,7 @@ export class MerakiEventsCard extends MerakiCardBase {
       auto_refresh: true,
       refresh_interval: 30,
       limit: 50,
+      events_per_page: 10,
     };
   }
 
@@ -216,6 +253,7 @@ export class MerakiEventsCard extends MerakiCardBase {
     this._filterType = 'all';
     this._filterSeverity = 'all';
     this._limit = 50;
+    this._currentPage = 0;
     this._refreshInterval = null;
   }
 
@@ -370,8 +408,16 @@ export class MerakiEventsCard extends MerakiCardBase {
     this.requestUpdate();
   }
 
+  _changePage(delta) {
+    this._currentPage += delta;
+  }
+
   renderCard() {
     const filteredEvents = this._filterEvents();
+    const eventsPerPage = this.config.events_per_page || 10;
+    const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
+    const startIdx = this._currentPage * eventsPerPage;
+    const pageEvents = filteredEvents.slice(startIdx, startIdx + eventsPerPage);
 
     return html`
       <ha-card>
@@ -397,6 +443,7 @@ export class MerakiEventsCard extends MerakiCardBase {
                   .value=${this._filterType}
                   @change=${(e) => {
                     this._filterType = e.target.value;
+                    this._currentPage = 0;
                   }}
                 >
                   <option value="all">All Types</option>
@@ -416,6 +463,7 @@ export class MerakiEventsCard extends MerakiCardBase {
                   .value=${this._filterSeverity}
                   @change=${(e) => {
                     this._filterSeverity = e.target.value;
+                    this._currentPage = 0;
                   }}
                 >
                   <option value="all">All Severities</option>
@@ -441,7 +489,7 @@ export class MerakiEventsCard extends MerakiCardBase {
             `
           : html`
               <div class="events-list">
-                ${filteredEvents.map(
+                ${pageEvents.map(
                   (event) => html`
                     <div class="event-item">
                       <ha-icon
@@ -489,16 +537,32 @@ export class MerakiEventsCard extends MerakiCardBase {
                   `
                 )}
               </div>
+              ${totalPages > 1
+                ? html`
+                    <div class="pagination">
+                      <button
+                        class="pagination-button"
+                        ?disabled=${this._currentPage === 0}
+                        @click=${() => this._changePage(-1)}
+                        aria-label="Previous page"
+                      >
+                        <ha-icon icon="mdi:chevron-left"></ha-icon>
+                      </button>
+                      <span class="pagination-info"
+                        >Page ${this._currentPage + 1} of ${totalPages}</span
+                      >
+                      <button
+                        class="pagination-button"
+                        ?disabled=${this._currentPage >= totalPages - 1}
+                        @click=${() => this._changePage(1)}
+                        aria-label="Next page"
+                      >
+                        <ha-icon icon="mdi:chevron-right"></ha-icon>
+                      </button>
+                    </div>
+                  `
+                : ''}
             `}
-        ${filteredEvents.length >= this._limit
-          ? html`
-              <div class="load-more">
-                <button class="load-more-button" @click=${this._loadMore}>
-                  Load More
-                </button>
-              </div>
-            `
-          : ''}
       </ha-card>
     `;
   }

@@ -91,10 +91,16 @@ export class MerakiDevicesByTypeCard extends MerakiCardBase {
 
         .devices-table tr:hover {
           background: var(--secondary-background-color);
+          cursor: pointer;
         }
 
         .device-name {
           font-weight: 500;
+          color: var(--primary-color);
+        }
+
+        .device-name:hover {
+          text-decoration: underline;
         }
 
         .status-badge {
@@ -270,6 +276,19 @@ export class MerakiDevicesByTypeCard extends MerakiCardBase {
     };
   }
 
+  _navigateToDevice(serial) {
+    // Navigate to device detail page
+    const path = `device_${serial.toLowerCase()}`;
+    window.history.pushState(null, '', `#${path}`);
+    // Fire event to trigger view change
+    this.dispatchEvent(
+      new CustomEvent('location-changed', {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   _renderDeviceTable(devices, type) {
     const devicesPerPage = this.config.devices_per_page || 20;
     const currentPage = this._currentPages[type] || 0;
@@ -291,7 +310,7 @@ export class MerakiDevicesByTypeCard extends MerakiCardBase {
         <tbody>
           ${pageDevices.map(
             (device) => html`
-              <tr>
+              <tr @click=${() => this._navigateToDevice(device.serial)}>
                 <td class="device-name">${device.name || device.serial}</td>
                 <td>${device.model || 'N/A'}</td>
                 <td>

@@ -11,26 +11,22 @@ import { CARD_DEFINITIONS } from './shared/constants.js';
 import './shared/meraki-card-base.js';
 import './shared/meraki-editor-base.js';
 
-// Import all card components (from cursor-review branch)
+// Import all card components
 import './meraki-overview-card.js';
 import './meraki-device-card.js';
-import './meraki-devices-by-type-card.js'; // NEW: Grouped devices card
+import './meraki-devices-by-type-card.js'; // Groups devices by type with tables
 import './meraki-clients-card.js';
 import './meraki-switch-ports-card.js';
-
-// Import card components (from feature branch)
-import './meraki-devices-card';
-import './meraki-mqtt-status-card';
+import './meraki-mqtt-status-card.js'; // MQTT status card
 import './meraki-client-card/meraki-client-card.js';
 import './meraki-client-card/meraki-client-card-editor.js';
 import './meraki-camera-card/meraki-camera-card.js';
 import './meraki-camera-card/meraki-camera-card-editor.js';
 
-// Import new cards
+// Import new Lovelace cards
 import './meraki-ssids-list-card.js';
 import './meraki-events-card.js';
 import './meraki-guest-access-card.js';
-import './meraki-mqtt-status-card.js'; // JavaScript version
 
 // Register cards with Home Assistant's custom cards registry
 window.customCards = window.customCards || [];

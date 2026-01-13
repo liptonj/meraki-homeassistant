@@ -629,6 +629,13 @@ def main():
             print("\n📸 Generating view screenshots...")
 
             for i, view in enumerate(views):
+                view_path = view.get("path", f"view_{i}")
+                view_title = view.get("title", "View")
+                
+                # Skip full dashboard for individual views
+                if view_path == "full":
+                    continue
+                    
                 # Create HTML using our inline function
                 html_content = create_view_html_with_data(view, i)
                 html_path = WWW_DIR / f"screenshot_view_{i}.html"
@@ -652,10 +659,10 @@ def main():
                 page.set_viewport_size({"width": 1270, "height": max(height + 50, 900)})
                 page.wait_for_timeout(1000)
 
-                filename = f"view_{view['path']}.png"
+                filename = f"view_{view_path}.png"
                 screenshot_path = SCREENSHOT_DIR / filename
                 page.screenshot(path=str(screenshot_path), full_page=True)
-                print(f"  ✓ {filename}")
+                print(f"  ✓ {filename} ({view_title})")
 
             # Generate full dashboard
             print("\n📸 Generating full dashboard screenshot...")
