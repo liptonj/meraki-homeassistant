@@ -233,6 +233,7 @@ async def test_strategy_devices_sorted_by_name(
     ):
         config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
 
+    assert config is not None
     devices_view = config["views"][1]
     # Devices should be sorted: Alpha AP, Mike AP, Zulu AP
     assert len(devices_view["cards"]) == 3
@@ -278,6 +279,7 @@ async def test_strategy_skips_devices_not_in_registry(
     ):
         config = await strategy.async_generate(hass, CONFIG_ENTRY_ID)
 
+    assert config is not None
     devices_view = config["views"][1]
     # Only one device should have a card
     assert len(devices_view["cards"]) == 1
