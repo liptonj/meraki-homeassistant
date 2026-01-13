@@ -22,6 +22,7 @@ from .const import (
     CONF_MQTT_RELAY_DESTINATIONS,
     CONF_SCAN_INTERVAL,
     CONF_SCANNING_API_VALIDATOR,
+    CONF_UI_MODE,
     CONF_WEB_UI_PORT,
     CONF_WEBHOOK_SHARED_SECRET,
     DATA_CLIENT,
@@ -32,9 +33,11 @@ from .const import (
     DEFAULT_MQTT_RELAY_DESTINATIONS,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SCANNING_API_VALIDATOR,
+    DEFAULT_UI_MODE,
     DEFAULT_WEB_UI_PORT,
     DOMAIN,
     PLATFORMS,
+    UI_MODE_LOVELACE,
 )
 from .core.api.client import MerakiAPIClient
 from .core.coordinators.ssid_firewall_coordinator import SsidFirewallCoordinator
@@ -535,8 +538,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry_data["entities"] = discovered_entities
 
     # Register frontend panel and WebSocket API
-    await async_register_static_path(hass)
-    await async_register_panel(hass, entry)
+    ui_mode = entry.options.get(CONF_UI_MODE, DEFAULT_UI_MODE)
+    if ui_mode == UI_MODE_LOVELACE:
+        from .dashboard import MerakiDashboardStrategy
+        from homeassistant.components.lovelace import (
+            dashboard as lovelace_dashboard,
+        )
+
+        strategy = MerakiDashboardStrategy()
+        dashboard_config = await strategy.async_generate(hass, entry.entry_id)
+
+        if dashboard_config:
+            lovelace_dashboard.async_register_strategy(
+                hass, f"meraki-dashboard-{entry.entry_id}", strategy.async_generate
+            )
+            # You might want to automatically create a dashboard instance here
+            # For now, we'll just register the strategy
+        async_unregister_frontend(hass)  # Ensure legacy panel is not shown
+    else:
+        await async_register_static_path(hass)
+        await async_register_panel(hass, entry)
 
     # Register custom cards
     from homeassistant.components.http import StaticPathConfig
@@ -747,6 +768,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 await entry_data["webhook_manager"].async_unregister_webhooks()
             else:
                 await async_unregister_webhook(hass, entry.entry_id, api_client)
+
+        # Unregister dashboard strategy if it exists
+        from homeassistant.components.lovelace import (
+            dashboard as lovelace_dashboard,
+        )
+        lovelace_dashboard.async_unregister_strategy(hass, f"meraki-dashboard-{entry.entry_id}")
+
 
         async_unregister_frontend(hass)
 

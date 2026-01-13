@@ -32,6 +32,7 @@ from .schemas import (
     SCHEMA_LOGGING,
     SCHEMA_NETWORK_SELECTION,
     SCHEMA_POLLING,
+    SCHEMA_UI_MODE,
     SCHEMA_WEBHOOKS,
 )
 
@@ -92,6 +93,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                 "mqtt",
                 "scanning_api",
                 "display_preferences",
+                "ui_mode",
                 "notifications",
                 "logging",
             ],
@@ -559,6 +561,69 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         return self.async_show_form(
             step_id="display_preferences",
+            data_schema=schema_with_defaults,
+        )
+
+    async def async_step_ui_mode(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle UI mode selection."""
+        if user_input is not None:
+            self.options.update(user_input)
+            return self.async_create_entry(
+                title=CONF_INTEGRATION_TITLE, data=self.options
+            )
+
+        schema_with_defaults = self._populate_schema_defaults(
+            SCHEMA_UI_MODE,
+            self.options,
+        )
+
+        return self.async_show_form(
+            step_id="ui_mode",
+            data_schema=schema_with_defaults,
+        )
+
+    async def async_step_ui_mode(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle UI mode selection."""
+        if user_input is not None:
+            self.options.update(user_input)
+            return self.async_create_entry(
+                title=CONF_INTEGRATION_TITLE, data=self.options
+            )
+
+        schema_with_defaults = self._populate_schema_defaults(
+            SCHEMA_UI_MODE,
+            self.options,
+        )
+
+        return self.async_show_form(
+            step_id="ui_mode",
+            data_schema=schema_with_defaults,
+        )
+
+    async def async_step_ui_mode(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle UI mode selection."""
+        if user_input is not None:
+            self.options.update(user_input)
+            return self.async_create_entry(
+                title=CONF_INTEGRATION_TITLE, data=self.options
+            )
+
+        schema_with_defaults = self._populate_schema_defaults(
+            SCHEMA_UI_MODE,
+            self.options,
+        )
+
+        return self.async_show_form(
+            step_id="ui_mode",
             data_schema=schema_with_defaults,
         )
 

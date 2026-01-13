@@ -1,3 +1,85 @@
+import sys
+from unittest.mock import MagicMock
+
+
+# --- Start of new mocking logic ---
+class MockEntity:
+    """A mock base class for Home Assistant entities."""
+
+    pass
+
+
+class MockSensorEntity(MockEntity):
+    """Mock for SensorEntity."""
+
+    pass
+
+
+class MockBinarySensorEntity(MockEntity):
+    """Mock for BinarySensorEntity."""
+
+    pass
+
+
+class MockCoordinatorEntity(MockEntity):
+    """Mock for CoordinatorEntity."""
+
+    pass
+
+
+# Mock the Home Assistant modules to allow for standalone testing
+# Create a dictionary of mocks
+# For most, a simple MagicMock is fine.
+# For modules with base classes that cause metaclass conflicts,
+# we create a MagicMock and then assign our mock *classes* to the
+# appropriate attributes.
+
+# Default mock for all modules
+mock_modules = {
+    module: MagicMock()
+    for module in [
+        "homeassistant.components",
+        "homeassistant.components.binary_sensor",
+        "homeassistant.components.button",
+        "homeassistant.components.camera",
+        "homeassistant.components.lovelace",
+        "homeassistant.components.lovelace.dashboard",
+        "homeassistant.components.number",
+        "homeassistant.components.select",
+        "homeassistant.components.sensor",
+        "homeassistant.components.switch",
+        "homeassistant.components.text",
+        "homeassistant.components.webhook",
+        "homeassistant.config_entries",
+        "homeassistant.const",
+        "homeassistant.core",
+        "homeassistant.exceptions",
+        "homeassistant.helpers",
+        "homeassistant.helpers.device_registry",
+        "homeassistant.helpers.entity",
+        "homeassistant.helpers.entity_platform",
+        "homeassistant.helpers.entity_registry",
+        "homeassistant.helpers.restore_state",
+        "homeassistant.helpers.storage",
+        "homeassistant.helpers.update_coordinator",
+    ]
+}
+
+# Overwrite specific modules/classes that need custom class mocks
+mock_modules["homeassistant.helpers.entity"].Entity = MockEntity
+mock_modules["homeassistant.components.sensor"].SensorEntity = MockSensorEntity
+mock_modules[
+    "homeassistant.components.binary_sensor"
+].BinarySensorEntity = MockBinarySensorEntity
+mock_modules[
+    "homeassistant.helpers.update_coordinator"
+].CoordinatorEntity = MockCoordinatorEntity
+
+# Apply all mocks to sys.modules
+sys.modules.update(mock_modules)
+# --- End of new mocking logic ---
+
+
 """Global fixtures for meraki_ha integration."""
 
 from collections.abc import Generator

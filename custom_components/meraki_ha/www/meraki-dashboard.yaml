@@ -1,0 +1,29 @@
+title: Meraki Network
+views:
+  - title: Overview
+    path: overview
+    badges:
+      - type: custom:meraki-status-badge
+      - type: custom:meraki-clients-badge
+      - type: custom:meraki-alerts-badge
+    cards:
+      - type: custom:meraki-overview-card
+      - type: custom:meraki-clients-card
+        limit: 10
+      - type: custom:meraki-ssids-list-card
+
+  - title: Devices
+    path: devices
+    cards:
+      # This view will be auto-populated by the dashboard strategy
+      # with custom:meraki-device-card for each discovered device.
+
+  - title: Events
+    path: events
+    cards:
+      - type: custom:meraki-events-card
+
+  - title: Guest Access
+    path: guest
+    cards:
+      - type: custom:meraki-guest-access-card

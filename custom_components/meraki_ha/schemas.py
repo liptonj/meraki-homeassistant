@@ -39,6 +39,7 @@ from .const import (
     CONF_SCANNING_API_VALIDATOR,
     CONF_SSID_SCAN_INTERVAL,
     CONF_TEMPERATURE_UNIT,
+    CONF_UI_MODE,
     DASHBOARD_VIEW_MODE_NETWORK,
     DASHBOARD_VIEW_MODE_TYPE,
     DEFAULT_CAMERA_LINK_INTEGRATION,
@@ -61,6 +62,7 @@ from .const import (
     DEFAULT_SCANNING_API_VALIDATOR,
     DEFAULT_SSID_SCAN_INTERVAL,
     DEFAULT_TEMPERATURE_UNIT,
+    DEFAULT_UI_MODE,
     LOG_LEVEL_CRITICAL,
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_ERROR,
@@ -76,6 +78,8 @@ from .const import (
     MQTT_DEST_USERNAME,
     TEMPERATURE_UNIT_CELSIUS,
     TEMPERATURE_UNIT_FAHRENHEIT,
+    UI_MODE_LEGACY_PANEL,
+    UI_MODE_LOVELACE,
 )
 
 CONFIG_SCHEMA = vol.Schema(
@@ -571,5 +575,26 @@ SCHEMA_DEVICE_ASSOCIATION = vol.Schema(
         vol.Optional(
             CONF_MANUAL_CLIENT_ASSOCIATIONS,
         ): vol.Schema({str: str}),
+    }
+)
+
+# Section: UI Mode
+SCHEMA_UI_MODE = vol.Schema(
+    {
+        vol.Required(
+            CONF_UI_MODE, default=DEFAULT_UI_MODE
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(
+                        value=UI_MODE_LOVELACE, label="Native Lovelace Dashboard"
+                    ),
+                    selector.SelectOptionDict(
+                        value=UI_MODE_LEGACY_PANEL, label="Legacy Panel (React)"
+                    ),
+                ],
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
     }
 )
