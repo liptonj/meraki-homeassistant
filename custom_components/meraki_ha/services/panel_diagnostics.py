@@ -6,8 +6,8 @@ from pathlib import Path
 
 from homeassistant.core import HomeAssistant, ServiceCall
 
-from .const import DOMAIN
-from .helpers.logging_helper import MerakiLoggers
+from ..const import DOMAIN
+from ..helpers.logging_helper import MerakiLoggers
 
 _LOGGER = MerakiLoggers.FRONTEND
 
@@ -20,7 +20,7 @@ async def async_diagnose_panel(hass: HomeAssistant, call: ServiceCall) -> None:
 
     # Check files
     _LOGGER.info("Checking panel files...")
-    base_path = Path(__file__).parent / "www"
+    base_path = Path(__file__).parent.parent / "www"
 
     files_to_check = {
         "meraki-panel.js": base_path / "meraki-panel.js",
