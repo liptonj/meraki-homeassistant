@@ -540,16 +540,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register frontend panel and WebSocket API
     ui_mode = entry.options.get(CONF_UI_MODE, DEFAULT_UI_MODE)
     if ui_mode == UI_MODE_LOVELACE:
-        from .dashboard import MerakiDashboardStrategy
         from homeassistant.components.lovelace import (
             dashboard as lovelace_dashboard,
         )
+
+        from .dashboard import MerakiDashboardStrategy
 
         strategy = MerakiDashboardStrategy()
         dashboard_config = await strategy.async_generate(hass, entry.entry_id)
 
         if dashboard_config:
-            lovelace_dashboard.async_register_strategy(
+            lovelace_dashboard.async_register_strategy(  # type: ignore[attr-defined]
                 hass, f"meraki-dashboard-{entry.entry_id}", strategy.async_generate
             )
             # You might want to automatically create a dashboard instance here
@@ -773,8 +774,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         from homeassistant.components.lovelace import (
             dashboard as lovelace_dashboard,
         )
-        lovelace_dashboard.async_unregister_strategy(hass, f"meraki-dashboard-{entry.entry_id}")
 
+        lovelace_dashboard.async_unregister_strategy(  # type: ignore[attr-defined]
+            hass, f"meraki-dashboard-{entry.entry_id}"
+        )
 
         async_unregister_frontend(hass)
 

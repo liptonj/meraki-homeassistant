@@ -1,4 +1,5 @@
 """Dashboard strategy for the Meraki Home Assistant integration."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -12,9 +13,10 @@ from .const import DOMAIN
 class MerakiDashboardStrategy:
     """Generate a dashboard for Meraki devices."""
 
-    async def async_generate(self, hass: HomeAssistant, config_entry_id: str) -> dict[str, Any] | None:
+    async def async_generate(
+        self, hass: HomeAssistant, config_entry_id: str
+    ) -> dict[str, Any] | None:
         """Generate a dashboard configuration."""
-
         coordinator = hass.data[DOMAIN][config_entry_id].get("coordinator")
         if not coordinator or not coordinator.data:
             return None

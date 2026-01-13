@@ -585,48 +585,6 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             data_schema=schema_with_defaults,
         )
 
-    async def async_step_ui_mode(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ) -> ConfigFlowResult:
-        """Handle UI mode selection."""
-        if user_input is not None:
-            self.options.update(user_input)
-            return self.async_create_entry(
-                title=CONF_INTEGRATION_TITLE, data=self.options
-            )
-
-        schema_with_defaults = self._populate_schema_defaults(
-            SCHEMA_UI_MODE,
-            self.options,
-        )
-
-        return self.async_show_form(
-            step_id="ui_mode",
-            data_schema=schema_with_defaults,
-        )
-
-    async def async_step_ui_mode(
-        self,
-        user_input: dict[str, Any] | None = None,
-    ) -> ConfigFlowResult:
-        """Handle UI mode selection."""
-        if user_input is not None:
-            self.options.update(user_input)
-            return self.async_create_entry(
-                title=CONF_INTEGRATION_TITLE, data=self.options
-            )
-
-        schema_with_defaults = self._populate_schema_defaults(
-            SCHEMA_UI_MODE,
-            self.options,
-        )
-
-        return self.async_show_form(
-            step_id="ui_mode",
-            data_schema=schema_with_defaults,
-        )
-
     async def async_step_notifications(
         self,
         user_input: dict[str, Any] | None = None,
