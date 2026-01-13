@@ -7,6 +7,8 @@ export default defineConfig({
       entry: {
         'ssid-card': resolve(__dirname, 'src/cards/meraki-ssid-card.ts'),
         'ssid-card-editor': resolve(__dirname, 'src/cards/meraki-ssid-card-editor.ts'),
+        'badges': resolve(__dirname, 'src/badges.ts'),
+        'dashboard-strategy': resolve(__dirname, 'src/strategies/meraki-dashboard-strategy.ts'),
       },
       formats: ['es'],
     },
