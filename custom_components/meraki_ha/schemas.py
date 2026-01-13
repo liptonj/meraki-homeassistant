@@ -6,6 +6,7 @@ import voluptuous as vol
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_AUTO_CREATE_DASHBOARD,
     CONF_CAMERA_LINK_INTEGRATION,
     CONF_CAMERA_SNAPSHOT_INTERVAL,
     CONF_CLIENT_SCAN_INTERVAL,
@@ -37,11 +38,13 @@ from .const import (
     CONF_SCANNING_API_EXTERNAL_URL,
     CONF_SCANNING_API_SECRET,
     CONF_SCANNING_API_VALIDATOR,
+    CONF_SHOW_REACT_PANEL,
     CONF_SSID_SCAN_INTERVAL,
     CONF_TEMPERATURE_UNIT,
     CONF_UI_MODE,
     DASHBOARD_VIEW_MODE_NETWORK,
     DASHBOARD_VIEW_MODE_TYPE,
+    DEFAULT_AUTO_CREATE_DASHBOARD,
     DEFAULT_CAMERA_LINK_INTEGRATION,
     DEFAULT_CAMERA_SNAPSHOT_INTERVAL,
     DEFAULT_CLIENT_SCAN_INTERVAL,
@@ -60,6 +63,7 @@ from .const import (
     DEFAULT_SCANNING_API_EXTERNAL_URL,
     DEFAULT_SCANNING_API_SECRET,
     DEFAULT_SCANNING_API_VALIDATOR,
+    DEFAULT_SHOW_REACT_PANEL,
     DEFAULT_SSID_SCAN_INTERVAL,
     DEFAULT_TEMPERATURE_UNIT,
     DEFAULT_UI_MODE,
@@ -578,7 +582,7 @@ SCHEMA_DEVICE_ASSOCIATION = vol.Schema(
     }
 )
 
-# Section: UI Mode
+# Section: UI Mode (DEPRECATED - kept for backwards compatibility)
 SCHEMA_UI_MODE = vol.Schema(
     {
         vol.Required(CONF_UI_MODE, default=DEFAULT_UI_MODE): selector.SelectSelector(
@@ -594,5 +598,17 @@ SCHEMA_UI_MODE = vol.Schema(
                 mode=selector.SelectSelectorMode.DROPDOWN,
             )
         ),
+    }
+)
+
+# Section: UI Configuration (New - replaces UI_MODE)
+SCHEMA_UI_CONFIGURATION = vol.Schema(
+    {
+        vol.Required(
+            CONF_SHOW_REACT_PANEL, default=DEFAULT_SHOW_REACT_PANEL
+        ): selector.BooleanSelector(selector.BooleanSelectorConfig()),
+        vol.Required(
+            CONF_AUTO_CREATE_DASHBOARD, default=DEFAULT_AUTO_CREATE_DASHBOARD
+        ): selector.BooleanSelector(selector.BooleanSelectorConfig()),
     }
 )

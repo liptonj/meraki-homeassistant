@@ -15,6 +15,10 @@ export const CARD_TYPES = {
   DEVICES: 'meraki-devices-card',
   MQTT_STATUS: 'meraki-mqtt-status-card',
   CAMERA: 'meraki-camera-card',
+  // New cards
+  SSIDS_LIST: 'meraki-ssids-list-card',
+  EVENTS: 'meraki-events-card',
+  GUEST_ACCESS: 'meraki-guest-access-card',
 };
 
 export const EDITOR_TYPES = {
@@ -34,13 +38,15 @@ export const CARD_DEFINITIONS = [
   {
     type: CARD_TYPES.OVERVIEW,
     name: 'Meraki Overview',
-    description: 'Overview of your Meraki network health with device counts, clients, and alerts',
+    description:
+      'Overview of your Meraki network health with device counts, clients, and alerts',
     preview: true,
   },
   {
     type: CARD_TYPES.DEVICE,
     name: 'Meraki Device',
-    description: 'Single device status card showing details, firmware, and client count',
+    description:
+      'Single device status card showing details, firmware, and client count',
     preview: true,
   },
   {
@@ -52,7 +58,8 @@ export const CARD_DEFINITIONS = [
   {
     type: CARD_TYPES.SWITCH_PORTS,
     name: 'Meraki Switch Ports',
-    description: 'Visual switch port status grid with PoE indicators and tooltips',
+    description:
+      'Visual switch port status grid with PoE indicators and tooltips',
     preview: true,
   },
   {
@@ -77,6 +84,25 @@ export const CARD_DEFINITIONS = [
     type: CARD_TYPES.CAMERA,
     name: 'Meraki Camera Card',
     description: 'A card to display Meraki camera snapshots and controls.',
+    preview: true,
+  },
+  {
+    type: CARD_TYPES.SSIDS_LIST,
+    name: 'Meraki SSIDs List',
+    description:
+      'Display all SSIDs across networks with status and client counts',
+    preview: true,
+  },
+  {
+    type: CARD_TYPES.EVENTS,
+    name: 'Meraki Events',
+    description: 'Display recent network events and alerts with filtering',
+    preview: true,
+  },
+  {
+    type: CARD_TYPES.GUEST_ACCESS,
+    name: 'Meraki Guest Access',
+    description: 'Manage guest WiFi access with timed keys',
     preview: true,
   },
 ];

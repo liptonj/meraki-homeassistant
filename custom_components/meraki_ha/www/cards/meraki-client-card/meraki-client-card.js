@@ -42,7 +42,8 @@ const getRelativeTime = (dateString) => {
 
   if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  if (diffHours < 24)
+    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
   if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   return formatDate(dateString);
 };
@@ -170,7 +171,9 @@ export class MerakiClientCard extends MerakiCardBase {
         .card-body {
           padding: 0 16px 16px;
           overflow: hidden;
-          transition: max-height 0.3s ease, opacity 0.3s ease;
+          transition:
+            max-height 0.3s ease,
+            opacity 0.3s ease;
         }
 
         .card-body.collapsed {
@@ -408,8 +411,8 @@ export class MerakiClientCard extends MerakiCardBase {
     const connectionType = client.ssid
       ? 'wireless'
       : client.switchport
-        ? 'wired'
-        : 'unknown';
+      ? 'wired'
+      : 'unknown';
 
     return html`
       <ha-card>
@@ -418,14 +421,22 @@ export class MerakiClientCard extends MerakiCardBase {
           <div class="client-info">
             <div class="header-name">${client.description || client.mac}</div>
             <div class="header-meta">
-              <span class="status-badge ${isOnline ? 'status-online' : 'status-offline'}">
+              <span
+                class="status-badge ${isOnline
+                  ? 'status-online'
+                  : 'status-offline'}"
+              >
                 ${isOnline ? '🟢' : '⚪'} ${client.status || 'Unknown'}
               </span>
               ${isBlocked
-                ? html`<span class="status-badge status-blocked">🚫 Blocked</span>`
+                ? html`<span class="status-badge status-blocked"
+                    >🚫 Blocked</span
+                  >`
                 : ''}
               ${client.os || client.manufacturer
-                ? html`<span>${client.manufacturer || ''} ${client.os || ''}</span>`
+                ? html`<span
+                    >${client.manufacturer || ''} ${client.os || ''}</span
+                  >`
                 : ''}
             </div>
           </div>
@@ -478,29 +489,32 @@ export class MerakiClientCard extends MerakiCardBase {
                   <h3 class="section-title">🔗 Connection</h3>
                   <div class="detail-table">
                     <span class="detail-label">Connected To</span>
-                    <span class="detail-value">${client.recentDeviceName || '—'}</span>
+                    <span class="detail-value"
+                      >${client.recentDeviceName || '—'}</span
+                    >
 
                     ${client.recentDeviceSerial
                       ? html`
                           <span class="detail-label">Device Serial</span>
-                          <span class="detail-value mono">${client.recentDeviceSerial}</span>
+                          <span class="detail-value mono"
+                            >${client.recentDeviceSerial}</span
+                          >
                         `
                       : ''}
-
                     ${client.ssid
                       ? html`
                           <span class="detail-label">SSID</span>
                           <span class="detail-value">${client.ssid}</span>
                         `
                       : ''}
-
                     ${client.switchport
                       ? html`
                           <span class="detail-label">Switchport</span>
-                          <span class="detail-value">Port ${client.switchport}</span>
+                          <span class="detail-value"
+                            >Port ${client.switchport}</span
+                          >
                         `
                       : ''}
-
                     ${client.vlan !== undefined
                       ? html`
                           <span class="detail-label">VLAN</span>
@@ -511,7 +525,9 @@ export class MerakiClientCard extends MerakiCardBase {
                     <span class="detail-label">Type</span>
                     <span class="detail-value">
                       <span class="connection-badge">
-                        ${connectionType === 'wireless' ? '📶 Wireless' : '🔌 Wired'}
+                        ${connectionType === 'wireless'
+                          ? '📶 Wireless'
+                          : '🔌 Wired'}
                       </span>
                     </span>
                   </div>
@@ -527,17 +543,23 @@ export class MerakiClientCard extends MerakiCardBase {
                   <div class="detail-table">
                     <span class="detail-label">↑ Sent</span>
                     <span class="detail-value">
-                      <span class="text-success">${formatBytes(client.usage.sent)}</span>
+                      <span class="text-success"
+                        >${formatBytes(client.usage.sent)}</span
+                      >
                     </span>
 
                     <span class="detail-label">↓ Received</span>
                     <span class="detail-value">
-                      <span class="text-info">${formatBytes(client.usage.recv)}</span>
+                      <span class="text-info"
+                        >${formatBytes(client.usage.recv)}</span
+                      >
                     </span>
 
                     <span class="detail-label">Total</span>
                     <span class="detail-value">
-                      ${formatBytes((client.usage.sent || 0) + (client.usage.recv || 0))}
+                      ${formatBytes(
+                        (client.usage.sent || 0) + (client.usage.recv || 0)
+                      )}
                     </span>
                   </div>
                 </div>
@@ -551,10 +573,14 @@ export class MerakiClientCard extends MerakiCardBase {
                   <h3 class="section-title">🕐 Timestamps</h3>
                   <div class="detail-table">
                     <span class="detail-label">First Seen</span>
-                    <span class="detail-value">${formatDate(client.firstSeen)}</span>
+                    <span class="detail-value"
+                      >${formatDate(client.firstSeen)}</span
+                    >
 
                     <span class="detail-label">Last Seen</span>
-                    <span class="detail-value">${getRelativeTime(client.lastSeen)}</span>
+                    <span class="detail-value"
+                      >${getRelativeTime(client.lastSeen)}</span
+                    >
                   </div>
                 </div>
               `
@@ -572,21 +598,66 @@ export class MerakiClientCard extends MerakiCardBase {
                   </button>
                 `
               : ''}
-
             ${client.ha_device_id
               ? html`
-                  <button class="action-button primary" @click=${this._handleNavigateToDevice}>
+                  <button
+                    class="action-button primary"
+                    @click=${this._handleNavigateToDevice}
+                  >
                     📱 View in HA
                   </button>
                 `
               : ''}
 
-            <button class="action-button secondary" @click=${this._handleRefresh}>
+            <button
+              class="action-button secondary"
+              @click=${this._handleRefresh}
+            >
               🔄 Refresh
             </button>
           </div>
+
+          ${this._renderHomeAssistantEntities(client)}
         </div>
       </ha-card>
+    `;
+  }
+
+  _renderHomeAssistantEntities(client) {
+    if (!client.ha_device_id || !this.hass) return '';
+
+    // Find HA entities for this device
+    const deviceEntities = Object.values(this.hass.states).filter((entity) => {
+      const deviceId = entity.attributes?.device_id;
+      return (
+        deviceId === client.ha_device_id ||
+        entity.entity_id.includes(client.ha_device_id.replace(/_/g, '-'))
+      );
+    });
+
+    if (deviceEntities.length === 0) return '';
+
+    return html`
+      <div class="info-section">
+        <div class="section-title">
+          🏠 Home Assistant Entities (${deviceEntities.length})
+        </div>
+        <div class="info-grid">
+          ${deviceEntities.map(
+            (entity) => html`
+              <div class="info-item">
+                <div class="info-label">
+                  ${entity.attributes?.friendly_name || entity.entity_id}
+                </div>
+                <div class="info-value">
+                  ${entity.state}
+                  ${entity.attributes?.unit_of_measurement || ''}
+                </div>
+              </div>
+            `
+          )}
+        </div>
+      </div>
     `;
   }
 
@@ -619,7 +690,8 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'meraki-client-card',
   name: 'Meraki Client Card',
-  description: 'Displays detailed information about a single Meraki network client',
+  description:
+    'Displays detailed information about a single Meraki network client',
   preview: true,
   documentationURL: 'https://github.com/liptonj/meraki-homeassistant',
 });

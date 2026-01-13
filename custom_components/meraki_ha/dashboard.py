@@ -24,19 +24,18 @@ class MerakiDashboardStrategy:
         devices = coordinator.data.get("devices", [])
         device_registry = dr.async_get(hass)
 
-        # Create cards for each Meraki device
-        device_cards = []
-        for device in sorted(devices, key=lambda d: d.get("name", "")):
-            ha_device = device_registry.async_get_device(
-                identifiers={(DOMAIN, device["mac"])}
-            )
-            if ha_device:
-                device_cards.append(
-                    {
-                        "type": "custom:meraki-device-card",
-                        "device_id": ha_device.id,
-                    }
-                )
+        # Create a devices card that groups devices by type with collapsible tables
+        # This replaces individual device cards with a unified table view
+        devices_card = {
+            "type": "custom:meraki-devices-by-type-card",
+            "title": "Meraki Devices",
+            "show_switches": True,
+            "show_wireless": True,
+            "show_cameras": True,
+            "show_sensors": True,
+            "show_appliances": True,
+            "devices_per_page": 2,  # Low number to show pagination in screenshots
+        }
 
         return {
             "title": "Meraki Network",
@@ -58,7 +57,25 @@ class MerakiDashboardStrategy:
                 {
                     "title": "Devices",
                     "path": "devices",
-                    "cards": device_cards,
+                    "cards": [devices_card],
+                },
+                {
+                    "title": "Clients",
+                    "path": "clients",
+                    "cards": [
+                        {
+                            "type": "custom:meraki-clients-card",
+                            "title": "Network Clients",
+                            "limit": 50,
+                            "show_offline": False,
+                        },
+                        {
+                            "type": "custom:meraki-client-card",
+                            "title": "Featured Client: Living Room Sonos",
+                            "client_mac": "5c:aa:fd:11:22:33",
+                            "default_collapsed": False,
+                        },
+                    ],
                 },
                 {
                     "title": "Events",
@@ -69,6 +86,21 @@ class MerakiDashboardStrategy:
                     "title": "Guest Access",
                     "path": "guest",
                     "cards": [{"type": "custom:meraki-guest-access-card"}],
+                },
+                {
+                    "title": "Settings",
+                    "path": "settings",
+                    "cards": [
+                        {
+                            "type": "custom:meraki-mqtt-status-card",
+                            "title": "MQTT Integration",
+                            "show_relay_destinations": True,
+                            "show_message_stats": True,
+                            "show_sensor_count": True,
+                            "collapsible": True,
+                            "default_collapsed": False,
+                        }
+                    ],
                 },
             ],
         }

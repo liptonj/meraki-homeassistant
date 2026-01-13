@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 
 from . import api
 from .const import (
+    CONF_AUTO_CREATE_DASHBOARD,
     CONF_ENABLE_MQTT,
     CONF_ENABLE_SCANNING_API,
     CONF_ENABLE_WEB_UI,
@@ -22,10 +23,12 @@ from .const import (
     CONF_MQTT_RELAY_DESTINATIONS,
     CONF_SCAN_INTERVAL,
     CONF_SCANNING_API_VALIDATOR,
+    CONF_SHOW_REACT_PANEL,
     CONF_UI_MODE,
     CONF_WEB_UI_PORT,
     CONF_WEBHOOK_SHARED_SECRET,
     DATA_CLIENT,
+    DEFAULT_AUTO_CREATE_DASHBOARD,
     DEFAULT_ENABLE_MQTT,
     DEFAULT_ENABLE_SCANNING_API,
     DEFAULT_ENABLE_WEB_UI,
@@ -33,6 +36,7 @@ from .const import (
     DEFAULT_MQTT_RELAY_DESTINATIONS,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SCANNING_API_VALIDATOR,
+    DEFAULT_SHOW_REACT_PANEL,
     DEFAULT_UI_MODE,
     DEFAULT_WEB_UI_PORT,
     DOMAIN,
@@ -99,6 +103,95 @@ def _create_scanning_api_handler(
         return await async_handle_scanning_api(hass, config_entry_id, request)
 
     return handler
+
+
+async def _async_create_lovelace_dashboard(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    dashboard_config: dict[str, Any],
+) -> bool:
+    """Create a Lovelace dashboard using Home Assistant's storage API.
+
+    Parameters
+    ----------
+    hass : HomeAssistant
+        The Home Assistant instance.
+    entry : ConfigEntry
+        The config entry for this integration.
+    dashboard_config : dict[str, Any]
+        The dashboard configuration dictionary.
+
+    Returns
+    -------
+    bool
+        True if dashboard was created successfully, False otherwise.
+    """
+    dashboard_id = f"meraki_{entry.entry_id[:8]}"
+
+    try:
+        # Defer import to avoid blocking startup
+        from homeassistant.components import (
+            lovelace,  # pylint: disable=import-outside-toplevel
+        )
+
+        # Check if lovelace data is initialized
+        if "lovelace" not in hass.data:
+            _LOGGER.warning("Lovelace not initialized, cannot create dashboard")
+            return False
+
+        # Check if dashboard already exists
+        dashboards = hass.data["lovelace"].get("dashboards", {})
+        if dashboard_id in dashboards:
+            _LOGGER.info("Dashboard %s already exists, skipping creation", dashboard_id)
+            return True
+
+        # Create dashboard via storage collection
+        await hass.data["lovelace"]["dashboards"].async_create_item(
+            {
+                "id": dashboard_id,
+                "url_path": dashboard_id,
+                "title": f"Meraki Network - {entry.title}",
+                "icon": "mdi:router-network",
+                "show_in_sidebar": True,
+                "require_admin": False,
+                "mode": "storage",  # Editable mode
+            }
+        )
+
+        # Save dashboard configuration
+        await lovelace.async_save_config(hass, dashboard_id, dashboard_config)
+
+        _LOGGER.info(
+            "Created editable Lovelace dashboard: %s at /%s",
+            entry.title,
+            dashboard_id,
+        )
+
+        # Show notification with dashboard link
+        await hass.services.async_call(
+            "persistent_notification",
+            "create",
+            {
+                "message": (
+                    f"Your Meraki dashboard has been created!\n\n"
+                    f"[Open Dashboard](/{dashboard_id})\n\n"
+                    f"You can edit this dashboard from the Lovelace UI."
+                ),
+                "title": "Meraki Dashboard Ready",
+                "notification_id": f"meraki_dashboard_{entry.entry_id}",
+            },
+            blocking=False,
+        )
+
+        return True
+
+    except Exception as err:  # pylint: disable=broad-except
+        _LOGGER.error(
+            "Failed to create Lovelace dashboard: %s",
+            err,
+            exc_info=True,
+        )
+        return False
 
 
 def _register_organization_device(
@@ -538,51 +631,77 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register diagnostic service
     async_register_diagnostic_service(hass)
 
+    # Register dashboard services
+    from .services.dashboard_service import (
+        async_register_services as async_register_dashboard_services,  # pylint: disable=import-outside-toplevel
+    )
+
+    async_register_dashboard_services(hass)
+
     discovered_entities = await discovery_service.discover_entities()
     entry_data["entities"] = discovered_entities
 
-    # Register frontend panel and WebSocket API
-    ui_mode = entry.options.get(CONF_UI_MODE, DEFAULT_UI_MODE)
-    if ui_mode == UI_MODE_LOVELACE:
-        # When Lovelace mode is selected, generate the dashboard configuration
-        # and store it for the frontend to use. The legacy React panel is not shown.
-        from .dashboard import MerakiDashboardStrategy
+    # Register frontend - support both UI modes simultaneously
+    show_react_panel = entry.options.get(
+        CONF_SHOW_REACT_PANEL, DEFAULT_SHOW_REACT_PANEL
+    )
+    auto_create_dashboard = entry.options.get(
+        CONF_AUTO_CREATE_DASHBOARD, DEFAULT_AUTO_CREATE_DASHBOARD
+    )
 
-        strategy = MerakiDashboardStrategy()
-        dashboard_config = await strategy.async_generate(hass, entry.entry_id)
+    # Always register static path for cards
+    _LOGGER.info("Registering static path for Meraki cards")
+    try:
+        await async_register_static_path(hass)
+        _LOGGER.info("Static path registration completed")
+    except Exception as err:
+        _LOGGER.error(
+            "Failed to register static path: %s",
+            err,
+            exc_info=True,
+        )
 
-        if dashboard_config:
-            # Store the generated dashboard config for later retrieval
-            entry_data["dashboard_config"] = dashboard_config
-            _LOGGER.info(
-                "Generated Meraki Lovelace dashboard configuration with %d views",
-                len(dashboard_config.get("views", [])),
-            )
-
-        # Register static path for custom cards
-        _LOGGER.info("Registering static path for Lovelace mode")
+    # Register React panel if enabled
+    if show_react_panel:
+        _LOGGER.info("Registering Meraki React panel")
         try:
-            await async_register_static_path(hass)
-            _LOGGER.info("Static path registration completed (Lovelace mode)")
+            await async_register_panel(hass, entry)
+            _LOGGER.info("React panel registration completed")
         except Exception as err:
             _LOGGER.error(
-                "Failed to register static path: %s",
+                "Failed to register React panel: %s. Panel will not be available.",
                 err,
                 exc_info=True,
             )
-
-        # Don't register the legacy React panel in Lovelace mode
-        async_unregister_frontend(hass)
     else:
-        # Legacy panel mode - register the React-based panel
-        _LOGGER.info("Registering Meraki frontend panel and static paths (legacy mode)")
+        # Unregister panel if disabled
+        async_unregister_frontend(hass)
+        _LOGGER.info("React panel disabled by configuration")
+
+    # Auto-create Lovelace dashboard if enabled
+    if auto_create_dashboard:
+        _LOGGER.info("Auto-creating Lovelace dashboard")
         try:
-            await async_register_static_path(hass)
-            await async_register_panel(hass, entry)
-            _LOGGER.info("Frontend panel registration completed")
+            from .dashboard import MerakiDashboardStrategy
+
+            strategy = MerakiDashboardStrategy()
+            dashboard_config = await strategy.async_generate(hass, entry.entry_id)
+
+            if dashboard_config:
+                # Store the generated dashboard config for later retrieval
+                entry_data["dashboard_config"] = dashboard_config
+                _LOGGER.info(
+                    "Generated Meraki Lovelace dashboard configuration with %d views",
+                    len(dashboard_config.get("views", [])),
+                )
+
+                # Auto-create the dashboard
+                await _async_create_lovelace_dashboard(hass, entry, dashboard_config)
+            else:
+                _LOGGER.warning("Failed to generate dashboard configuration")
         except Exception as err:
             _LOGGER.error(
-                "Failed to register frontend panel: %s. Panel will not be available.",
+                "Failed to generate/create dashboard: %s",
                 err,
                 exc_info=True,
             )

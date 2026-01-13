@@ -39,6 +39,13 @@ async def async_handle_sensor_alert(
     """
     _LOGGER.info("Sensor alert received: %s", alert_type)
 
+    # Store alert in history for Events card
+    coordinator.add_alert_to_history(
+        alert_type=alert_type,
+        category="sensor",
+        data=data,
+    )
+
     serial = data.get("deviceSerial")
     if not serial:
         _LOGGER.warning("Sensor alert missing 'deviceSerial': %s", data)

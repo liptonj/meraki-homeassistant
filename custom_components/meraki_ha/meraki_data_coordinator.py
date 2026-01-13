@@ -101,6 +101,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._processed_alert_ids: dict[str, datetime] = {}  # alertId -> processed time
         self._alert_dedup_ttl_seconds: int = 300  # 5 minutes TTL for dedup cache
 
+        # Alert history storage for Events card
+        self._alert_history: list[dict[str, Any]] = []  # Stores recent alerts
+        self._max_alert_history: int = 200  # Keep last 200 alerts
+
         # Prometheus-style metrics for monitoring
         self._webhook_counts_by_type: dict[str, int] = {}  # alert_type -> count
         self._webhook_processing_durations: list[float] = []  # milliseconds
@@ -1613,3 +1617,220 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             new_status,
                         )
                     break
+
+    def add_alert_to_history(
+        self,
+        alert_type: str,
+        category: str,
+        data: dict[str, Any],
+        severity: str | None = None,
+    ) -> None:
+        """
+        Add an alert to the history for display in the Events card.
+
+        Args:
+        ----
+            alert_type: The type of alert (e.g., "APs came up").
+            category: The alert category (device, client, network, security, sensor).
+            data: The raw alert data from the webhook.
+            severity: Optional severity level (critical, warning, info).
+                     If not provided, it will be auto-determined.
+
+        """
+        # Auto-determine severity if not provided
+        if severity is None:
+            severity = self._determine_alert_severity(alert_type)
+
+        # Format a human-readable description
+        description = self._format_alert_description(alert_type, data)
+
+        # Create the alert entry
+        alert_entry = {
+            "type": alert_type,
+            "category": category,
+            "severity": severity,
+            "description": description,
+            "timestamp": data.get("occurredAt") or datetime.now().isoformat(),
+            "device_serial": data.get("deviceSerial"),
+            "device_name": data.get("deviceName") or data.get("deviceSerial"),
+            "network_id": data.get("networkId"),
+            "network_name": data.get("networkName"),
+            "alert_id": data.get("alertId"),
+            "raw_data": data,
+        }
+
+        # Add to front of list (most recent first)
+        self._alert_history.insert(0, alert_entry)
+
+        # Trim to max size
+        if len(self._alert_history) > self._max_alert_history:
+            self._alert_history = self._alert_history[: self._max_alert_history]
+
+        _LOGGER.debug(
+            "Added %s alert to history: %s (total: %d)",
+            category,
+            alert_type,
+            len(self._alert_history),
+        )
+
+    def get_alert_history(
+        self,
+        limit: int = 50,
+        category: str | None = None,
+        severity: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Get recent alert history, optionally filtered by category and/or severity.
+
+        Args:
+        ----
+            limit: Maximum number of alerts to return (default: 50).
+            category: Optional category filter.
+                (device, client, network, security, sensor).
+            severity: Optional severity filter (critical, warning, info).
+
+        Returns
+        -------
+            List of alert entries, most recent first.
+
+        """
+        alerts = self._alert_history
+
+        # Apply filters if specified
+        if category:
+            alerts = [a for a in alerts if a.get("category") == category]
+        if severity:
+            alerts = [a for a in alerts if a.get("severity") == severity]
+
+        return alerts[:limit]
+
+    @staticmethod
+    def _determine_alert_severity(alert_type: str) -> str:
+        """
+        Determine alert severity from alert type.
+
+        Args:
+        ----
+            alert_type: The type of alert.
+
+        Returns
+        -------
+            Severity level: "critical", "warning", or "info".
+
+        """
+        alert_lower = alert_type.lower()
+
+        # Critical alerts
+        if any(
+            word in alert_lower
+            for word in [
+                "offline",
+                "went down",
+                "malware",
+                "intrusion",
+                "power outage",
+                "power loss",
+                "down",
+            ]
+        ):
+            return "critical"
+
+        # Warning alerts
+        if any(
+            word in alert_lower
+            for word in [
+                "rogue",
+                "threshold",
+                "blocked",
+                "disconnected",
+                "exceeded",
+                "water",
+                "door opened",
+            ]
+        ):
+            return "warning"
+
+        # Info alerts (default)
+        return "info"
+
+    @staticmethod
+    def _format_alert_description(alert_type: str, data: dict[str, Any]) -> str:
+        """
+        Format a human-readable alert description.
+
+        Args:
+        ----
+            alert_type: The type of alert.
+            data: The raw alert data from the webhook.
+
+        Returns
+        -------
+            A formatted description string.
+
+        """
+        alert_data = data.get("alertData", {})
+        device = data.get("deviceName") or data.get("deviceSerial", "Unknown")
+        network = data.get("networkName", "Unknown Network")
+        alert_lower = alert_type.lower()
+
+        # Device status alerts
+        if "came up" in alert_lower or "came online" in alert_lower:
+            return f"{device} came online in {network}"
+        if "went down" in alert_lower or "went offline" in alert_lower:
+            return f"{device} went offline in {network}"
+        if "rebooted" in alert_lower:
+            return f"{device} was rebooted in {network}"
+
+        # Client alerts
+        if "client" in alert_lower:
+            mac = data.get("deviceMac", "Unknown")
+            if "connect" in alert_lower:
+                return f"Client {mac} connected to {network}"
+            if "disconnect" in alert_lower:
+                return f"Client {mac} disconnected from {network}"
+            if "blocked" in alert_lower:
+                return f"Client {mac} was blocked on {network}"
+            return f"Client {mac}: {alert_type}"
+
+        # Security alerts
+        if "rogue" in alert_lower:
+            return f"Rogue AP detected in {network}"
+        if "intrusion" in alert_lower or "malware" in alert_lower:
+            return f"Security alert in {network}: {alert_type}"
+
+        # Sensor alerts
+        if "temperature" in alert_lower:
+            value = alert_data.get("value", "N/A")
+            threshold = alert_data.get("threshold", "N/A")
+            units = alert_data.get("temperatureUnits", "C")
+            return f"{device}: Temperature {value}°{units} (threshold: {threshold}°)"
+
+        if "humidity" in alert_lower:
+            value = alert_data.get("value", "N/A")
+            threshold = alert_data.get("threshold", "N/A")
+            return f"{device}: Humidity {value}% (threshold: {threshold}%)"
+
+        if "water" in alert_lower:
+            return f"{device}: Water detected"
+
+        if "door" in alert_lower:
+            status = "opened" if "open" in alert_lower else "closed"
+            return f"{device}: Door {status}"
+
+        if "power" in alert_lower:
+            if "outage" in alert_lower or "loss" in alert_lower:
+                return f"{device}: Power outage detected"
+            return f"{device}: {alert_type}"
+
+        # Network/configuration alerts
+        if "settings changed" in alert_lower:
+            return f"Network settings changed in {network}"
+        if "ssid" in alert_lower:
+            return f"SSID configuration changed in {network}"
+        if "vlan" in alert_lower:
+            return f"VLAN configuration changed in {network}"
+        if "firewall" in alert_lower:
+            return f"Firewall rules changed in {network}"
+
+        # Default: use alert type as-is
+        return f"{network}: {alert_type}"

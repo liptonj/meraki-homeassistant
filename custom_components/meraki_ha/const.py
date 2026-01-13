@@ -11,7 +11,7 @@ from typing import Any, Final
 
 # UI Mode Configuration
 CONF_UI_MODE: Final = "ui_mode"
-"""Configuration key for UI mode selection."""
+"""Configuration key for UI mode selection (DEPRECATED - use individual toggles)."""
 
 UI_MODE_LOVELACE: Final = "lovelace"
 """UI mode for native Lovelace dashboard."""
@@ -19,9 +19,21 @@ UI_MODE_LOVELACE: Final = "lovelace"
 UI_MODE_LEGACY_PANEL: Final = "legacy_panel"
 """UI mode for legacy React panel."""
 
-DEFAULT_UI_MODE: Final = UI_MODE_LEGACY_PANEL
-"""Default UI mode - use legacy panel for better out-of-box experience."""
-"""Default UI mode."""
+DEFAULT_UI_MODE: Final = UI_MODE_LOVELACE
+"""Default UI mode - use native Lovelace dashboard with custom cards."""
+
+# New UI Configuration (replaces UI_MODE)
+CONF_SHOW_REACT_PANEL: Final = "show_react_panel"
+"""Configuration key for showing React panel in sidebar."""
+
+CONF_AUTO_CREATE_DASHBOARD: Final = "auto_create_dashboard"
+"""Configuration key for auto-creating Lovelace dashboard."""
+
+DEFAULT_SHOW_REACT_PANEL: Final = True
+"""Default value for showing React panel."""
+
+DEFAULT_AUTO_CREATE_DASHBOARD: Final = True
+"""Default value for auto-creating Lovelace dashboard."""
 
 DOMAIN: Final = "meraki_ha"
 """Domain for the component."""

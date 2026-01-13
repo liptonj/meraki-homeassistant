@@ -27,6 +27,7 @@ def async_setup_websocket_api(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_get_ssids)
     websocket_api.async_register_command(hass, ws_get_switch_ports)
     websocket_api.async_register_command(hass, ws_subscribe_updates)
+    websocket_api.async_register_command(hass, ws_get_events)
     # Action endpoints
     websocket_api.async_register_command(hass, ws_block_client)
     websocket_api.async_register_command(hass, ws_unblock_client)
@@ -420,6 +421,53 @@ async def ws_set_client_policy(
     except Exception as err:  # noqa: BLE001
         _LOGGER.error("Failed to update client policy: %s", err)
         connection.send_error(msg["id"], "api_error", str(err))
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "meraki/get_events",
+        vol.Required("config_entry_id"): str,
+        vol.Optional("limit", default=50): int,
+        vol.Optional("category"): str,
+        vol.Optional("severity"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_get_events(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict,
+) -> None:
+    """Get recent webhook alert events with optional filtering.
+
+    Args:
+    ----
+        limit: Maximum number of events to return (default: 50, max: 200).
+        category: Optional filter by category.
+            (device, client, network, security, sensor).
+        severity: Optional filter by severity (critical, warning, info).
+
+    """
+    entry_id = msg["config_entry_id"]
+    if entry_id not in hass.data[DOMAIN]:
+        connection.send_error(msg["id"], "not_found", "Config entry not found.")
+        return
+
+    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
+
+    # Get parameters
+    limit = min(msg.get("limit", 50), 200)  # Cap at 200
+    category = msg.get("category")
+    severity = msg.get("severity")
+
+    # Fetch events from coordinator with optional filters
+    events = coordinator.get_alert_history(
+        limit=limit,
+        category=category,
+        severity=severity,
+    )
+
+    connection.send_result(msg["id"], {"events": events})
 
 
 def _sanitize_result(result: Any) -> dict[str, Any]:
