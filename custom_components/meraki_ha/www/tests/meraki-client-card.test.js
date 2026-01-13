@@ -1,5 +1,5 @@
-import { MerakiClientCard } from '../cards/meraki-client-card/meraki-client-card.js';
-import { MerakiClientCardEditor } from '../cards/meraki-client-card/meraki-client-card-editor.js';
+import { MerakiClientCard } from '../../../../www/meraki_ha/meraki-client-card/meraki-client-card.js';
+import { MerakiClientCardEditor } from '../../../../www/meraki_ha/meraki-client-card/meraki-client-card-editor.js';
 
 describe('MerakiClientCard', () => {
   let element;

@@ -1,4 +1,4 @@
-import { merakiCardStyles } from '../../custom_components/meraki_ha/www/cards/shared/styles.js';
+import { merakiCardStyles } from '../../www/meraki_ha/shared/styles.js';
 import { expect } from '@open-wc/testing';
 
 describe('merakiCardStyles', () => {

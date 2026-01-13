@@ -1,6 +1,6 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { MerakiSwitchPortsCard, MerakiSwitchPortsCardEditor } from '../../custom_components/meraki_ha/www/cards/meraki-switch-ports-card.js';
+import { MerakiSwitchPortsCard, MerakiSwitchPortsCardEditor } from '../../www/meraki_ha/meraki-switch-ports-card.js';
 
 describe('MerakiSwitchPortsCard', () => {
   let element;

@@ -1,6 +1,6 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { MerakiGuestAccessCard } from '../../custom_components/meraki_ha/www/cards/meraki-guest-access-card.js';
+import { MerakiGuestAccessCard } from '../../www/meraki_ha/meraki-guest-access-card.js';
 
 describe('MerakiGuestAccessCard', () => {
   let element;

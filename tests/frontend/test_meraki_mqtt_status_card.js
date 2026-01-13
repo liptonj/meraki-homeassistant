@@ -2,7 +2,7 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
 import 'custom-card-helpers';
-import '../../custom_components/meraki_ha/www/cards/meraki-mqtt-status-card.ts';
+import '../../www/meraki_ha/meraki-mqtt-status-card.ts';
 
 describe('MerakiMqttStatusCard', () => {
   let element;

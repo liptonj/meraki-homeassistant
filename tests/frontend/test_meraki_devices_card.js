@@ -10,7 +10,7 @@ describe('MerakiDevicesCard', () => {
   beforeEach(async () => {
     // Import the card dynamically to handle TS/JS interop
     await import(
-      '../../custom_components/meraki_ha/www/cards/meraki-devices-card.ts'
+      '../../www/meraki_ha/meraki-devices-card.ts'
     );
 
     hass = {
