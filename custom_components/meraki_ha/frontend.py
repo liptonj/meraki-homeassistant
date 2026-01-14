@@ -186,7 +186,7 @@ async def _async_register_cards_resource(hass: HomeAssistant) -> None:
         
         # Check if resource already exists
         existing = False
-        items = await resources.async_items()
+        items = resources.async_items()
         for item in items:
             if item.get("url") == cards_url:
                 existing = True
