@@ -13,7 +13,7 @@ class MerakiDashboardStrategy:
     """Generate a dashboard for Meraki devices."""
 
     def _generate_device_detail_page(
-        self, device: dict[str, Any], device_serial: str
+        self, device: dict[str, Any], device_serial: str, config_entry_id: str
     ) -> dict[str, Any]:
         """Generate a detail page for a specific device."""
         device_name = device.get("name", "Unknown Device")
@@ -24,6 +24,7 @@ class MerakiDashboardStrategy:
         cards = [
             {
                 "type": "custom:meraki-device-card",
+                "config_entry_id": config_entry_id,
                 "device_serial": device_serial,
                 "show_details": True,
             }
@@ -34,6 +35,7 @@ class MerakiDashboardStrategy:
             cards.append(
                 {
                     "type": "custom:meraki-switch-ports-card",
+                    "config_entry_id": config_entry_id,
                     "device_serial": device_serial,
                     "title": "Switch Ports",
                 }
@@ -42,6 +44,7 @@ class MerakiDashboardStrategy:
             cards.append(
                 {
                     "type": "custom:meraki-camera-card",
+                    "config_entry_id": config_entry_id,
                     "device_serial": device_serial,
                     "title": "Camera Feed",
                     "show_snapshot": True,
@@ -52,6 +55,7 @@ class MerakiDashboardStrategy:
             cards.append(
                 {
                     "type": "custom:meraki-sensor-readings-card",
+                    "config_entry_id": config_entry_id,
                     "device_serial": device_serial,
                     "title": "Sensor Readings",
                 }
@@ -62,6 +66,7 @@ class MerakiDashboardStrategy:
             cards.append(
                 {
                     "type": "custom:meraki-clients-card",
+                    "config_entry_id": config_entry_id,
                     "device_serial": device_serial,
                     "title": "Connected Clients",
                     "limit": 20,
@@ -72,6 +77,7 @@ class MerakiDashboardStrategy:
         cards.append(
             {
                 "type": "custom:meraki-events-card",
+                "config_entry_id": config_entry_id,
                 "device_serial": device_serial,
                 "title": "Recent Events",
                 "limit": 10,
@@ -86,10 +92,12 @@ class MerakiDashboardStrategy:
             "badges": [
                 {
                     "type": "custom:meraki-device-status-badge",
+                    "config_entry_id": config_entry_id,
                     "device_serial": device_serial,
                 },
                 {
                     "type": "custom:meraki-device-uptime-badge",
+                    "config_entry_id": config_entry_id,
                     "device_serial": device_serial,
                 },
             ],
@@ -97,7 +105,7 @@ class MerakiDashboardStrategy:
         }
 
     def _generate_client_detail_page(
-        self, client: dict[str, Any], client_mac: str
+        self, client: dict[str, Any], client_mac: str, config_entry_id: str
     ) -> dict[str, Any]:
         """Generate a detail page for a specific client."""
         client_name = client.get("description") or client.get("hostname", "Unknown Client")
@@ -105,6 +113,7 @@ class MerakiDashboardStrategy:
         cards = [
             {
                 "type": "custom:meraki-client-card",
+                "config_entry_id": config_entry_id,
                 "client_mac": client_mac,
                 "show_details": True,
             }
@@ -115,6 +124,7 @@ class MerakiDashboardStrategy:
             cards.append(
                 {
                     "type": "custom:meraki-ha-entities-card",
+                    "config_entry_id": config_entry_id,
                     "ha_device_id": client["ha_device_id"],
                     "title": "Home Assistant Entities",
                 }
@@ -124,6 +134,7 @@ class MerakiDashboardStrategy:
         cards.append(
             {
                 "type": "custom:meraki-client-history-card",
+                "config_entry_id": config_entry_id,
                 "client_mac": client_mac,
                 "title": "Connection History",
                 "limit": 10,
@@ -181,14 +192,14 @@ class MerakiDashboardStrategy:
                 "title": "Overview",
                 "path": "overview",
                 "badges": [
-                    {"type": "custom:meraki-status-badge"},
-                    {"type": "custom:meraki-clients-badge"},
-                    {"type": "custom:meraki-alerts-badge"},
+                    {"type": "custom:meraki-status-badge", "config_entry_id": config_entry_id},
+                    {"type": "custom:meraki-clients-badge", "config_entry_id": config_entry_id},
+                    {"type": "custom:meraki-alerts-badge", "config_entry_id": config_entry_id},
                 ],
                 "cards": [
-                    {"type": "custom:meraki-overview-card"},
-                    {"type": "custom:meraki-clients-card", "limit": 10},
-                    {"type": "custom:meraki-ssids-list-card"},
+                    {"type": "custom:meraki-overview-card", "config_entry_id": config_entry_id},
+                    {"type": "custom:meraki-clients-card", "config_entry_id": config_entry_id, "limit": 10},
+                    {"type": "custom:meraki-ssids-list-card", "config_entry_id": config_entry_id},
                 ],
             },
             {
@@ -197,6 +208,7 @@ class MerakiDashboardStrategy:
                 "cards": [
                     {
                         "type": "custom:meraki-devices-by-type-card",
+                        "config_entry_id": config_entry_id,
                         "title": "Meraki Devices",
                         "show_switches": True,
                         "show_wireless": True,
@@ -213,12 +225,14 @@ class MerakiDashboardStrategy:
                 "cards": [
                     {
                         "type": "custom:meraki-clients-card",
+                        "config_entry_id": config_entry_id,
                         "title": "Network Clients",
                         "limit": 50,
                         "show_offline": False,
                     },
                     {
                         "type": "custom:meraki-client-card",
+                        "config_entry_id": config_entry_id,
                         "title": "Featured Client: Living Room Sonos",
                         "client_mac": "5c:aa:fd:11:22:33",
                         "default_collapsed": False,
@@ -231,6 +245,7 @@ class MerakiDashboardStrategy:
                 "cards": [
                     {
                         "type": "custom:meraki-events-card",
+                        "config_entry_id": config_entry_id,
                         "events_per_page": 10,
                     }
                 ],
@@ -238,7 +253,7 @@ class MerakiDashboardStrategy:
             {
                 "title": "Guest Access",
                 "path": "guest",
-                "cards": [{"type": "custom:meraki-guest-access-card"}],
+                "cards": [{"type": "custom:meraki-guest-access-card", "config_entry_id": config_entry_id}],
             },
             {
                 "title": "Settings",
@@ -246,6 +261,7 @@ class MerakiDashboardStrategy:
                 "cards": [
                     {
                         "type": "custom:meraki-mqtt-status-card",
+                        "config_entry_id": config_entry_id,
                         "title": "MQTT Integration",
                         "show_relay_destinations": True,
                         "show_message_stats": True,
@@ -268,17 +284,17 @@ class MerakiDashboardStrategy:
 
             if switch:
                 views.append(
-                    self._generate_device_detail_page(switch, switch.get("serial"))
+                    self._generate_device_detail_page(switch, switch.get("serial"), config_entry_id)
                 )
             if camera:
                 views.append(
-                    self._generate_device_detail_page(camera, camera.get("serial"))
+                    self._generate_device_detail_page(camera, camera.get("serial"), config_entry_id)
                 )
             if ap:
-                views.append(self._generate_device_detail_page(ap, ap.get("serial")))
+                views.append(self._generate_device_detail_page(ap, ap.get("serial"), config_entry_id))
             if sensor:
                 views.append(
-                    self._generate_device_detail_page(sensor, sensor.get("serial"))
+                    self._generate_device_detail_page(sensor, sensor.get("serial"), config_entry_id)
                 )
 
         # Add example client detail pages
@@ -287,7 +303,7 @@ class MerakiDashboardStrategy:
             ha_client = next((c for c in clients if c.get("ha_device_id")), None)
             if ha_client:
                 views.append(
-                    self._generate_client_detail_page(ha_client, ha_client.get("mac"))
+                    self._generate_client_detail_page(ha_client, ha_client.get("mac"), config_entry_id)
                 )
 
             # Add one more example client
@@ -296,7 +312,7 @@ class MerakiDashboardStrategy:
                 if other_client:
                     views.append(
                         self._generate_client_detail_page(
-                            other_client, other_client.get("mac")
+                            other_client, other_client.get("mac"), config_entry_id
                         )
                     )
 
