@@ -175,17 +175,30 @@ async def _async_create_lovelace_dashboard(
 
         # Create dashboard via storage collection
         _LOGGER.debug("Creating dashboard with ID: %s", dashboard_id)
-        await dashboards_collection.async_create_item(
-            {
-                "id": dashboard_id,
-                "url_path": dashboard_id,
-                "title": f"Meraki Network - {entry.title}",
-                "icon": "mdi:router-network",
-                "show_in_sidebar": True,
-                "require_admin": False,
-                "mode": "storage",  # Editable mode
-            }
-        )
+        
+        dashboard_data = {
+            "id": dashboard_id,
+            "url_path": dashboard_id,
+            "title": f"Meraki Network - {entry.title}",
+            "icon": "mdi:router-network",
+            "show_in_sidebar": True,
+            "require_admin": False,
+            "mode": "storage",  # Editable mode
+        }
+        
+        # Try to create the dashboard
+        if hasattr(dashboards_collection, "async_create_item"):
+            # StorageCollection
+            await dashboards_collection.async_create_item(dashboard_data)
+        elif isinstance(dashboards_collection, dict):
+            # Direct dict access (older HA versions or different setup)
+            dashboards_collection[dashboard_id] = dashboard_data
+        else:
+            _LOGGER.error(
+                "Unknown dashboards collection type: %s", 
+                type(dashboards_collection).__name__
+            )
+            return False
 
         # Save dashboard configuration
         num_views = len(dashboard_config.get("views", []))
