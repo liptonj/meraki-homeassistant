@@ -771,6 +771,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Cards are in www/ subdirectory of this integration
     integration_path = Path(__file__).parent
     cards_path = integration_path / "www"
+    
+    _LOGGER.info("Integration path: %s", integration_path)
+    _LOGGER.info("Cards path: %s", cards_path)
+    _LOGGER.info("Cards path exists: %s", cards_path.exists())
 
     if cards_path.exists():
         await hass.http.async_register_static_paths(
