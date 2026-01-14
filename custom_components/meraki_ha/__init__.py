@@ -741,21 +741,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register custom cards at HACS-standard path
     # Per HA custom card docs:
     # https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/
-    # Cards are built to www/meraki_ha/ at repo root
+    # Cards are built to custom_components/meraki_ha/www/
     # We register them at /local/community/<domain>/ which is the HACS standard
     from pathlib import Path
 
     from homeassistant.components.http import StaticPathConfig
 
-    # Cards are at ../../www/meraki_ha/ relative to this integration
-    # This path is: custom_components/meraki_ha/ -> ../../www/meraki_ha/
+    # Cards are in www/ subdirectory of this integration
     integration_path = Path(__file__).parent
-    cards_path = integration_path.parent.parent / "www" / DOMAIN
-
-    # Fallback to HACS community path if repo-relative path doesn't exist
-    if not cards_path.exists():
-        cards_path = Path(hass.config.path("www", "community", DOMAIN))
-        _LOGGER.debug("Using HACS community path for cards: %s", cards_path)
+    cards_path = integration_path / "www"
 
     if cards_path.exists():
         await hass.http.async_register_static_paths(

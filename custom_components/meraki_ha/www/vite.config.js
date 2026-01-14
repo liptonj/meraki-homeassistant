@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
-// Output directory for built cards - at repo root www/meraki_ha/
-// This is where HACS expects frontend files to be located
-const CARDS_OUTPUT_DIR = resolve(__dirname, '../../../www/meraki_ha');
+// Output directory for built cards - inside custom_components for HACS packaging
+// This directory gets packaged with the integration
+const CARDS_OUTPUT_DIR = resolve(__dirname, '../www');
 
 export default defineConfig({
   build: {
@@ -18,7 +18,7 @@ export default defineConfig({
       },
       formats: ['es'],
     },
-    // Output built cards to www/meraki_ha/ at repo root
+    // Output built cards inside custom_components/meraki_ha/www/
     outDir: CARDS_OUTPUT_DIR,
     emptyOutDir: false, // Don't delete existing vanilla JS cards
     rollupOptions: {
