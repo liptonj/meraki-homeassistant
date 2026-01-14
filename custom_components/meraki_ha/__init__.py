@@ -140,14 +140,19 @@ async def _async_create_lovelace_dashboard(
             return False
 
         lovelace_data = hass.data["lovelace"]
-        _LOGGER.debug("Lovelace data keys: %s", list(lovelace_data.keys()))
+        _LOGGER.debug("Lovelace data type: %s", type(lovelace_data).__name__)
 
         # Check if dashboards collection exists
-        if "dashboards" not in lovelace_data:
+        # The lovelace_data might be a LovelaceData object, not a dict
+        dashboards_collection = None
+        if hasattr(lovelace_data, "dashboards"):
+            dashboards_collection = lovelace_data.dashboards
+        elif isinstance(lovelace_data, dict) and "dashboards" in lovelace_data:
+            dashboards_collection = lovelace_data["dashboards"]
+        
+        if not dashboards_collection:
             _LOGGER.warning("Lovelace dashboards collection not available")
             return False
-
-        dashboards_collection = lovelace_data["dashboards"]
 
         # Check if dashboard already exists by iterating through items
         dashboard_exists = False
