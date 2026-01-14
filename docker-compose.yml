@@ -1,0 +1,16 @@
+version: '3'
+services:
+  homeassistant:
+    container_name: meraki-homeassistant-dev
+    image: 'homeassistant/home-assistant:latest'
+    command: sh -c "pip install meraki && /init"
+    volumes:
+      # Mount the integration from repo root to HA custom_components
+      - ./custom_components/meraki_ha:/config/custom_components/meraki_ha
+      # Mount config directory for HA data
+      - ./config:/config
+    environment:
+      - TZ=America/New_York
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
