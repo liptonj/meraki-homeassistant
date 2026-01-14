@@ -796,9 +796,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
             # Access lovelace resources via hass.data
-            if "lovelace" in hass.data and "resources" in hass.data["lovelace"]:
-                resources = hass.data["lovelace"]["resources"]
-                if isinstance(resources, ResourceStorageCollection):
+            lovelace_data = hass.data.get("lovelace")
+            if lovelace_data:
+                # Try to get resources - could be attribute or dict key
+                resources = None
+                if hasattr(lovelace_data, "resources"):
+                    resources = lovelace_data.resources
+                elif isinstance(lovelace_data, dict) and "resources" in lovelace_data:
+                    resources = lovelace_data["resources"]
+                
+                if resources and isinstance(resources, ResourceStorageCollection):
                     # Check if resource already exists
                     existing = False
                     async for item in resources.async_items():
