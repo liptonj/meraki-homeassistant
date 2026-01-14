@@ -782,13 +782,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
             ]
         )
-        _LOGGER.debug(
-            "Registered custom cards at /local/community/%s -> %s", DOMAIN, cards_path
+        _LOGGER.info(
+            "Registered custom cards static path at /local/community/%s -> %s", 
+            DOMAIN, 
+            cards_path
         )
 
         # Register cards as Lovelace resources for automatic loading
         # This makes the cards available in the Lovelace UI picker
         cards_url = f"/local/community/{DOMAIN}/meraki-cards.js"
+        _LOGGER.info("Attempting to register Lovelace resource: %s", cards_url)
+        
         try:
             # pylint: disable=import-outside-toplevel
             from homeassistant.components.lovelace.resources import (
