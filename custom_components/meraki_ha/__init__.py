@@ -744,12 +744,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 err,
                 exc_info=True,
             )
-    else:
-        # Unregister panel if disabled
-        async_unregister_frontend(hass)
-        _LOGGER.info("React panel disabled by configuration")
 
-    # Auto-create Lovelace dashboard if enabled
+    # Auto-create Lovelace dashboard if enabled (independent of React panel)
     if auto_create_dashboard:
         _LOGGER.info("Auto-creating Lovelace dashboard")
         try:
