@@ -713,6 +713,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     auto_create_dashboard = entry.options.get(
         CONF_AUTO_CREATE_DASHBOARD, DEFAULT_AUTO_CREATE_DASHBOARD
     )
+    
+    _LOGGER.info(
+        "Dashboard auto-creation: %s (show_react_panel: %s)",
+        auto_create_dashboard,
+        show_react_panel,
+    )
 
     # Always register static path for cards
     _LOGGER.info("Registering static path for Meraki cards")
