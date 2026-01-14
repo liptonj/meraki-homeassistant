@@ -188,28 +188,31 @@ async def _async_create_lovelace_dashboard(
         
         # Try to create the dashboard
         if hasattr(dashboards_collection, "async_create_item"):
-            # StorageCollection
+            # StorageCollection - pass the full config including strategy
+            dashboard_data["mode"] = "storage"
+            dashboard_data["strategy"] = {
+                "type": "custom:meraki-dashboard-strategy"
+            }
             await dashboards_collection.async_create_item(dashboard_data)
+            _LOGGER.info(
+                "Created Lovelace dashboard: %s at /%s using strategy",
+                entry.title,
+                dashboard_id,
+            )
         elif isinstance(dashboards_collection, dict):
             # Direct dict access (older HA versions or different setup)
             dashboards_collection[dashboard_id] = dashboard_data
+            _LOGGER.info(
+                "Registered dashboard in dict: %s at /%s",
+                entry.title,
+                dashboard_id,
+            )
         else:
             _LOGGER.error(
                 "Unknown dashboards collection type: %s", 
                 type(dashboards_collection).__name__
             )
             return False
-
-        # Save dashboard configuration
-        num_views = len(dashboard_config.get("views", []))
-        _LOGGER.debug("Saving dashboard configuration with %d views", num_views)
-        await lovelace.async_save_config(hass, dashboard_id, dashboard_config)  # type: ignore[attr-defined]
-
-        _LOGGER.info(
-            "Created editable Lovelace dashboard: %s at /%s",
-            entry.title,
-            dashboard_id,
-        )
 
         # Show notification with dashboard link
         await hass.services.async_call(
