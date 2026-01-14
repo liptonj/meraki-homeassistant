@@ -126,11 +126,6 @@ async def _async_create_lovelace_dashboard(
     dashboard_id = f"meraki_{entry.entry_id[:8]}"
 
     try:
-        # Defer import to avoid blocking startup
-        from homeassistant.components import (
-            lovelace,  # pylint: disable=import-outside-toplevel
-        )
-
         # Check if lovelace data is initialized
         if "lovelace" not in hass.data:
             _LOGGER.warning(
@@ -149,7 +144,7 @@ async def _async_create_lovelace_dashboard(
             dashboards_collection = lovelace_data.dashboards
         elif isinstance(lovelace_data, dict) and "dashboards" in lovelace_data:
             dashboards_collection = lovelace_data["dashboards"]
-        
+
         if not dashboards_collection:
             _LOGGER.warning("Lovelace dashboards collection not available")
             return False
@@ -161,7 +156,7 @@ async def _async_create_lovelace_dashboard(
             if hasattr(dashboards_collection, "async_items"):
                 items = dashboards_collection.async_items()
                 # Check if it's an awaitable/async generator or just a list
-                if hasattr(items, '__aiter__'):
+                if hasattr(items, "__aiter__"):
                     async for item in items:
                         if item.get("id") == dashboard_id:
                             dashboard_exists = True
@@ -187,7 +182,7 @@ async def _async_create_lovelace_dashboard(
 
         # Create dashboard via storage collection
         _LOGGER.debug("Creating dashboard with ID: %s", dashboard_id)
-        
+
         dashboard_data = {
             "id": dashboard_id,
             "url_path": dashboard_id,
@@ -197,14 +192,12 @@ async def _async_create_lovelace_dashboard(
             "require_admin": False,
             "mode": "storage",  # Editable mode
         }
-        
+
         # Try to create the dashboard
         if hasattr(dashboards_collection, "async_create_item"):
             # StorageCollection - pass the full config including strategy
             dashboard_data["mode"] = "storage"
-            dashboard_data["strategy"] = {
-                "type": "custom:meraki-dashboard-strategy"
-            }
+            dashboard_data["strategy"] = {"type": "custom:meraki-dashboard-strategy"}
             await dashboards_collection.async_create_item(dashboard_data)
             _LOGGER.info(
                 "Created Lovelace dashboard: %s at /%s using strategy",
@@ -221,8 +214,8 @@ async def _async_create_lovelace_dashboard(
             )
         else:
             _LOGGER.error(
-                "Unknown dashboards collection type: %s", 
-                type(dashboards_collection).__name__
+                "Unknown dashboards collection type: %s",
+                type(dashboards_collection).__name__,
             )
             return False
 
@@ -439,6 +432,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     ------
         ConfigEntryNotReady: If the coordinator fails to fetch initial data.
     """
+    _LOGGER.info("🔧🔧🔧 async_setup_entry CALLED for entry: %s", entry.entry_id[:8])
     hass.data.setdefault(DOMAIN, {})
     entry_data = hass.data.setdefault(DOMAIN, {}).setdefault(entry.entry_id, {})
 
@@ -713,7 +707,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     auto_create_dashboard = entry.options.get(
         CONF_AUTO_CREATE_DASHBOARD, DEFAULT_AUTO_CREATE_DASHBOARD
     )
-    
+
     _LOGGER.info(
         "Dashboard auto-creation: %s (show_react_panel: %s)",
         auto_create_dashboard,
@@ -785,7 +779,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Cards are in www/ subdirectory of this integration
     integration_path = Path(__file__).parent
     cards_path = integration_path / "www"
-    
+
     _LOGGER.info("Integration path: %s", integration_path)
     _LOGGER.info("Cards path: %s", cards_path)
     _LOGGER.info("Cards path exists: %s", cards_path.exists())
@@ -801,16 +795,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             ]
         )
         _LOGGER.info(
-            "Registered custom cards static path at /local/community/%s -> %s", 
-            DOMAIN, 
-            cards_path
+            "Registered custom cards static path at /local/community/%s -> %s",
+            DOMAIN,
+            cards_path,
         )
 
         # Register cards as Lovelace resources for automatic loading
         # This makes the cards available in the Lovelace UI picker
         cards_url = f"/local/community/{DOMAIN}/meraki-cards.js"
         _LOGGER.info("Attempting to register Lovelace resource: %s", cards_url)
-        
+
         try:
             # pylint: disable=import-outside-toplevel
             from homeassistant.components.lovelace.resources import (
@@ -826,7 +820,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     resources = lovelace_data.resources
                 elif isinstance(lovelace_data, dict) and "resources" in lovelace_data:
                     resources = lovelace_data["resources"]
-                
+
                 if resources and isinstance(resources, ResourceStorageCollection):
                     # Check if resource already exists
                     existing = False
