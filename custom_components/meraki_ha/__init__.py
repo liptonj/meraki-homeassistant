@@ -159,13 +159,25 @@ async def _async_create_lovelace_dashboard(
         try:
             # The dashboards collection might be a StorageCollection
             if hasattr(dashboards_collection, "async_items"):
-                async for item in dashboards_collection.async_items():
-                    if item.get("id") == dashboard_id:
-                        dashboard_exists = True
-                        break
+                items = dashboards_collection.async_items()
+                # Check if it's an awaitable/async generator or just a list
+                if hasattr(items, '__aiter__'):
+                    async for item in items:
+                        if item.get("id") == dashboard_id:
+                            dashboard_exists = True
+                            break
+                else:
+                    # It's a regular list
+                    for item in items:
+                        if item.get("id") == dashboard_id:
+                            dashboard_exists = True
+                            break
             elif hasattr(dashboards_collection, "data"):
                 # Direct dictionary access
                 dashboard_exists = dashboard_id in dashboards_collection.data
+            elif isinstance(dashboards_collection, dict):
+                # It's just a plain dict
+                dashboard_exists = dashboard_id in dashboards_collection
         except (AttributeError, TypeError) as check_err:
             _LOGGER.debug("Could not check existing dashboards: %s", check_err)
 
