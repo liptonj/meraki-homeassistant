@@ -154,7 +154,7 @@ def async_unregister_frontend(hass: HomeAssistant) -> None:
 
 async def _async_register_cards_resource(hass: HomeAssistant) -> None:
     """Register Meraki cards as a Lovelace resource."""
-    cards_url = f"/local/community/{DOMAIN}/meraki-cards.js"
+    cards_url = f"/local/community/{DOMAIN}/meraki-cards-loader.js"
     _LOGGER.info("Attempting to auto-register cards resource: %s", cards_url)
     
     try:
