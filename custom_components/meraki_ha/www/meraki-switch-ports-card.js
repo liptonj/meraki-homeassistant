@@ -213,12 +213,19 @@ export class MerakiSwitchPortsCard extends MerakiCardBase {
 
   static getStubConfig() {
     return {
+      title: 'Switch Ports',
       device_serial: '',
       show_poe: true,
       show_speed: true,
       show_labels: true,
       compact: false,
+      show_poe_status: true,
+      compact_view: false,
     };
+  }
+
+  static getConfigElement() {
+    return document.createElement('meraki-switch-ports-card-editor');
   }
 
   static getConfigForm() {
@@ -399,6 +406,7 @@ export class MerakiSwitchPortsCard extends MerakiCardBase {
 
         ${!isCompact ? this._renderLegend() : ''}
         ${this._hoveredPort ? this._renderTooltip() : ''}
+        ${this._renderDebugPanel()}
       </ha-card>
     `;
   }
@@ -412,9 +420,13 @@ export class MerakiSwitchPortsCard extends MerakiCardBase {
 
       return html`
         <div class="ports-grid ${gridClass}">
-          ${showLabels ? html`<div class="port-row-label">Ports 1-24</div>` : ''}
+          ${showLabels
+            ? html`<div class="port-row-label">Ports 1-24</div>`
+            : ''}
           ${row1.map((port) => this._renderPort(port, showLabels, showPoe))}
-          ${showLabels ? html`<div class="port-row-label">Ports 25-48</div>` : ''}
+          ${showLabels
+            ? html`<div class="port-row-label">Ports 25-48</div>`
+            : ''}
           ${row2.map((port) => this._renderPort(port, showLabels, showPoe))}
         </div>
       `;
@@ -422,7 +434,9 @@ export class MerakiSwitchPortsCard extends MerakiCardBase {
 
     return html`
       <div class="ports-grid ${gridClass}">
-        ${this._ports.map((port) => this._renderPort(port, showLabels, showPoe))}
+        ${this._ports.map((port) =>
+          this._renderPort(port, showLabels, showPoe)
+        )}
       </div>
     `;
   }
@@ -441,7 +455,9 @@ export class MerakiSwitchPortsCard extends MerakiCardBase {
         aria-label="Port ${port.portId}: ${port.status || 'Unknown'}"
       >
         ${showLabels ? port.portId : ''}
-        ${hasPoe ? html`<div class="poe-indicator" title="PoE Active"></div>` : ''}
+        ${hasPoe
+          ? html`<div class="poe-indicator" title="PoE Active"></div>`
+          : ''}
       </div>
     `;
   }
@@ -478,7 +494,8 @@ export class MerakiSwitchPortsCard extends MerakiCardBase {
     return html`
       <div
         class="tooltip"
-        style="left: ${this._tooltipPosition.x}px; top: ${this._tooltipPosition.y}px; transform: translateX(-50%);"
+        style="left: ${this._tooltipPosition.x}px; top: ${this._tooltipPosition
+          .y}px; transform: translateX(-50%);"
       >
         <div class="tooltip-header">
           <ha-icon icon="mdi:ethernet"></ha-icon>
@@ -626,4 +643,7 @@ export class MerakiSwitchPortsCardEditor extends MerakiEditorBase {
 }
 
 customElements.define('meraki-switch-ports-card', MerakiSwitchPortsCard);
-customElements.define('meraki-switch-ports-card-editor', MerakiSwitchPortsCardEditor);
+customElements.define(
+  'meraki-switch-ports-card-editor',
+  MerakiSwitchPortsCardEditor
+);

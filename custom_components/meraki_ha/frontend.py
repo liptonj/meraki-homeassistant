@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -53,7 +54,7 @@ async def async_register_static_path(hass: HomeAssistant) -> None:
             DOMAIN,
             static_path,
         )
-        
+
         # Also register cards at /local/community/ for HACS compatibility
         await hass.http.async_register_static_paths(
             [
@@ -69,10 +70,11 @@ async def async_register_static_path(hass: HomeAssistant) -> None:
             DOMAIN,
             static_path,
         )
-        
-        # Auto-register cards as Lovelace resource
-        await _async_register_cards_resource(hass)
-        
+
+        # IMPORTANT: Don't await this! It can hang if Lovelace isn't ready yet.
+        # Register cards as a background task instead.
+        asyncio.create_task(_async_register_cards_resource(hass))
+
     except Exception as err:
         _LOGGER.error(
             "Failed to register static path: %s (type: %s)",
@@ -156,7 +158,7 @@ async def _async_register_cards_resource(hass: HomeAssistant) -> None:
     """Register Meraki cards as a Lovelace resource."""
     cards_url = f"/local/community/{DOMAIN}/meraki-cards-loader.js"
     _LOGGER.info("Attempting to auto-register cards resource: %s", cards_url)
-    
+
     try:
         # pylint: disable=import-outside-toplevel
         from homeassistant.components.lovelace.resources import (
@@ -168,22 +170,26 @@ async def _async_register_cards_resource(hass: HomeAssistant) -> None:
         if not lovelace_data:
             _LOGGER.info("Lovelace not initialized yet - cards must be added manually")
             return
-        
+
         # Try to get resources - could be attribute or dict key
         resources = None
         if hasattr(lovelace_data, "resources"):
             resources = lovelace_data.resources
         elif isinstance(lovelace_data, dict) and "resources" in lovelace_data:
             resources = lovelace_data["resources"]
-        
+
         if not resources:
-            _LOGGER.info("Lovelace resources not available - cards must be added manually")
+            _LOGGER.info(
+                "Lovelace resources not available - cards must be added manually"
+            )
             return
-            
+
         if not isinstance(resources, ResourceStorageCollection):
-            _LOGGER.info("Lovelace using YAML mode - add cards manually to configuration.yaml")
+            _LOGGER.info(
+                "Lovelace using YAML mode - add cards manually to configuration.yaml"
+            )
             return
-        
+
         # Check if resource already exists
         existing = False
         items = resources.async_items()
@@ -193,21 +199,21 @@ async def _async_register_cards_resource(hass: HomeAssistant) -> None:
                 break
 
         if not existing:
-            await resources.async_create_item(
-                {"res_type": "module", "url": cards_url}
-            )
+            await resources.async_create_item({"res_type": "module", "url": cards_url})
             _LOGGER.info(
                 "✅ Successfully registered Meraki cards as Lovelace resource: %s",
                 cards_url,
             )
         else:
             _LOGGER.info("Meraki cards resource already registered")
-            
+
     except ImportError:
-        _LOGGER.info("Lovelace resources API not available - cards must be added manually")
+        _LOGGER.info(
+            "Lovelace resources API not available - cards must be added manually"
+        )
     except Exception as err:
         _LOGGER.warning(
-            "Could not auto-register cards resource: %s - add manually at %s", 
+            "Could not auto-register cards resource: %s - add manually at %s",
             err,
-            cards_url
+            cards_url,
         )

@@ -1,6 +1,6 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { MerakiGuestAccessCard } from '../../www/meraki_ha/meraki-guest-access-card.js';
+import { MerakiGuestAccessCard } from '../../custom_components/meraki_ha/www/meraki-guest-access-card.js';
 
 describe('MerakiGuestAccessCard', () => {
   let element;
@@ -272,13 +272,34 @@ describe('MerakiGuestAccessCard', () => {
     });
 
     it('enables submit button with valid input', async () => {
-      element._formData.name = 'Test Guest';
-      element._formData.passphrase = 'validpass123';
+      // Directly set up the component state for form validation testing
+      // This bypasses the complex fetchData filtering to test form validation logic
+      const ssid = hass.states['switch.guest_wifi_enabled_switch'];
+
+      // Manually set up the guest SSIDs array and select one
+      element._guestSSIDs = [ssid];
+      element._selectedSSID = ssid;
+      element._showCreateForm = true;
+      element._creating = false;
+      element._loading = false;
+
+      element._formData = {
+        name: 'Test Guest',
+        passphrase: 'validpass123',
+        duration: 24,
+      };
       await element.updateComplete;
+
+      // Verify component state is set correctly
+      expect(element._showCreateForm).to.be.true;
+      expect(element._selectedSSID).to.exist;
+      expect(element._formData.passphrase.length).to.be.at.least(8);
 
       const submitButton = element.shadowRoot.querySelector(
         '.form-button.primary'
       );
+      expect(submitButton).to.exist;
+      // Button should be enabled with valid form data
       expect(submitButton.disabled).to.be.false;
     });
   });

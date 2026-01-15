@@ -56,7 +56,9 @@ export class MerakiCameraCard extends MerakiCardBase {
         .card-body {
           padding: 0 16px 16px;
           overflow: hidden;
-          transition: max-height 0.3s ease, opacity 0.3s ease;
+          transition:
+            max-height 0.3s ease,
+            opacity 0.3s ease;
         }
 
         .card-body.collapsed {
@@ -405,7 +407,11 @@ export class MerakiCameraCard extends MerakiCardBase {
     if (!this.hass || !this.config.entity_id) return;
     const entity = this.hass.states[this.config.entity_id];
     if (entity && entity.attributes.meraki_dashboard_url) {
-      window.open(entity.attributes.meraki_dashboard_url, '_blank', 'noopener,noreferrer');
+      window.open(
+        entity.attributes.meraki_dashboard_url,
+        '_blank',
+        'noopener,noreferrer'
+      );
     }
   }
 
@@ -416,7 +422,8 @@ export class MerakiCameraCard extends MerakiCardBase {
   }
 
   _getCameraStatus() {
-    if (!this.hass || !this.config.entity_id) return { online: false, recording: false, motion: false };
+    if (!this.hass || !this.config.entity_id)
+      return { online: false, recording: false, motion: false };
     const entity = this.hass.states[this.config.entity_id];
     return {
       online: entity?.state !== 'unavailable',
@@ -455,7 +462,9 @@ export class MerakiCameraCard extends MerakiCardBase {
           <!-- Status Indicators -->
           <div class="status-indicators">
             <div class="status-indicator">
-              <span class="status-dot ${status.online ? 'online' : 'offline'}"></span>
+              <span
+                class="status-dot ${status.online ? 'online' : 'offline'}"
+              ></span>
               <span>${status.online ? 'Online' : 'Offline'}</span>
             </div>
             ${status.recording
@@ -485,7 +494,11 @@ export class MerakiCameraCard extends MerakiCardBase {
               ? html`
                   <div class="error-message">
                     <div>❌ ${this._error}</div>
-                    <button class="action-button" @click=${this._handleRefresh} style="margin-top: 8px;">
+                    <button
+                      class="action-button"
+                      @click=${this._handleRefresh}
+                      style="margin-top: 8px;"
+                    >
                       🔄 Retry
                     </button>
                   </div>
@@ -497,7 +510,12 @@ export class MerakiCameraCard extends MerakiCardBase {
                     ● ${this._streamType}
                   </div>
                   ${this._streamType === 'Live'
-                    ? html`<video src=${this._streamUrl} autoplay muted playsinline></video>`
+                    ? html`<video
+                        src=${this._streamUrl}
+                        autoplay
+                        muted
+                        playsinline
+                      ></video>`
                     : html`<img src=${this._streamUrl} alt="Camera view" />`}
                 `
               : ''}
@@ -510,22 +528,34 @@ export class MerakiCameraCard extends MerakiCardBase {
                   <button class="action-button" @click=${this._handleRefresh}>
                     🔄 Refresh
                   </button>
-                  <button class="action-button" @click=${this._handleFullScreen}>
+                  <button
+                    class="action-button"
+                    @click=${this._handleFullScreen}
+                  >
                     📺 Full Screen
                   </button>
                   ${this.config.show_snapshot_button
                     ? html`
-                        <button class="action-button" @click=${this._handleSnapshot}>
+                        <button
+                          class="action-button"
+                          @click=${this._handleSnapshot}
+                        >
                           📷 Snapshot
                         </button>
                       `
                     : ''}
-                  <button class="action-button" @click=${this._handleToggleLinkPanel}>
+                  <button
+                    class="action-button"
+                    @click=${this._handleToggleLinkPanel}
+                  >
                     ⚙️ Link
                   </button>
                   ${this.config.show_dashboard_link
                     ? html`
-                        <button class="action-button" @click=${this._handleDashboard}>
+                        <button
+                          class="action-button"
+                          @click=${this._handleDashboard}
+                        >
                           🌐 Dashboard
                         </button>
                       `
@@ -562,13 +592,17 @@ export class MerakiCameraCard extends MerakiCardBase {
                       `
                     )}
                   </select>
-                  <button class="action-button primary" @click=${this._handleSaveLink}>
+                  <button
+                    class="action-button primary"
+                    @click=${this._handleSaveLink}
+                  >
                     Save
                   </button>
                 </div>
               `
             : ''}
         </div>
+        ${this._renderDebugPanel()}
       </ha-card>
     `;
   }
@@ -602,7 +636,8 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'meraki-camera-card',
   name: 'Meraki Camera Card',
-  description: 'Displays live video, RTSP streams, and snapshots from Meraki MV cameras',
+  description:
+    'Displays live video, RTSP streams, and snapshots from Meraki MV cameras',
   preview: true,
   documentationURL: 'https://github.com/liptonj/meraki-homeassistant',
 });

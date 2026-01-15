@@ -22,6 +22,7 @@ from .const import (
     CONF_MERAKI_ORG_ID,
     DOMAIN,
 )
+from .core.api.client import MerakiAPIClient
 from .core.errors import MerakiAuthenticationError, MerakiConnectionError
 from .helpers.logging_helper import MerakiLoggers
 from .options_flow import MerakiOptionsFlowHandler
@@ -90,8 +91,44 @@ class MerakiConfigFlow(ConfigFlow, domain="meraki_ha"):  # type: ignore[call-arg
                 options=self.options,
             )
 
+        network_options: list[dict[str, str]] = []
+        api_key = self.data.get(CONF_MERAKI_API_KEY)
+        org_id = self.data.get(CONF_MERAKI_ORG_ID)
+        if api_key and org_id:
+            api_client = MerakiAPIClient(
+                hass=self.hass,
+                api_key=api_key,
+                org_id=org_id,
+            )
+            try:
+                await api_client.async_setup()
+                networks = await api_client.organization.get_organization_networks()
+                if isinstance(networks, list):
+                    network_options = [
+                        {
+                            "label": network.get("name", network.get("id", "Unknown")),
+                            "value": network.get("id", ""),
+                        }
+                        for network in networks
+                        if network.get("id")
+                    ]
+            except Exception as err:
+                _LOGGER.warning(
+                    "Failed to fetch networks for config flow: %s",
+                    err,
+                )
+            finally:
+                await api_client.async_close()
+
+        schema_with_defaults = self._populate_schema_defaults(
+            SCHEMA_NETWORK_SELECTION,
+            self.options,
+            network_options,
+        )
+
         return self.async_show_form(
-            step_id="init", data_schema=SCHEMA_NETWORK_SELECTION
+            step_id="init",
+            data_schema=schema_with_defaults,
         )
 
     @staticmethod

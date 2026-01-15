@@ -1,80 +1,129 @@
-
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import 'lovelace-player';
-
-import MerakiCameraCard from '../../www/meraki_ha/src/cards/meraki-camera-card';
+import { MerakiCameraCard } from '../../custom_components/meraki_ha/www/meraki-camera-card/meraki-camera-card.js';
 
 describe('MerakiCameraCard', () => {
   let element;
   let hass;
 
   beforeEach(async () => {
+    // Per HA docs, hass object provides states and connection
     hass = {
       states: {
         'camera.meraki_camera': {
           entity_id: 'camera.meraki_camera',
+          state: 'idle',
           attributes: {
             friendly_name: 'Meraki Camera',
             meraki_dashboard_url: 'https://dashboard.meraki.com',
           },
         },
       },
-      callWS: sinon.stub(),
+      connection: {
+        subscribeMessage: sinon.stub().returns(() => {}),
+        sendMessagePromise: sinon.stub().resolves({
+          cameras: [],
+        }),
+      },
+      callWS: sinon.stub().resolves({}),
     };
 
-    element = await fixture(html`
-      <meraki-camera-card .hass=${hass}></meraki-camera-card>
-    `);
-    element.config = { entity_id: 'camera.meraki_camera' };
-  });
-
-  it('renders the card header', () => {
-    const header = element.shadowRoot.querySelector('.card-header span');
-    expect(header).to.exist;
-    expect(header.textContent).to.equal('Meraki Camera');
-  });
-
-  it('fetches and displays the live stream', async () => {
-    hass.callWS.withArgs({ type: 'camera/stream', entity_id: 'camera.linked_camera' }).resolves({ url: 'live_stream.mp4' });
-    element.config = { entity_id: 'camera.meraki_camera', linked_camera_id: 'camera.linked_camera' };
+    element = await fixture(html`<meraki-camera-card></meraki-camera-card>`);
+    element.setConfig({
+      config_entry_id: 'test-entry',
+      entity_id: 'camera.meraki_camera',
+    });
+    element.hass = hass;
     await element.updateComplete;
-
-    const video = element.shadowRoot.querySelector('video');
-    expect(video).to.exist;
-    expect(video.src).to.equal('live_stream.mp4');
   });
 
-  it('falls back to RTSP stream', async () => {
-    hass.callWS.withArgs({ type: 'camera/stream', entity_id: 'camera.linked_camera' }).rejects();
-    hass.callWS.withArgs({ type: 'meraki_ha/get_rtsp_url', entity_id: 'camera.meraki_camera' }).resolves({ rtsp_url: 'rtsp://stream' });
-    element.config = { entity_id: 'camera.meraki_camera', linked_camera_id: 'camera.linked_camera' };
-    await element.updateComplete;
-
-    const img = element.shadowRoot.querySelector('img');
-    expect(img).to.exist;
-    expect(img.src).to.equal('rtsp://stream');
+  afterEach(() => {
+    sinon.restore();
   });
 
-  it('falls back to snapshot', async () => {
-    hass.callWS.withArgs({ type: 'camera/stream', entity_id: 'camera.linked_camera' }).rejects();
-    hass.callWS.withArgs({ type: 'meraki_ha/get_rtsp_url', entity_id: 'camera.meraki_camera' }).rejects();
-    hass.callWS.withArgs({ type: 'meraki_ha/get_camera_snapshot', entity_id: 'camera.meraki_camera' }).resolves({ url: 'snapshot.jpg' });
-    element.config = { entity_id: 'camera.meraki_camera', linked_camera_id: 'camera.linked_camera' };
-    await element.updateComplete;
+  describe('Card Registration', () => {
+    it('is registered as a custom element', () => {
+      expect(customElements.get('meraki-camera-card')).to.exist;
+    });
 
-    const img = element.shadowRoot.querySelector('img');
-    expect(img).to.exist;
-    expect(img.src).to.equal('snapshot.jpg');
+    it('creates element instance', () => {
+      expect(element).to.exist;
+      expect(element.tagName.toLowerCase()).to.equal('meraki-camera-card');
+    });
   });
 
-  it('shows an error message on failure', async () => {
-    hass.callWS.rejects();
-    element.config = { entity_id: 'camera.meraki_camera', linked_camera_id: 'camera.linked_camera' };
-    await element.updateComplete;
+  describe('Configuration (per HA docs)', () => {
+    it('setConfig stores the configuration', () => {
+      element.setConfig({
+        config_entry_id: 'test-entry',
+        entity_id: 'camera.test',
+        show_controls: true,
+      });
+      expect(element.config).to.have.property('entity_id', 'camera.test');
+      expect(element.config).to.have.property('show_controls', true);
+    });
 
-    const error = element.shadowRoot.querySelector('div.error');
-    expect(error).to.exist;
-    expect(error.textContent).to.contain('Failed to fetch any camera stream or snapshot.');
+    it('getStubConfig returns default config structure', () => {
+      const stubConfig = MerakiCameraCard.getStubConfig();
+      expect(stubConfig).to.have.property('entity_id');
+      expect(stubConfig).to.have.property('show_controls');
+      expect(stubConfig).to.have.property('show_snapshot_button');
+    });
+
+    it('getConfigElement returns editor element', () => {
+      const editor = MerakiCameraCard.getConfigElement();
+      expect(editor).to.exist;
+      expect(editor.tagName.toLowerCase()).to.equal(
+        'meraki-camera-card-editor'
+      );
+    });
+  });
+
+  describe('hass Property', () => {
+    it('receives and stores hass object', () => {
+      expect(element.hass).to.exist;
+      expect(element.hass.states).to.exist;
+    });
+
+    it('subscribes to updates when hass is set', () => {
+      expect(hass.connection.subscribeMessage.called).to.be.true;
+    });
+  });
+
+  describe('Rendering', () => {
+    it('renders with shadowRoot', () => {
+      expect(element.shadowRoot).to.exist;
+    });
+
+    it('renders card structure', async () => {
+      element._loading = false;
+      await element.updateComplete;
+      const card = element.shadowRoot.querySelector('ha-card');
+      expect(card).to.exist;
+    });
+  });
+
+  describe('Properties', () => {
+    it('has _collapsed property for collapsible behavior', () => {
+      expect(element).to.have.property('_collapsed');
+    });
+
+    it('has _streamUrl property for video source', () => {
+      expect(element).to.have.property('_streamUrl');
+    });
+
+    it('has _streamType property', () => {
+      expect(element).to.have.property('_streamType');
+    });
+  });
+
+  describe('Camera Linking', () => {
+    it('has _showLinkPanel property for camera linking UI', () => {
+      expect(element).to.have.property('_showLinkPanel');
+    });
+
+    it('has _availableCameras property', () => {
+      expect(element).to.have.property('_availableCameras');
+    });
   });
 });

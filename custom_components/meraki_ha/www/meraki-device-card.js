@@ -9,6 +9,7 @@ import { html, css } from 'lit';
 import { MerakiCardBase } from './shared/meraki-card-base.js';
 import { MerakiEditorBase } from './shared/meraki-editor-base.js';
 import { merakiCardStyles } from './shared/styles.js';
+import { renderConfigEntrySelector } from './shared/editor-helpers.js';
 
 export class MerakiDeviceCard extends MerakiCardBase {
   static get properties() {
@@ -206,10 +207,15 @@ export class MerakiDeviceCard extends MerakiCardBase {
         return;
       }
 
-      this._device = await this._callMerakiApi('meraki/get_device', { serial });
+      this._device = await this._callMerakiApi('meraki/get_device', {
+        serial,
+      });
 
       if (this.config.show_clients !== false) {
-        this._clients = await this._callMerakiApi('meraki/get_device_clients', { serial });
+        this._clients = await this._callMerakiApi(
+          'meraki/get_device_clients',
+          { serial }
+        );
       }
     } catch (err) {
       // Error handled by base class
@@ -229,11 +235,14 @@ export class MerakiDeviceCard extends MerakiCardBase {
 
   _getDeviceIcon() {
     const model = this._device?.model?.toLowerCase() || '';
-    if (model.includes('mr') || model.includes('ap')) return 'mdi:access-point';
+    if (model.includes('mr') || model.includes('ap'))
+      return 'mdi:access-point';
     if (model.includes('ms') || model.includes('switch')) return 'mdi:lan';
-    if (model.includes('mx') || model.includes('appliance')) return 'mdi:router-network';
+    if (model.includes('mx') || model.includes('appliance'))
+      return 'mdi:router-network';
     if (model.includes('mv') || model.includes('camera')) return 'mdi:video';
-    if (model.includes('mt') || model.includes('sensor')) return 'mdi:thermometer';
+    if (model.includes('mt') || model.includes('sensor'))
+      return 'mdi:thermometer';
     return 'mdi:devices';
   }
 
@@ -276,16 +285,25 @@ export class MerakiDeviceCard extends MerakiCardBase {
     return html`
       <ha-card class="${isCompact ? 'compact' : ''}">
         <div class="device-header">
-          <ha-icon class="device-icon ${status}" icon="${this._getDeviceIcon()}"></ha-icon>
+          <ha-icon
+            class="device-icon ${status}"
+            icon="${this._getDeviceIcon()}"
+          ></ha-icon>
           <div class="device-info">
-            <div class="device-name">${this._device.name || this._device.serial}</div>
-            <div class="device-model">${this._device.model || 'Unknown model'}</div>
+            <div class="device-name">
+              ${this._device.name || this._device.serial}
+            </div>
+            <div class="device-model">
+              ${this._device.model || 'Unknown model'}
+            </div>
           </div>
           <span class="status-badge ${status}">${status}</span>
         </div>
 
         ${this._device.statusMessage
-          ? html`<div class="status-message">${this._device.statusMessage}</div>`
+          ? html`<div class="status-message">
+              ${this._device.statusMessage}
+            </div>`
           : ''}
 
         <div class="device-details">
@@ -345,6 +363,7 @@ export class MerakiDeviceCard extends MerakiCardBase {
               </div>
             `
           : ''}
+        ${this._renderDebugPanel()}
       </ha-card>
     `;
   }
@@ -352,7 +371,9 @@ export class MerakiDeviceCard extends MerakiCardBase {
   _canReboot() {
     // MR, MS, MX devices typically support reboot
     const model = this._device?.model?.toLowerCase() || '';
-    return model.includes('mr') || model.includes('ms') || model.includes('mx');
+    return (
+      model.includes('mr') || model.includes('ms') || model.includes('mx')
+    );
   }
 }
 
@@ -393,16 +414,12 @@ export class MerakiDeviceCardEditor extends MerakiEditorBase {
     const config = this.config || {};
 
     return html`
-      <div class="form-row">
-        <label for="config_entry_id">Config Entry ID (required)</label>
-        <ha-textfield
-          id="config_entry_id"
-          .value=${config.config_entry_id || ''}
-          .configValue=${'config_entry_id'}
-          @input=${this._valueChanged}
-          required
-        ></ha-textfield>
-      </div>
+      ${renderConfigEntrySelector(
+        this.hass,
+        config.config_entry_id,
+        this._handleConfigEntryChanged.bind(this)
+      )}
+
       <div class="form-row">
         <label for="device_serial">Device Serial</label>
         <ha-textfield
@@ -457,6 +474,13 @@ export class MerakiDeviceCardEditor extends MerakiEditorBase {
         ></ha-switch>
       </div>
     `;
+  }
+
+  _handleConfigEntryChanged(ev) {
+    if (!this.config || !this.hass) return;
+    const newConfig = { ...this.config };
+    newConfig.config_entry_id = ev.detail.value;
+    this._configChanged(newConfig);
   }
 }
 

@@ -22,15 +22,9 @@ UI_MODE_LEGACY_PANEL: Final = "legacy_panel"
 DEFAULT_UI_MODE: Final = UI_MODE_LOVELACE
 """Default UI mode - use native Lovelace dashboard with custom cards."""
 
-# New UI Configuration (replaces UI_MODE)
-CONF_SHOW_REACT_PANEL: Final = "show_react_panel"
-"""Configuration key for showing React panel in sidebar."""
-
+# Lovelace Dashboard Configuration
 CONF_AUTO_CREATE_DASHBOARD: Final = "auto_create_dashboard"
 """Configuration key for auto-creating Lovelace dashboard."""
-
-DEFAULT_SHOW_REACT_PANEL: Final = True
-"""Default value for showing React panel."""
 
 DEFAULT_AUTO_CREATE_DASHBOARD: Final = True
 """Default value for auto-creating Lovelace dashboard."""
@@ -390,6 +384,9 @@ MERAKI_MQTT_MT_TOPIC_PATTERN: Final = "meraki/v1/mt/#"
 """Topic pattern for MT sensor data."""
 
 # Logging Configuration
+CONF_LOG_LEVEL_MAIN: Final = "log_level_main"
+"""Configuration key for main integration log level."""
+
 CONF_LOG_LEVEL_MQTT: Final = "log_level_mqtt"
 """Configuration key for MQTT log level."""
 

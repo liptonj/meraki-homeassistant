@@ -1,0 +1,113 @@
+# Meraki Home Assistant Dashboard
+# Copy this entire file content and paste it when creating a new dashboard
+#
+# Instructions:
+# 1. Go to Settings → Dashboards
+# 2. Click "+ Add Dashboard"
+# 3. Click "New dashboard from scratch"
+# 4. Give it a name: "Meraki Network"
+# 5. Click "Take Control" (if using yaml mode)
+# 6. Replace the URL with: meraki_editable
+# 7. Click the ⋮ menu → "Edit in YAML"
+# 8. Paste this entire content
+# 9. Click Save
+
+title: Meraki Network
+icon: mdi:router-network
+
+views:
+  # ============================================================================
+  # OVERVIEW VIEW
+  # ============================================================================
+  - title: Overview
+    path: overview
+    icon: mdi:view-dashboard
+    badges:
+      - type: custom:meraki-status-badge
+        config_entry_id: YOUR_CONFIG_ENTRY_ID # Replace this!
+      - type: custom:meraki-clients-badge
+        config_entry_id: YOUR_CONFIG_ENTRY_ID
+      - type: custom:meraki-alerts-badge
+        config_entry_id: YOUR_CONFIG_ENTRY_ID
+
+    cards:
+      # Main overview card - full width
+      - type: custom:meraki-overview-card
+        config_entry_id: YOUR_CONFIG_ENTRY_ID
+
+      # Two cards side-by-side
+      - type: horizontal-stack
+        cards:
+          - type: custom:meraki-clients-card
+            config_entry_id: YOUR_CONFIG_ENTRY_ID
+            limit: 10
+
+          - type: custom:meraki-ssids-list-card
+            config_entry_id: YOUR_CONFIG_ENTRY_ID
+
+  # ============================================================================
+  # DEVICES VIEW
+  # ============================================================================
+  - title: Devices
+    path: devices
+    icon: mdi:devices
+    cards:
+      - type: custom:meraki-devices-by-type-card
+        config_entry_id: YOUR_CONFIG_ENTRY_ID
+        title: Meraki Devices
+        show_switches: true
+        show_wireless: true
+        show_cameras: true
+        show_sensors: true
+        show_appliances: true
+        devices_per_page: 10
+
+  # ============================================================================
+  # CLIENTS VIEW
+  # ============================================================================
+  - title: Clients
+    path: clients
+    icon: mdi:account-multiple
+    cards:
+      - type: custom:meraki-clients-card
+        config_entry_id: YOUR_CONFIG_ENTRY_ID
+        title: Network Clients
+        limit: 50
+        show_offline: false
+
+  # ============================================================================
+  # EVENTS VIEW
+  # ============================================================================
+  - title: Events
+    path: events
+    icon: mdi:history
+    cards:
+      - type: custom:meraki-events-card
+        config_entry_id: YOUR_CONFIG_ENTRY_ID
+        events_per_page: 10
+
+  # ============================================================================
+  # GUEST ACCESS VIEW
+  # ============================================================================
+  - title: Guest Access
+    path: guest
+    icon: mdi:account-key
+    cards:
+      - type: custom:meraki-guest-access-card
+        config_entry_id: YOUR_CONFIG_ENTRY_ID
+
+  # ============================================================================
+  # SETTINGS VIEW
+  # ============================================================================
+  - title: Settings
+    path: settings
+    icon: mdi:cog
+    cards:
+      - type: custom:meraki-mqtt-status-card
+        config_entry_id: YOUR_CONFIG_ENTRY_ID
+        title: MQTT Integration
+        show_relay_destinations: true
+        show_message_stats: true
+        show_sensor_count: true
+        collapsible: true
+        default_collapsed: false

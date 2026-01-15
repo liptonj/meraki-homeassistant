@@ -1,10 +1,11 @@
 """Tests for the Meraki data coordinator."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from custom_components.meraki_ha.core.errors import ApiClientCommunicationError
 from custom_components.meraki_ha.meraki_data_coordinator import MerakiDataCoordinator
@@ -241,8 +242,8 @@ def test_is_update_pending_not_registered(coordinator):
 
 def test_is_update_pending_expired(coordinator):
     """Test is_update_pending returns False when expired."""
-    # Register with expired time
-    expired_time = datetime.now() - timedelta(seconds=10)
+    # Register with expired time (using timezone-aware datetime)
+    expired_time = dt_util.utcnow() - timedelta(seconds=10)
     coordinator._pending_updates["expired_entity"] = expired_time
 
     assert coordinator.is_update_pending("expired_entity") is False
@@ -384,7 +385,7 @@ def test_is_traffic_check_due_after_mark(coordinator):
 
 def test_is_check_due_after_24_hours(coordinator):
     """Test _is_check_due returns True after 24 hours."""
-    coordinator._vlan_check_timestamps["N_123"] = datetime.now() - timedelta(hours=25)
+    coordinator._vlan_check_timestamps["N_123"] = dt_util.utcnow() - timedelta(hours=25)
 
     assert coordinator.is_vlan_check_due("N_123") is True
 
@@ -578,9 +579,9 @@ async def test_update_data_sets_last_successful_update(coordinator, mock_api_cli
         "vlans": {},
     }
 
-    before = datetime.now()
+    before = dt_util.utcnow()
     await coordinator._async_update_data()
-    after = datetime.now()
+    after = dt_util.utcnow()
 
     assert coordinator.last_successful_update is not None
     assert before <= coordinator.last_successful_update <= after
@@ -745,10 +746,10 @@ async def test_tiered_polling_respects_individual_intervals(
 
     # Simulate client interval exceeded but others not
     coordinator_with_tiered_polling.last_client_update = (
-        datetime.now() - timedelta(seconds=120)  # 2 minutes ago
+        dt_util.utcnow() - timedelta(seconds=120)  # 2 minutes ago
     )
     # Keep other timestamps recent
-    now = datetime.now()
+    now = dt_util.utcnow()
     coordinator_with_tiered_polling.last_network_update = now
     coordinator_with_tiered_polling.last_device_update = now
     coordinator_with_tiered_polling.last_ssid_update = now

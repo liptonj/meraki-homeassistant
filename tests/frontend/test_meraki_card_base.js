@@ -1,6 +1,6 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { MerakiCardBase } from '../../www/meraki_ha/shared/meraki-card-base.js';
+import { MerakiCardBase } from '../../custom_components/meraki_ha/www/shared/meraki-card-base.js';
 
 customElements.define('meraki-card-base-test', MerakiCardBase);
 
@@ -49,7 +49,10 @@ describe('MerakiCardBase', () => {
     } catch (e) {
       // expected
     }
-    expect(element._error).to.equal('API Failed');
+    // _error is now a JSON string with detailed error info
+    expect(element._error).to.include('API Failed');
+    const errorDetails = JSON.parse(element._error);
+    expect(errorDetails.message).to.equal('API Failed');
   });
 
   it('subscribes to updates when hass is set', () => {
@@ -169,7 +172,8 @@ describe('MerakiCardBase', () => {
       }
 
       expect(element._loading).to.be.false;
-      expect(element._error).to.equal('Test error');
+      // _error is now a JSON string with detailed error info
+      expect(element._error).to.include('Test error');
     });
 
     it('transitions from loading to success state', async () => {
@@ -296,7 +300,10 @@ describe('MerakiCardBase', () => {
         // Expected
       }
 
-      expect(element._error).to.equal('Specific error');
+      // _error is now a JSON string with detailed error info
+      expect(element._error).to.include('Specific error');
+      const errorDetails = JSON.parse(element._error);
+      expect(errorDetails.message).to.equal('Specific error');
     });
 
     it('uses fallback error message when none provided', async () => {
@@ -309,7 +316,10 @@ describe('MerakiCardBase', () => {
         // Expected
       }
 
-      expect(element._error).to.equal('Unknown error');
+      // _error is now a JSON string with detailed error info
+      expect(element._error).to.include('Unknown error');
+      const errorDetails = JSON.parse(element._error);
+      expect(errorDetails.message).to.equal('Unknown error');
     });
 
     it('throws error after setting error state', async () => {
@@ -324,13 +334,15 @@ describe('MerakiCardBase', () => {
       }
 
       expect(thrownError).to.exist;
-      expect(element._error).to.equal('Test');
+      // _error is now a JSON string with detailed error info
+      expect(element._error).to.include('Test');
     });
   });
 
   describe('Connection Availability', () => {
     it('throws error when hass connection not available', async () => {
-      element.hass = null;
+      // Set hass to null directly on the internal property to avoid triggering subscription
+      element._hass = null;
       element.config = { config_entry_id: 'test' };
 
       let error;

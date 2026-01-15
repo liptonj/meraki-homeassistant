@@ -244,6 +244,7 @@
         "title": "Debug Logging",
         "description": "Control log verbosity for different features. Use 'Warning' or 'Error' to reduce log noise, or 'Debug' for troubleshooting.",
         "data": {
+          "log_level_main": "Main Integration Logging",
           "log_level_mqtt": "MQTT Logging",
           "log_level_alerts": "Webhook Alerts Logging",
           "log_level_scanning_api": "Scanning API Logging",
@@ -257,6 +258,7 @@
           "log_level_frontend": "Frontend Panel Logging"
         },
         "data_description": {
+          "log_level_main": "Core integration operations (__init__.py, config flow, helpers).",
           "log_level_mqtt": "Real-time MQTT sensor updates (can be chatty).",
           "log_level_alerts": "Webhook alerts from Meraki Dashboard (device down, client connectivity).",
           "log_level_scanning_api": "Scanning API (CMX) client presence and location data.",

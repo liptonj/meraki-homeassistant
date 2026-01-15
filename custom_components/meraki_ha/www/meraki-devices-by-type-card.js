@@ -200,7 +200,14 @@ export class MerakiDevicesByTypeCard extends MerakiCardBase {
       show_cameras: true,
       show_sensors: true,
       show_appliances: true,
+      devices_per_page: 20,
     };
+  }
+
+  static getConfigElement() {
+    // This card has complex settings, for now it can be configured via YAML
+    // Future: create meraki-devices-by-type-card-editor.js
+    return null;
   }
 
   async fetchData() {
@@ -410,6 +417,7 @@ export class MerakiDevicesByTypeCard extends MerakiCardBase {
             `;
           })}
         </div>
+        ${this._renderDebugPanel()}
       </ha-card>
     `;
   }

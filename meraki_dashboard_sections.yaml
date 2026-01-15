@@ -1,0 +1,124 @@
+# Meraki Dashboard - Clean Professional Layout
+# Modern sections-based dashboard with proper card placement
+
+title: Meraki Network
+icon: mdi:router-network
+
+views:
+  # ============================================================================
+  # OVERVIEW VIEW
+  # ============================================================================
+  - title: Overview
+    path: overview
+    type: sections
+    icon: mdi:view-dashboard
+
+    badges:
+      - type: custom:meraki-status-badge
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+      - type: custom:meraki-clients-badge
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+      - type: custom:meraki-alerts-badge
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+
+    sections:
+      # Full-width overview metrics
+      - type: grid
+        cards:
+          - type: custom:meraki-overview-card
+            config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+
+      # Two-column section for clients and SSIDs
+      - type: grid
+        cards:
+          - type: custom:meraki-clients-card
+            config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+            view_mode: grid
+            limit: 10
+
+          - type: custom:meraki-ssids-list-card
+            config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+            view_mode: grid
+
+  # ============================================================================
+  # DEVICES VIEW
+  # ============================================================================
+  - title: Devices
+    path: devices
+    type: sections
+    icon: mdi:devices
+
+    sections:
+      - type: grid
+        cards:
+          - type: custom:meraki-devices-by-type-card
+            config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+            title: Network Devices
+            show_switches: true
+            show_wireless: true
+            show_cameras: true
+            show_sensors: true
+            show_appliances: true
+
+  # ============================================================================
+  # CLIENTS VIEW
+  # ============================================================================
+  - title: Clients
+    path: clients
+    type: sections
+    icon: mdi:account-multiple
+
+    sections:
+      - type: grid
+        cards:
+          - type: custom:meraki-clients-card
+            config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+            title: All Network Clients
+            limit: 100
+            show_offline: true
+
+  # ============================================================================
+  # NETWORKS VIEW
+  # ============================================================================
+  - title: Networks
+    path: networks
+    type: sections
+    icon: mdi:network
+
+    sections:
+      - type: grid
+        cards:
+          - type: custom:meraki-ssids-list-card
+            config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+            title: Wireless Networks (SSIDs)
+            show_details: true
+
+  # ============================================================================
+  # EVENTS VIEW
+  # ============================================================================
+  - title: Events
+    path: events
+    type: sections
+    icon: mdi:history
+
+    sections:
+      - type: grid
+        cards:
+          - type: custom:meraki-events-card
+            config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+            events_per_page: 20
+
+  # ============================================================================
+  # SETTINGS VIEW
+  # ============================================================================
+  - title: Settings
+    path: settings
+    type: sections
+    icon: mdi:cog
+
+    sections:
+      - type: grid
+        cards:
+          - type: custom:meraki-mqtt-status-card
+            config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+            title: MQTT Integration Status

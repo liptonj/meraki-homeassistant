@@ -166,11 +166,10 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                 title=CONF_INTEGRATION_TITLE, data=self.options
             )
 
-        coordinator: MerakiDataCoordinator = self.hass.data[DOMAIN][
-            self.config_entry.entry_id
-        ]["coordinator"]
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id, {})
+        coordinator: MerakiDataCoordinator | None = entry_data.get("coordinator")
         network_options: list[selector.SelectOptionDict] = []
-        if coordinator.data and coordinator.data.get("networks"):
+        if coordinator and coordinator.data and coordinator.data.get("networks"):
             network_options = [
                 selector.SelectOptionDict(label=network["name"], value=network["id"])
                 for network in coordinator.data["networks"]
@@ -215,15 +214,14 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         # Build summary of current associations
         association_summary = []
-        coordinator: MerakiDataCoordinator = self.hass.data[DOMAIN][
-            self.config_entry.entry_id
-        ]["coordinator"]
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id, {})
+        coordinator: MerakiDataCoordinator | None = entry_data.get("coordinator")
         device_registry = dr.async_get(self.hass)
 
         for client_mac, device_id in current_associations.items():
             # Find client name
             client_name = client_mac
-            if coordinator.data and coordinator.data.get("clients"):
+            if coordinator and coordinator.data and coordinator.data.get("clients"):
                 for client in coordinator.data["clients"]:
                     if client.get("mac") == client_mac:
                         client_name = (
@@ -286,9 +284,8 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             self._selected_client_mac = user_input.get("client")
             return await self.async_step_select_device()
 
-        coordinator: MerakiDataCoordinator = self.hass.data[DOMAIN][
-            self.config_entry.entry_id
-        ]["coordinator"]
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id, {})
+        coordinator: MerakiDataCoordinator | None = entry_data.get("coordinator")
 
         # Get current associations to filter out already-associated clients
         current_associations: dict[str, str] = self.options.get(
@@ -297,7 +294,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         # Build list of unassociated clients
         client_options: list[selector.SelectOptionDict] = []
-        if coordinator.data and coordinator.data.get("clients"):
+        if coordinator and coordinator.data and coordinator.data.get("clients"):
             for client in coordinator.data["clients"]:
                 client_mac = client.get("mac")
                 if not client_mac or client_mac in current_associations:

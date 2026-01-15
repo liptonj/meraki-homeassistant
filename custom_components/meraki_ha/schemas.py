@@ -26,6 +26,7 @@ from .const import (
     CONF_LOG_LEVEL_DEVICE_TRACKER,
     CONF_LOG_LEVEL_DISCOVERY,
     CONF_LOG_LEVEL_FRONTEND,
+    CONF_LOG_LEVEL_MAIN,
     CONF_LOG_LEVEL_MQTT,
     CONF_LOG_LEVEL_SCANNING_API,
     CONF_LOG_LEVEL_SENSOR,
@@ -38,7 +39,6 @@ from .const import (
     CONF_SCANNING_API_EXTERNAL_URL,
     CONF_SCANNING_API_SECRET,
     CONF_SCANNING_API_VALIDATOR,
-    CONF_SHOW_REACT_PANEL,
     CONF_SSID_SCAN_INTERVAL,
     CONF_TEMPERATURE_UNIT,
     CONF_UI_MODE,
@@ -63,7 +63,6 @@ from .const import (
     DEFAULT_SCANNING_API_EXTERNAL_URL,
     DEFAULT_SCANNING_API_SECRET,
     DEFAULT_SCANNING_API_VALIDATOR,
-    DEFAULT_SHOW_REACT_PANEL,
     DEFAULT_SSID_SCAN_INTERVAL,
     DEFAULT_TEMPERATURE_UNIT,
     DEFAULT_UI_MODE,
@@ -396,6 +395,14 @@ _LOG_LEVEL_OPTIONS = [
 SCHEMA_LOGGING = vol.Schema(
     {
         vol.Required(
+            CONF_LOG_LEVEL_MAIN, default=DEFAULT_LOG_LEVEL
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=_LOG_LEVEL_OPTIONS,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
+        vol.Required(
             CONF_LOG_LEVEL_MQTT, default=DEFAULT_LOG_LEVEL
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(
@@ -601,12 +608,9 @@ SCHEMA_UI_MODE = vol.Schema(
     }
 )
 
-# Section: UI Configuration (New - replaces UI_MODE)
+# Section: UI Configuration
 SCHEMA_UI_CONFIGURATION = vol.Schema(
     {
-        vol.Required(
-            CONF_SHOW_REACT_PANEL, default=DEFAULT_SHOW_REACT_PANEL
-        ): selector.BooleanSelector(selector.BooleanSelectorConfig()),
         vol.Required(
             CONF_AUTO_CREATE_DASHBOARD, default=DEFAULT_AUTO_CREATE_DASHBOARD
         ): selector.BooleanSelector(selector.BooleanSelectorConfig()),

@@ -9,6 +9,10 @@ import { html, css } from 'lit';
 import { MerakiCardBase } from './shared/meraki-card-base.js';
 import { MerakiEditorBase } from './shared/meraki-editor-base.js';
 import { merakiCardStyles } from './shared/styles.js';
+import {
+  renderConfigEntrySelector,
+  renderPaginationSelector,
+} from './shared/editor-helpers.js';
 
 export class MerakiClientsCard extends MerakiCardBase {
   static get properties() {
@@ -266,7 +270,9 @@ export class MerakiClientsCard extends MerakiCardBase {
 
     // Filter by online status if not showing offline
     if (!this.config.show_offline) {
-      clients = clients.filter((c) => c.status === 'Online' || c.recentDeviceSerial);
+      clients = clients.filter(
+        (c) => c.status === 'Online' || c.recentDeviceSerial
+      );
     }
 
     // Search filter
@@ -384,7 +390,10 @@ export class MerakiClientsCard extends MerakiCardBase {
     const limit = config.limit || 10;
     const totalPages = Math.ceil(this._filteredClients.length / limit);
     const startIdx = this._currentPage * limit;
-    const pageClients = this._filteredClients.slice(startIdx, startIdx + limit);
+    const pageClients = this._filteredClients.slice(
+      startIdx,
+      startIdx + limit
+    );
     const maxUsage = this._getMaxUsage();
 
     return html`
@@ -402,7 +411,9 @@ export class MerakiClientsCard extends MerakiCardBase {
             @input=${this._handleSearch}
             aria-label="Search clients"
           />
-          <span class="client-count">${this._filteredClients.length} clients</span>
+          <span class="client-count"
+            >${this._filteredClients.length} clients</span
+          >
         </div>
 
         ${pageClients.length === 0
@@ -415,29 +426,47 @@ export class MerakiClientsCard extends MerakiCardBase {
                       class="${this._sortBy === 'name' ? 'sorted' : ''}"
                       @click=${() => this._handleSort('name')}
                     >
-                      Name ${this._sortBy === 'name' ? (this._sortAsc ? '↑' : '↓') : ''}
+                      Name
+                      ${this._sortBy === 'name'
+                        ? this._sortAsc
+                          ? '↑'
+                          : '↓'
+                        : ''}
                     </th>
                     <th
                       class="${this._sortBy === 'ip' ? 'sorted' : ''}"
                       @click=${() => this._handleSort('ip')}
                     >
-                      IP ${this._sortBy === 'ip' ? (this._sortAsc ? '↑' : '↓') : ''}
+                      IP
+                      ${this._sortBy === 'ip'
+                        ? this._sortAsc
+                          ? '↑'
+                          : '↓'
+                        : ''}
                     </th>
                     <th>Status</th>
                     <th
                       class="${this._sortBy === 'usage' ? 'sorted' : ''}"
                       @click=${() => this._handleSort('usage')}
                     >
-                      Usage ${this._sortBy === 'usage' ? (this._sortAsc ? '↑' : '↓') : ''}
+                      Usage
+                      ${this._sortBy === 'usage'
+                        ? this._sortAsc
+                          ? '↑'
+                          : '↓'
+                        : ''}
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${pageClients.map((client) => this._renderClientRow(client, maxUsage))}
+                  ${pageClients.map((client) =>
+                    this._renderClientRow(client, maxUsage)
+                  )}
                 </tbody>
               </table>
             `}
         ${totalPages > 1 ? this._renderPagination(totalPages) : ''}
+        ${this._renderDebugPanel()}
       </ha-card>
     `;
   }
@@ -470,7 +499,9 @@ export class MerakiClientsCard extends MerakiCardBase {
           </div>
         </td>
       </tr>
-      ${this._expandedClient === client.mac ? this._renderExpandedDetails(client) : ''}
+      ${this._expandedClient === client.mac
+        ? this._renderExpandedDetails(client)
+        : ''}
     `;
   }
 
@@ -498,11 +529,15 @@ export class MerakiClientsCard extends MerakiCardBase {
               </div>
               <div class="detail-item">
                 <span class="label">Sent</span>
-                <span class="value">${this._formatBytes(client.usage?.sent)}</span>
+                <span class="value"
+                  >${this._formatBytes(client.usage?.sent)}</span
+                >
               </div>
               <div class="detail-item">
                 <span class="label">Received</span>
-                <span class="value">${this._formatBytes(client.usage?.recv)}</span>
+                <span class="value"
+                  >${this._formatBytes(client.usage?.recv)}</span
+                >
               </div>
             </div>
             <div class="actions-row">
@@ -587,16 +622,13 @@ export class MerakiClientsCardEditor extends MerakiEditorBase {
           @input=${this._valueChanged}
         ></ha-textfield>
       </div>
-      <div class="form-row">
-        <label for="config_entry_id">Config Entry ID (required)</label>
-        <ha-textfield
-          id="config_entry_id"
-          .value=${config.config_entry_id || ''}
-          .configValue=${'config_entry_id'}
-          @input=${this._valueChanged}
-          required
-        ></ha-textfield>
-      </div>
+
+      ${renderConfigEntrySelector(
+        this.hass,
+        config.config_entry_id,
+        this._handleConfigEntryChanged.bind(this)
+      )}
+
       <div class="form-row">
         <label for="network_id">Network ID (optional)</label>
         <ha-textfield
@@ -607,18 +639,15 @@ export class MerakiClientsCardEditor extends MerakiEditorBase {
           placeholder="L_123456789"
         ></ha-textfield>
       </div>
-      <div class="form-row">
-        <label for="limit">Clients per page</label>
-        <ha-textfield
-          id="limit"
-          type="number"
-          .value=${config.limit || 10}
-          .configValue=${'limit'}
-          @input=${this._valueChanged}
-          min="5"
-          max="100"
-        ></ha-textfield>
-      </div>
+
+      ${renderPaginationSelector(
+        this.hass,
+        'Clients per page',
+        config.limit || 10,
+        this._handleLimitChanged.bind(this),
+        { min: 5, max: 100, step: 5 }
+      )}
+
       <div class="switch-row">
         <label>Show Offline Clients</label>
         <ha-switch
@@ -628,6 +657,20 @@ export class MerakiClientsCardEditor extends MerakiEditorBase {
         ></ha-switch>
       </div>
     `;
+  }
+
+  _handleConfigEntryChanged(ev) {
+    if (!this.config || !this.hass) return;
+    const newConfig = { ...this.config };
+    newConfig.config_entry_id = ev.detail.value;
+    this._configChanged(newConfig);
+  }
+
+  _handleLimitChanged(ev) {
+    if (!this.config || !this.hass) return;
+    const newConfig = { ...this.config };
+    newConfig.limit = ev.detail.value;
+    this._configChanged(newConfig);
   }
 }
 

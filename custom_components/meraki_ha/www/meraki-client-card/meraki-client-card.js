@@ -619,6 +619,7 @@ export class MerakiClientCard extends MerakiCardBase {
 
           ${this._renderHomeAssistantEntities(client)}
         </div>
+        ${this._renderDebugPanel()}
       </ha-card>
     `;
   }

@@ -129,6 +129,11 @@ async def test_async_step_user_success(mock_hass: MagicMock) -> None:
     object.__setattr__(flow, "_abort_if_unique_id_configured", MagicMock())
     object.__setattr__(
         flow,
+        "async_step_init",
+        AsyncMock(return_value={"type": "form", "step_id": "init"}),
+    )
+    object.__setattr__(
+        flow,
         "async_show_form",
         MagicMock(return_value={"type": "form", "step_id": "init"}),
     )
@@ -160,6 +165,43 @@ async def test_async_step_init_no_input() -> None:
 
     assert result["type"] == "form"
     assert result["step_id"] == "init"
+
+
+@pytest.mark.asyncio
+async def test_async_step_init_fetches_networks(mock_hass: MagicMock) -> None:
+    """Test step init fetches networks for selection."""
+    flow = MerakiConfigFlow()
+    flow.hass = mock_hass
+    flow.data = {
+        CONF_MERAKI_API_KEY: "valid_key",
+        CONF_MERAKI_ORG_ID: "123456",
+    }
+    object.__setattr__(
+        flow,
+        "async_show_form",
+        MagicMock(return_value={"type": "form", "step_id": "init"}),
+    )
+
+    mock_client = MagicMock()
+    mock_client.async_setup = AsyncMock()
+    mock_client.async_close = AsyncMock()
+    mock_client.organization.get_organization_networks = AsyncMock(
+        return_value=[
+            {"id": "net_1", "name": "Network 1"},
+            {"id": "net_2", "name": "Network 2"},
+        ]
+    )
+
+    with patch(
+        "custom_components.meraki_ha.config_flow.MerakiAPIClient",
+        return_value=mock_client,
+    ):
+        result = await flow.async_step_init(None)
+
+    assert result["type"] == "form"
+    mock_client.async_setup.assert_called_once()
+    mock_client.organization.get_organization_networks.assert_called_once()
+    mock_client.async_close.assert_called_once()
 
 
 @pytest.mark.asyncio

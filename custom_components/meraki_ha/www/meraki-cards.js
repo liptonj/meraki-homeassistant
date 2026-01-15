@@ -11,6 +11,11 @@ import { CARD_DEFINITIONS } from './shared/constants.js';
 import './shared/meraki-card-base.js';
 import './shared/meraki-editor-base.js';
 
+// Import badges
+import './badges/meraki-status-badge.js';
+import './badges/meraki-clients-badge.js';
+import './badges/meraki-alerts-badge.js';
+
 // Import all card components
 import './meraki-overview-card.js';
 import './meraki-device-card.js';
@@ -18,6 +23,7 @@ import './meraki-devices-by-type-card.js'; // Groups devices by type with tables
 import './meraki-clients-card.js';
 import './meraki-switch-ports-card.js';
 import './meraki-mqtt-status-card.js'; // MQTT status card
+import './meraki-mqtt-status-card-editor.js';
 import './meraki-client-card/meraki-client-card.js';
 import './meraki-client-card/meraki-client-card-editor.js';
 import './meraki-camera-card/meraki-camera-card.js';
@@ -25,8 +31,12 @@ import './meraki-camera-card/meraki-camera-card-editor.js';
 
 // Import new Lovelace cards
 import './meraki-ssids-list-card.js';
+import './meraki-ssids-list-card-editor.js';
 import './meraki-events-card.js';
+import './meraki-events-card-editor.js';
 import './meraki-guest-access-card.js';
+import './meraki-guest-access-card-editor.js';
+import './meraki-switch-ports-card-editor.js';
 
 // Register cards with Home Assistant's custom cards registry
 window.customCards = window.customCards || [];

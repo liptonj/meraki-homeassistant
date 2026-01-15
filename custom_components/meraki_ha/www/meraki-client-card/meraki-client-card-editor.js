@@ -1,5 +1,6 @@
 import { html, css } from 'lit';
 import { MerakiEditorBase } from '../shared/meraki-editor-base.js';
+import { renderConfigEntrySelector } from '../shared/editor-helpers.js';
 
 /**
  * Configuration editor for the Meraki Client Card
@@ -113,13 +114,11 @@ export class MerakiClientCardEditor extends MerakiEditorBase {
               helper="e.g., device_tracker.meraki_client_aa_bb_cc_dd_ee_ff"
             ></ha-textfield>
 
-            <ha-textfield
-              label="Config Entry ID"
-              .value=${this.config.config_entry_id || ''}
-              .configValue=${'config_entry_id'}
-              @input=${this._valueChanged}
-              helper="Required for API access"
-            ></ha-textfield>
+            ${renderConfigEntrySelector(
+              this.hass,
+              this.config.config_entry_id,
+              this._handleConfigEntryChanged.bind(this)
+            )}
           </div>
         </div>
 
@@ -190,6 +189,22 @@ export class MerakiClientCardEditor extends MerakiEditorBase {
         </div>
       </div>
     `;
+  }
+
+  _handleConfigEntryChanged(ev) {
+    if (!this.config || !this.hass) return;
+    const newConfig = { ...this.config };
+    newConfig.config_entry_id = ev.detail.value;
+    this._configChanged(newConfig);
+  }
+
+  _configChanged(newConfig) {
+    const event = new Event('config-changed', {
+      bubbles: true,
+      composed: true,
+    });
+    event.detail = { config: newConfig };
+    this.dispatchEvent(event);
   }
 }
 

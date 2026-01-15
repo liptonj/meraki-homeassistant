@@ -8,6 +8,8 @@
     "build": "vite build",
     "build:panel": "vite build --config vite.panel.config.js",
     "build:all": "npm run build && npm run build:panel",
+    "test": "web-test-runner --config web-test-runner.config.js",
+    "test:watch": "web-test-runner --config web-test-runner.config.js --watch",
     "lint": "eslint . --ext js,jsx,ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
@@ -25,11 +27,16 @@
     "react-router-dom": "^6.22.3"
   },
   "devDependencies": {
+    "@open-wc/testing": "^4.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@types/node": "^25.0.3",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
+    "@web/dev-server-esbuild": "^1.0.4",
+    "@web/dev-server-rollup": "^0.6.4",
+    "@web/test-runner": "^0.20.2",
     "autoprefixer": "^10.4.19",
     "conventional-changelog-cli": "^4.1.0",
     "custom-card-helpers": "^1.9.0",
@@ -38,6 +45,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
     "postcss": "^8.4.38",
+    "sinon": "^21.0.1",
     "tailwindcss": "^3.4.3",
     "typescript": "^5.9.3",
     "vite": "^5.2.0"

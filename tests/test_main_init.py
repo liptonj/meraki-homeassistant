@@ -26,6 +26,8 @@ def mock_hass() -> MagicMock:
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
     hass.states = MagicMock()
     hass.http = AsyncMock()
+    hass.services = MagicMock()
+    hass.services.async_call = AsyncMock()
     return hass
 
 
@@ -105,9 +107,6 @@ async def test_async_setup_entry_success(
         patch("custom_components.meraki_ha.api.async_setup"),
         patch(
             "custom_components.meraki_ha.async_register_static_path",
-        ),
-        patch(
-            "custom_components.meraki_ha.async_register_panel",
         ),
         patch(
             "custom_components.meraki_ha.async_register_webhook",
@@ -211,9 +210,6 @@ async def test_async_setup_entry_existing_coordinator(
         patch("custom_components.meraki_ha.api.async_setup"),
         patch(
             "custom_components.meraki_ha.async_register_static_path",
-        ),
-        patch(
-            "custom_components.meraki_ha.async_register_panel",
         ),
         patch(
             "custom_components.meraki_ha.async_register_webhook",
@@ -350,7 +346,6 @@ async def test_scanning_api_webhook_registered_when_enabled(
         patch("custom_components.meraki_ha.DeviceDiscoveryService") as mock_discovery,
         patch("custom_components.meraki_ha.api.async_setup"),
         patch("custom_components.meraki_ha.async_register_static_path"),
-        patch("custom_components.meraki_ha.async_register_panel"),
         patch("custom_components.meraki_ha.async_register_webhook"),
         patch(
             "custom_components.meraki_ha.ha_webhook.async_register",
@@ -417,7 +412,6 @@ async def test_scanning_api_webhook_not_registered_when_disabled(
         patch("custom_components.meraki_ha.DeviceDiscoveryService") as mock_discovery,
         patch("custom_components.meraki_ha.api.async_setup"),
         patch("custom_components.meraki_ha.async_register_static_path"),
-        patch("custom_components.meraki_ha.async_register_panel"),
         patch("custom_components.meraki_ha.async_register_webhook"),
         patch(
             "custom_components.meraki_ha.ha_webhook.async_register",
@@ -481,7 +475,6 @@ async def test_scanning_api_webhook_not_registered_without_validator(
         patch("custom_components.meraki_ha.api.async_setup"),
         patch("custom_components.meraki_ha.api.legacy.async_setup_websocket_api"),
         patch("custom_components.meraki_ha.async_register_static_path"),
-        patch("custom_components.meraki_ha.async_register_panel"),
         patch("custom_components.meraki_ha.async_register_webhook"),
         patch(
             "custom_components.meraki_ha.ha_webhook.async_register",

@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .async_logging import async_log_time
 from .const import (
@@ -139,7 +140,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         if unique_id is None:
             return
-        expiry_time = datetime.now() + timedelta(seconds=expiry_seconds)
+        expiry_time = dt_util.utcnow() + timedelta(seconds=expiry_seconds)
         self._pending_updates[unique_id] = expiry_time
         _LOGGER.debug(
             "Registered pending update for %s, ignoring coordinator updates until %s",
@@ -163,7 +164,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if unique_id is None or unique_id not in self._pending_updates:
             return False
 
-        now = datetime.now()
+        now = dt_util.utcnow()
         expiry_time = self._pending_updates[unique_id]
 
         if now > expiry_time:
@@ -254,7 +255,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             return False
 
-        self._last_webhook_received = datetime.now()
+        self._last_webhook_received = dt_util.utcnow()
         self._webhook_received_count += 1
         _LOGGER.debug(
             "Webhook received (type=%s, total=%d, last=%s)",
@@ -266,7 +267,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _is_duplicate_alert(self, alert_id: str) -> bool:
         """Check if an alert was recently processed (deduplication)."""
-        now = datetime.now()
+        now = dt_util.utcnow()
 
         # Clean up old entries
         self._cleanup_dedup_cache()
@@ -280,7 +281,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _cleanup_dedup_cache(self) -> None:
         """Remove expired entries from the deduplication cache."""
-        now = datetime.now()
+        now = dt_util.utcnow()
         ttl = timedelta(seconds=self._alert_dedup_ttl_seconds)
         expired = [
             aid
@@ -314,7 +315,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             True if refresh was scheduled, False if already pending.
 
         """
-        now = datetime.now()
+        now = dt_util.utcnow()
         delay = delay_seconds or self._refresh_debounce_seconds
 
         # Check if a refresh is already pending for this key
@@ -447,7 +448,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         device["readings"] = self._process_sensor_readings_for_frontend(readings_raw)
 
         # Track MQTT update timestamp
-        mqtt_update_time = datetime.now()
+        mqtt_update_time = dt_util.utcnow()
         self._mqtt_last_updates[serial] = mqtt_update_time
 
         # Update readings_meta with timestamp and data source
@@ -637,11 +638,13 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         ent_reg = er.async_get(self.hass)
 
         # Get identifiers for all devices associated with this config entry
-        device_ids_in_registry = {
-            list(device.identifiers)[0][1]
-            for device in dev_reg.devices.values()
-            if self.config_entry.entry_id in device.config_entries
-        }
+        device_ids_in_registry: set[str] = set()
+        for device in dev_reg.devices.values():
+            if self.config_entry.entry_id not in device.config_entries:
+                continue
+            for domain, identifier in device.identifiers:
+                if domain == DOMAIN:
+                    device_ids_in_registry.add(identifier)
 
         # Build a set of all valid identifiers from the latest coordinator data
         # Physical devices use serial number as identifier
@@ -869,7 +872,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             last_ts = ts
                             break
                     device["readings_meta"] = {
-                        "last_updated": last_ts or datetime.now().isoformat(),
+                        "last_updated": last_ts or dt_util.utcnow().isoformat(),
                         "data_source": "api",
                     }
 
@@ -1015,7 +1018,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # Consider webhooks active if we've received one in the last 15 minutes.
         # This allows for a grace period if webhooks stop arriving.
-        return (datetime.now() - self._last_webhook_received) < timedelta(minutes=15)
+        return (dt_util.utcnow() - self._last_webhook_received) < timedelta(minutes=15)
 
     def _get_effective_poll_interval(self, data_type: str) -> timedelta:
         """Get the polling interval, reduced if webhooks are active."""
@@ -1062,7 +1065,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @async_log_time(MerakiLoggers.COORDINATOR, slow_threshold=10.0)
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from API endpoint based on tiered polling intervals."""
-        now = datetime.now()
+        now = dt_util.utcnow()
 
         # Get intervals from config entry options
         if not self.config_entry:
@@ -1293,7 +1296,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         last_check = check_timestamps.get(network_id)
         if not last_check:
             return True
-        return (datetime.now() - last_check) > timedelta(hours=interval_hours)
+        return (dt_util.utcnow() - last_check) > timedelta(hours=interval_hours)
 
     def is_vlan_check_due(self, network_id: str) -> bool:
         """
@@ -1334,7 +1337,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             network_id: The ID of the network.
 
         """
-        self._vlan_check_timestamps[network_id] = datetime.now()
+        self._vlan_check_timestamps[network_id] = dt_util.utcnow()
 
     def mark_traffic_check_done(self, network_id: str) -> None:
         """
@@ -1345,7 +1348,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             network_id: The ID of the network.
 
         """
-        self._traffic_check_timestamps[network_id] = datetime.now()
+        self._traffic_check_timestamps[network_id] = dt_util.utcnow()
 
     async def async_handle_scanning_api_data(self, data: dict[str, Any]) -> None:
         """
@@ -1650,7 +1653,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "category": category,
             "severity": severity,
             "description": description,
-            "timestamp": data.get("occurredAt") or datetime.now().isoformat(),
+            "timestamp": data.get("occurredAt") or dt_util.utcnow().isoformat(),
             "device_serial": data.get("deviceSerial"),
             "device_name": data.get("deviceName") or data.get("deviceSerial"),
             "network_id": data.get("networkId"),

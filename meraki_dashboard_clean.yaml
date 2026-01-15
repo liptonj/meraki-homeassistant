@@ -1,0 +1,96 @@
+# Meraki Dashboard - Simple Single Column Layout
+# Guaranteed to work - no complex sections
+
+title: Meraki Network
+icon: mdi:router-network
+
+views:
+  # ============================================================================
+  # OVERVIEW
+  # ============================================================================
+  - title: Overview
+    path: overview
+    icon: mdi:view-dashboard
+
+    badges:
+      - type: custom:meraki-status-badge
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+      - type: custom:meraki-clients-badge
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+      - type: custom:meraki-alerts-badge
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+
+    cards:
+      # Overview metrics - full width
+      - type: custom:meraki-overview-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+
+      # Clients and SSIDs side-by-side using horizontal-stack
+      - type: horizontal-stack
+        cards:
+          - type: custom:meraki-clients-card
+            config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+            limit: 10
+
+          - type: custom:meraki-ssids-list-card
+            config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+
+  # ============================================================================
+  # DEVICES
+  # ============================================================================
+  - title: Devices
+    path: devices
+    icon: mdi:devices
+
+    cards:
+      - type: custom:meraki-devices-by-type-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+        title: All Devices by Type
+
+  # ============================================================================
+  # CLIENTS
+  # ============================================================================
+  - title: Clients
+    path: clients
+    icon: mdi:account-multiple
+
+    cards:
+      - type: custom:meraki-clients-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+        title: Network Clients
+        limit: 100
+        show_offline: true
+
+  # ============================================================================
+  # WIRELESS
+  # ============================================================================
+  - title: Wireless
+    path: wireless
+    icon: mdi:wifi
+
+    cards:
+      - type: custom:meraki-ssids-list-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+        title: Wireless Networks
+
+  # ============================================================================
+  # EVENTS
+  # ============================================================================
+  - title: Events
+    path: events
+    icon: mdi:history
+
+    cards:
+      - type: custom:meraki-events-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+
+  # ============================================================================
+  # SETTINGS
+  # ============================================================================
+  - title: Settings
+    path: settings
+    icon: mdi:cog
+
+    cards:
+      - type: custom:meraki-mqtt-status-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN

@@ -1,6 +1,9 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { MerakiClientsCard, MerakiClientsCardEditor } from '../../www/meraki_ha/meraki-clients-card.js';
+import {
+  MerakiClientsCard,
+  MerakiClientsCardEditor,
+} from '../../custom_components/meraki_ha/www/meraki-clients-card.js';
 
 describe('MerakiClientsCard', () => {
   let element;
@@ -44,7 +47,9 @@ describe('MerakiClientsCard', () => {
       },
     };
 
-    element = await fixture(html`<meraki-clients-card .hass=${hass}></meraki-clients-card>`);
+    element = await fixture(
+      html`<meraki-clients-card .hass=${hass}></meraki-clients-card>`
+    );
     element.setConfig({ config_entry_id: 'test-entry' });
     await element.updateComplete;
   });
@@ -88,7 +93,11 @@ describe('MerakiClientsCard', () => {
   });
 
   it('limit config is respected', async () => {
-    element.setConfig({ config_entry_id: 'test', limit: 1, show_offline: true });
+    element.setConfig({
+      config_entry_id: 'test',
+      limit: 1,
+      show_offline: true,
+    });
     await element.fetchData();
     await element.updateComplete;
 
@@ -97,7 +106,11 @@ describe('MerakiClientsCard', () => {
   });
 
   it('pagination controls work', async () => {
-    element.setConfig({ config_entry_id: 'test', limit: 1, show_offline: true });
+    element.setConfig({
+      config_entry_id: 'test',
+      limit: 1,
+      show_offline: true,
+    });
     await element.fetchData();
     await element.updateComplete;
 
@@ -112,10 +125,16 @@ describe('MerakiClientsCard', () => {
     await element.updateComplete;
 
     const client = { mac: 'aa:bb:cc:dd:ee:ff' };
-    hass.connection.sendMessagePromise.withArgs(sinon.match({ type: 'meraki/block_client' })).resolves({ status: 'success' });
+    hass.connection.sendMessagePromise
+      .withArgs(sinon.match({ type: 'meraki/block_client' }))
+      .resolves({ status: 'success' });
 
     await element._handleBlock(client);
-    expect(hass.connection.sendMessagePromise.calledWith(sinon.match({ type: 'meraki/block_client', mac: 'aa:bb:cc:dd:ee:ff' }))).to.be.true;
+    expect(
+      hass.connection.sendMessagePromise.calledWith(
+        sinon.match({ type: 'meraki/block_client', mac: 'aa:bb:cc:dd:ee:ff' })
+      )
+    ).to.be.true;
   });
 
   it('getCardSize returns a number', () => {
@@ -161,7 +180,9 @@ describe('MerakiClientsCardEditor', () => {
   let editor;
 
   beforeEach(async () => {
-    editor = await fixture(html`<meraki-clients-card-editor></meraki-clients-card-editor>`);
+    editor = await fixture(
+      html`<meraki-clients-card-editor></meraki-clients-card-editor>`
+    );
     editor.hass = {};
     editor.setConfig({ config_entry_id: 'test' });
     await editor.updateComplete;

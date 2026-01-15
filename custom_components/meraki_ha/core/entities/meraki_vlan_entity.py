@@ -15,7 +15,7 @@ from . import BaseMerakiEntity
 class MerakiVLANEntity(BaseMerakiEntity):
     """Representation of a Meraki VLAN.
 
-    Device Hierarchy: Organization → Network → VLANs Group → VLAN
+    Device Hierarchy: Organization → Network → VLAN
     """
 
     def __init__(
@@ -40,13 +40,13 @@ class MerakiVLANEntity(BaseMerakiEntity):
             config=self._config_entry.options,
         )
 
-        # Link VLAN to its VLANs group (under network)
+        # Link VLAN directly to its network (device type groups removed)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"vlan_{network_id}_{vlan['id']}")},
             name=formatted_name,
             manufacturer="Cisco Meraki",
             model="VLAN",
-            via_device=(DOMAIN, f"devicetype_{network_id}_vlans"),
+            via_device=(DOMAIN, f"network_{network_id}"),
         )
 
     @property

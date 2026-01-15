@@ -108,7 +108,9 @@ class MerakiDashboardStrategy:
         self, client: dict[str, Any], client_mac: str, config_entry_id: str
     ) -> dict[str, Any]:
         """Generate a detail page for a specific client."""
-        client_name = client.get("description") or client.get("hostname", "Unknown Client")
+        client_name = client.get("description") or client.get(
+            "hostname", "Unknown Client"
+        )
 
         cards = [
             {
@@ -192,14 +194,33 @@ class MerakiDashboardStrategy:
                 "title": "Overview",
                 "path": "overview",
                 "badges": [
-                    {"type": "custom:meraki-status-badge", "config_entry_id": config_entry_id},
-                    {"type": "custom:meraki-clients-badge", "config_entry_id": config_entry_id},
-                    {"type": "custom:meraki-alerts-badge", "config_entry_id": config_entry_id},
+                    {
+                        "type": "custom:meraki-status-badge",
+                        "config_entry_id": config_entry_id,
+                    },
+                    {
+                        "type": "custom:meraki-clients-badge",
+                        "config_entry_id": config_entry_id,
+                    },
+                    {
+                        "type": "custom:meraki-alerts-badge",
+                        "config_entry_id": config_entry_id,
+                    },
                 ],
                 "cards": [
-                    {"type": "custom:meraki-overview-card", "config_entry_id": config_entry_id},
-                    {"type": "custom:meraki-clients-card", "config_entry_id": config_entry_id, "limit": 10},
-                    {"type": "custom:meraki-ssids-list-card", "config_entry_id": config_entry_id},
+                    {
+                        "type": "custom:meraki-overview-card",
+                        "config_entry_id": config_entry_id,
+                    },
+                    {
+                        "type": "custom:meraki-clients-card",
+                        "config_entry_id": config_entry_id,
+                        "limit": 10,
+                    },
+                    {
+                        "type": "custom:meraki-ssids-list-card",
+                        "config_entry_id": config_entry_id,
+                    },
                 ],
             },
             {
@@ -215,7 +236,7 @@ class MerakiDashboardStrategy:
                         "show_cameras": True,
                         "show_sensors": True,
                         "show_appliances": True,
-                        "devices_per_page": 2,
+                        "devices_per_page": 10,
                     }
                 ],
             },
@@ -229,13 +250,6 @@ class MerakiDashboardStrategy:
                         "title": "Network Clients",
                         "limit": 50,
                         "show_offline": False,
-                    },
-                    {
-                        "type": "custom:meraki-client-card",
-                        "config_entry_id": config_entry_id,
-                        "title": "Featured Client: Living Room Sonos",
-                        "client_mac": "5c:aa:fd:11:22:33",
-                        "default_collapsed": False,
                     },
                 ],
             },
@@ -253,7 +267,12 @@ class MerakiDashboardStrategy:
             {
                 "title": "Guest Access",
                 "path": "guest",
-                "cards": [{"type": "custom:meraki-guest-access-card", "config_entry_id": config_entry_id}],
+                "cards": [
+                    {
+                        "type": "custom:meraki-guest-access-card",
+                        "config_entry_id": config_entry_id,
+                    }
+                ],
             },
             {
                 "title": "Settings",
@@ -277,24 +296,40 @@ class MerakiDashboardStrategy:
         # In production, these would be dynamically created via navigation
         if devices:
             # Find one device of each type for examples
-            switch = next((d for d in devices if d.get("model", "").startswith("MS")), None)
-            camera = next((d for d in devices if d.get("model", "").startswith("MV")), None)
+            switch = next(
+                (d for d in devices if d.get("model", "").startswith("MS")), None
+            )
+            camera = next(
+                (d for d in devices if d.get("model", "").startswith("MV")), None
+            )
             ap = next((d for d in devices if d.get("model", "").startswith("MR")), None)
-            sensor = next((d for d in devices if d.get("model", "").startswith("MT")), None)
+            sensor = next(
+                (d for d in devices if d.get("model", "").startswith("MT")), None
+            )
 
             if switch:
                 views.append(
-                    self._generate_device_detail_page(switch, switch.get("serial"), config_entry_id)
+                    self._generate_device_detail_page(
+                        switch, switch.get("serial"), config_entry_id
+                    )
                 )
             if camera:
                 views.append(
-                    self._generate_device_detail_page(camera, camera.get("serial"), config_entry_id)
+                    self._generate_device_detail_page(
+                        camera, camera.get("serial"), config_entry_id
+                    )
                 )
             if ap:
-                views.append(self._generate_device_detail_page(ap, ap.get("serial"), config_entry_id))
+                views.append(
+                    self._generate_device_detail_page(
+                        ap, ap.get("serial"), config_entry_id
+                    )
+                )
             if sensor:
                 views.append(
-                    self._generate_device_detail_page(sensor, sensor.get("serial"), config_entry_id)
+                    self._generate_device_detail_page(
+                        sensor, sensor.get("serial"), config_entry_id
+                    )
                 )
 
         # Add example client detail pages
@@ -303,12 +338,16 @@ class MerakiDashboardStrategy:
             ha_client = next((c for c in clients if c.get("ha_device_id")), None)
             if ha_client:
                 views.append(
-                    self._generate_client_detail_page(ha_client, ha_client.get("mac"), config_entry_id)
+                    self._generate_client_detail_page(
+                        ha_client, ha_client.get("mac"), config_entry_id
+                    )
                 )
 
             # Add one more example client
             if len(clients) > 1:
-                other_client = next((c for c in clients if not c.get("ha_device_id")), None)
+                other_client = next(
+                    (c for c in clients if not c.get("ha_device_id")), None
+                )
                 if other_client:
                     views.append(
                         self._generate_client_detail_page(

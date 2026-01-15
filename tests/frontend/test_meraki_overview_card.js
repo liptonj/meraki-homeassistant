@@ -1,6 +1,9 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { MerakiOverviewCard, MerakiOverviewCardEditor } from '../../www/meraki_ha/meraki-overview-card.js';
+import {
+  MerakiOverviewCard,
+  MerakiOverviewCardEditor,
+} from '../../custom_components/meraki_ha/www/meraki-overview-card.js';
 
 describe('MerakiOverviewCard', () => {
   let element;
@@ -12,10 +15,18 @@ describe('MerakiOverviewCard', () => {
         sendMessagePromise: sinon.stub().resolves({
           devices: [
             { serial: '123', name: 'AP1', status: 'online' },
-            { serial: '456', name: 'Switch1', status: 'alerting', statusMessage: 'High CPU' },
+            {
+              serial: '456',
+              name: 'Switch1',
+              status: 'alerting',
+              statusMessage: 'High CPU',
+            },
             { serial: '789', name: 'AP2', status: 'offline' },
           ],
-          clients: [{ mac: 'aa:bb:cc:dd:ee:ff' }, { mac: '11:22:33:44:55:66' }],
+          clients: [
+            { mac: 'aa:bb:cc:dd:ee:ff' },
+            { mac: '11:22:33:44:55:66' },
+          ],
           ssids: [
             { number: 0, name: 'Corp', enabled: true },
             { number: 1, name: 'Guest', enabled: true },
@@ -26,7 +37,9 @@ describe('MerakiOverviewCard', () => {
       },
     };
 
-    element = await fixture(html`<meraki-overview-card .hass=${hass}></meraki-overview-card>`);
+    element = await fixture(
+      html`<meraki-overview-card .hass=${hass}></meraki-overview-card>`
+    );
     element.setConfig({ config_entry_id: 'test-entry' });
     await element.updateComplete;
   });
@@ -73,7 +86,9 @@ describe('MerakiOverviewCard', () => {
   it('displays client count', async () => {
     await element.fetchData();
     await element.updateComplete;
-    const clientCard = element.shadowRoot.querySelector('.stat-card:nth-child(4)');
+    const clientCard = element.shadowRoot.querySelector(
+      '.stat-card:nth-child(4)'
+    );
     expect(clientCard).to.exist;
   });
 
@@ -108,7 +123,9 @@ describe('MerakiOverviewCardEditor', () => {
   let editor;
 
   beforeEach(async () => {
-    editor = await fixture(html`<meraki-overview-card-editor></meraki-overview-card-editor>`);
+    editor = await fixture(
+      html`<meraki-overview-card-editor></meraki-overview-card-editor>`
+    );
     editor.hass = {};
     editor.setConfig({ config_entry_id: 'test', title: 'Test' });
     await editor.updateComplete;
@@ -119,10 +136,25 @@ describe('MerakiOverviewCardEditor', () => {
     expect(editor.shadowRoot.querySelector('ha-switch')).to.exist;
   });
 
+  it('renders integration selector for config_entry_id', () => {
+    const selector = editor.shadowRoot.querySelector('ha-selector');
+    expect(selector).to.exist;
+  });
+
   it('dispatches config-changed event', async () => {
     const spy = sinon.spy();
     editor.addEventListener('config-changed', spy);
     editor._configChanged({ test: 'value' });
     expect(spy.calledOnce).to.be.true;
+  });
+
+  it('handles config entry changed event', async () => {
+    const spy = sinon.spy();
+    editor.addEventListener('config-changed', spy);
+    editor._handleConfigEntryChanged({ detail: { value: 'new-entry-id' } });
+    expect(spy.calledOnce).to.be.true;
+    expect(spy.firstCall.args[0].detail.config.config_entry_id).to.equal(
+      'new-entry-id'
+    );
   });
 });

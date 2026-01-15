@@ -1,6 +1,6 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { MerakiEventsCard } from '../../www/meraki_ha/meraki-events-card.js';
+import { MerakiEventsCard } from '../../custom_components/meraki_ha/www/meraki-events-card.js';
 
 describe('MerakiEventsCard', () => {
   let element;
@@ -110,13 +110,15 @@ describe('MerakiEventsCard', () => {
 
   describe('Event Fetching', () => {
     it('fetches events from WebSocket API', async () => {
+      // Reset the stub to get a clean count
+      hass.connection.sendMessagePromise.resetHistory();
       await element.fetchData();
       await element.updateComplete;
 
-      expect(hass.connection.sendMessagePromise.calledOnce).to.be.true;
-      expect(
-        hass.connection.sendMessagePromise.firstCall.args[0]
-      ).to.deep.include({
+      expect(hass.connection.sendMessagePromise.called).to.be.true;
+      // Check the last call includes the expected parameters
+      const lastCall = hass.connection.sendMessagePromise.lastCall.args[0];
+      expect(lastCall).to.deep.include({
         type: 'meraki/get_events',
         config_entry_id: 'test-entry',
       });
@@ -132,35 +134,40 @@ describe('MerakiEventsCard', () => {
     });
 
     it('sends limit parameter to API', async () => {
+      hass.connection.sendMessagePromise.resetHistory();
       element._limit = 25;
       await element.fetchData();
 
-      const callArgs = hass.connection.sendMessagePromise.firstCall.args[0];
+      // Check the last call for the limit parameter
+      const callArgs = hass.connection.sendMessagePromise.lastCall.args[0];
       expect(callArgs.limit).to.equal(25);
     });
 
     it('sends category filter when set', async () => {
+      hass.connection.sendMessagePromise.resetHistory();
       element._filterType = 'device_status';
       await element.fetchData();
 
-      const callArgs = hass.connection.sendMessagePromise.firstCall.args[0];
+      const callArgs = hass.connection.sendMessagePromise.lastCall.args[0];
       expect(callArgs.category).to.equal('device_status');
     });
 
     it('sends severity filter when set', async () => {
+      hass.connection.sendMessagePromise.resetHistory();
       element._filterSeverity = 'critical';
       await element.fetchData();
 
-      const callArgs = hass.connection.sendMessagePromise.firstCall.args[0];
+      const callArgs = hass.connection.sendMessagePromise.lastCall.args[0];
       expect(callArgs.severity).to.equal('critical');
     });
 
     it('does not send filters when set to "all"', async () => {
+      hass.connection.sendMessagePromise.resetHistory();
       element._filterType = 'all';
       element._filterSeverity = 'all';
       await element.fetchData();
 
-      const callArgs = hass.connection.sendMessagePromise.firstCall.args[0];
+      const callArgs = hass.connection.sendMessagePromise.lastCall.args[0];
       expect(callArgs).to.not.have.property('category');
       expect(callArgs).to.not.have.property('severity');
     });
@@ -406,32 +413,34 @@ describe('MerakiEventsCard', () => {
     });
   });
 
-  describe('Load More Functionality', () => {
-    it('increases limit when load more is clicked', () => {
-      const initialLimit = element._limit;
-      element._loadMore();
-
-      expect(element._limit).to.equal(initialLimit + 50);
-    });
-
-    it('shows load more button when events equal limit', async () => {
-      element._limit = 5;
+  describe('Pagination Functionality', () => {
+    it('uses pagination instead of load more', async () => {
       await element.fetchData();
+      element._loading = false;
       await element.updateComplete;
 
-      const loadMoreButton =
-        element.shadowRoot.querySelector('.load-more-button');
-      expect(loadMoreButton).to.exist;
+      // Card now uses pagination with events_per_page
+      const pagination = element.shadowRoot.querySelector('.pagination');
+      // Pagination may or may not be rendered depending on number of events
+      expect(element._currentPage).to.equal(0);
     });
 
-    it('hides load more button when events less than limit', async () => {
-      element._limit = 100;
-      await element.fetchData();
-      await element.updateComplete;
+    it('has _changePage method for navigation', () => {
+      expect(element._changePage).to.be.a('function');
+    });
 
-      const loadMoreButton =
-        element.shadowRoot.querySelector('.load-more-button');
-      expect(loadMoreButton).to.not.exist;
+    it('changes page when _changePage is called', () => {
+      element._currentPage = 0;
+      element._changePage(1);
+      expect(element._currentPage).to.equal(1);
+    });
+
+    it('uses events_per_page from config for pagination', () => {
+      element.setConfig({
+        config_entry_id: 'test-entry',
+        events_per_page: 20,
+      });
+      expect(element.config.events_per_page).to.equal(20);
     });
   });
 

@@ -1,8 +1,6 @@
-
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import 'custom-card-helpers';
-import '../../www/meraki_ha/meraki-mqtt-status-card.ts';
+import '../../custom_components/meraki_ha/www/meraki-mqtt-status-card.js';
 
 describe('MerakiMqttStatusCard', () => {
   let element;
@@ -18,7 +16,12 @@ describe('MerakiMqttStatusCard', () => {
     auto_hide_when_disabled: true,
   };
 
-  const defaultHass = {
+  // Create a mock hass object with proper connection methods required by MerakiCardBase
+  const createMockHass = (states = {}) => ({
+    connection: {
+      subscribeMessage: sinon.stub().returns(() => {}),
+      sendMessagePromise: sinon.stub().resolves({}),
+    },
     states: {
       'sensor.meraki_cloud_simulator_mqtt_data': {
         attributes: {
@@ -28,7 +31,9 @@ describe('MerakiMqttStatusCard', () => {
             messages_received: 1234,
             messages_processed: 1230,
             last_message_time: new Date().toISOString(),
-            start_time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            start_time: new Date(
+              Date.now() - 2 * 60 * 60 * 1000
+            ).toISOString(),
             sensors_mapped: 8,
           },
           relay_destinations: {
@@ -57,14 +62,20 @@ describe('MerakiMqttStatusCard', () => {
           },
         },
       },
+      ...states,
     },
-  };
+  });
+
+  let defaultHass;
 
   beforeEach(async () => {
     localStorage.clear();
-    element = await fixture(html\`<meraki-mqtt-status-card></meraki-mqtt-status-card>\`);
-    element.hass = defaultHass;
+    defaultHass = createMockHass();
+    element = await fixture(
+      html`<meraki-mqtt-status-card></meraki-mqtt-status-card>`
+    );
     element.setConfig(defaultConfig);
+    element.hass = defaultHass;
     await element.updateComplete;
   });
 
@@ -73,13 +84,19 @@ describe('MerakiMqttStatusCard', () => {
   });
 
   describe('Basic Rendering', () => {
-    it('renders the card', () => {
+    it('renders the card', async () => {
+      // Card renders ha-card element after loading
+      element._loading = false;
+      await element.updateComplete;
       expect(element).to.be.ok;
-      expect(element.shadowRoot.querySelector('#react-root')).to.be.ok;
+      // Check for ha-card which is the main container
+      const haCard = element.shadowRoot.querySelector('ha-card');
+      expect(haCard).to.be.ok;
     });
 
     it('renders when MQTT is enabled', async () => {
       element.hass = defaultHass;
+      element._loading = false;
       await element.updateComplete;
       expect(element).to.be.ok;
     });
@@ -127,7 +144,9 @@ describe('MerakiMqttStatusCard', () => {
             attributes: {
               enabled: true,
               stats: {
-                ...defaultHass.states['sensor.meraki_cloud_simulator_mqtt_data'].attributes.stats,
+                ...defaultHass.states[
+                  'sensor.meraki_cloud_simulator_mqtt_data'
+                ].attributes.stats,
                 is_running: false,
               },
               relay_destinations: {},
@@ -159,7 +178,9 @@ describe('MerakiMqttStatusCard', () => {
                 messages_received: 1234567,
                 messages_processed: 1234560,
                 last_message_time: new Date().toISOString(),
-                start_time: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+                start_time: new Date(
+                  Date.now() - 24 * 60 * 60 * 1000
+                ).toISOString(),
                 sensors_mapped: 25,
               },
               relay_destinations: {},
@@ -208,8 +229,12 @@ describe('MerakiMqttStatusCard', () => {
                 is_running: true,
                 messages_received: 100,
                 messages_processed: 100,
-                last_message_time: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-                start_time: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                last_message_time: new Date(
+                  Date.now() - 15 * 60 * 1000
+                ).toISOString(),
+                start_time: new Date(
+                  Date.now() - 30 * 60 * 1000
+                ).toISOString(),
                 sensors_mapped: 5,
               },
               relay_destinations: {},
@@ -245,13 +270,21 @@ describe('MerakiMqttStatusCard', () => {
 
   describe('Collapsible Behavior', () => {
     it('defaults to collapsed', async () => {
-      element.setConfig({ ...defaultConfig, default_collapsed: true, collapsible: true });
+      element.setConfig({
+        ...defaultConfig,
+        default_collapsed: true,
+        collapsible: true,
+      });
       await element.updateComplete;
       expect(element).to.be.ok;
     });
 
     it('shows summary in collapsed state', async () => {
-      element.setConfig({ ...defaultConfig, default_collapsed: true, collapsible: true });
+      element.setConfig({
+        ...defaultConfig,
+        default_collapsed: true,
+        collapsible: true,
+      });
       await element.updateComplete;
       expect(element).to.be.ok;
     });

@@ -2,6 +2,8 @@ import { css } from 'lit';
 
 export const merakiCardStyles = css`
   :host {
+    display: block;
+    width: 100%;
     --meraki-primary: var(--primary-color);
     --meraki-success: var(--success-color, #4caf50);
     --meraki-warning: var(--warning-color, #ff9800);
@@ -10,9 +12,11 @@ export const merakiCardStyles = css`
   }
 
   ha-card {
+    width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
   }
 
   .card-header {

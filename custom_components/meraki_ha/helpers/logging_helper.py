@@ -8,7 +8,7 @@ Example configuration.yaml:
 logger:
   default: info
   logs:
-    # Main integration
+    # Main integration (core operations, config flow, helpers)
     custom_components.meraki_ha: info
 
     # Feature-specific logging (add any of these to adjust verbosity):
@@ -146,6 +146,7 @@ _LOG_LEVEL_MAP: Final[dict[str, int]] = {
 
 # Mapping from config option keys to logger feature names
 _CONFIG_TO_LOGGER_MAP: Final[dict[str, logging.Logger]] = {
+    "log_level_main": MerakiLoggers.MAIN,
     "log_level_mqtt": MerakiLoggers.MQTT,
     "log_level_alerts": MerakiLoggers.ALERTS,
     "log_level_scanning_api": MerakiLoggers.SCANNING_API,

@@ -239,12 +239,17 @@ export class MerakiEventsCard extends MerakiCardBase {
 
   static getStubConfig() {
     return {
+      title: 'Events',
       show_filters: true,
       auto_refresh: true,
       refresh_interval: 30,
       limit: 50,
       events_per_page: 10,
     };
+  }
+
+  static getConfigElement() {
+    return document.createElement('meraki-events-card-editor');
   }
 
   constructor() {
@@ -417,7 +422,10 @@ export class MerakiEventsCard extends MerakiCardBase {
     const eventsPerPage = this.config.events_per_page || 10;
     const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
     const startIdx = this._currentPage * eventsPerPage;
-    const pageEvents = filteredEvents.slice(startIdx, startIdx + eventsPerPage);
+    const pageEvents = filteredEvents.slice(
+      startIdx,
+      startIdx + eventsPerPage
+    );
 
     return html`
       <ha-card>
@@ -563,6 +571,7 @@ export class MerakiEventsCard extends MerakiCardBase {
                   `
                 : ''}
             `}
+        ${this._renderDebugPanel()}
       </ha-card>
     `;
   }

@@ -192,11 +192,16 @@ export class MerakiSSIDsListCard extends MerakiCardBase {
 
   static getStubConfig() {
     return {
+      title: 'SSIDs',
       show_filter: true,
       show_client_count: true,
       show_toggle: true,
       collapsed_by_default: false,
     };
+  }
+
+  static getConfigElement() {
+    return document.createElement('meraki-ssids-list-card-editor');
   }
 
   constructor() {
@@ -510,6 +515,7 @@ export class MerakiSSIDsListCard extends MerakiCardBase {
               </div>
             `
           : ''}
+        ${this._renderDebugPanel()}
       </ha-card>
     `;
   }

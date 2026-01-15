@@ -9,6 +9,7 @@ import { html, css } from 'lit';
 import { MerakiCardBase } from './shared/meraki-card-base.js';
 import { MerakiEditorBase } from './shared/meraki-editor-base.js';
 import { merakiCardStyles } from './shared/styles.js';
+import { renderConfigEntrySelector } from './shared/editor-helpers.js';
 
 export class MerakiOverviewCard extends MerakiCardBase {
   static get properties() {
@@ -24,46 +25,74 @@ export class MerakiOverviewCard extends MerakiCardBase {
       css`
         .overview-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-          gap: 16px;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 12px;
           padding: 16px;
+        }
+
+        /* Responsive: Stack on smaller screens */
+        @media (max-width: 768px) {
+          .overview-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 480px) {
+          .overview-grid {
+            grid-template-columns: 1fr;
+          }
         }
 
         .stat-card {
           background: var(--secondary-background-color);
           border-radius: 8px;
-          padding: 16px;
+          padding: 20px 16px;
           text-align: center;
           cursor: pointer;
-          transition: transform 0.2s;
+          transition: all 0.2s ease;
+          min-height: 100px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
         }
 
         .stat-card:hover {
           transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .stat-value {
-          font-size: 2rem;
-          font-weight: bold;
+          font-size: 2.5rem;
+          font-weight: 700;
           color: var(--primary-color);
+          line-height: 1;
+          margin-bottom: 8px;
         }
 
         .stat-label {
           font-size: 0.875rem;
           color: var(--secondary-text-color);
+          display: flex;
+          align-items: center;
+          gap: 4px;
           margin-top: 4px;
         }
 
+        .stat-label ha-icon {
+          --mdc-icon-size: 16px;
+        }
+
         .status-online {
-          color: var(--meraki-success);
+          color: var(--meraki-success, #4caf50);
         }
 
         .status-alerting {
-          color: var(--meraki-warning);
+          color: var(--meraki-warning, #ff9800);
         }
 
         .status-offline {
-          color: var(--meraki-error);
+          color: var(--meraki-error, #f44336);
         }
 
         .alerts-section {
@@ -145,7 +174,8 @@ export class MerakiOverviewCard extends MerakiCardBase {
     this._deviceCounts = {
       online: devices.filter((d) => d.status === 'online').length,
       alerting: devices.filter((d) => d.status === 'alerting').length,
-      offline: devices.filter((d) => d.status === 'offline' || !d.status).length,
+      offline: devices.filter((d) => d.status === 'offline' || !d.status)
+        .length,
       total: devices.length,
     };
   }
@@ -195,7 +225,9 @@ export class MerakiOverviewCard extends MerakiCardBase {
                   tabindex="0"
                   aria-label="View devices"
                 >
-                  <div class="stat-value status-online">${this._deviceCounts.online}</div>
+                  <div class="stat-value status-online">
+                    ${this._deviceCounts.online}
+                  </div>
                   <div class="stat-label">
                     <ha-icon icon="mdi:check-circle"></ha-icon>
                     Online
@@ -208,7 +240,9 @@ export class MerakiOverviewCard extends MerakiCardBase {
                   tabindex="0"
                   aria-label="View alerting devices"
                 >
-                  <div class="stat-value status-alerting">${this._deviceCounts.alerting}</div>
+                  <div class="stat-value status-alerting">
+                    ${this._deviceCounts.alerting}
+                  </div>
                   <div class="stat-label">
                     <ha-icon icon="mdi:alert"></ha-icon>
                     Alerting
@@ -221,7 +255,9 @@ export class MerakiOverviewCard extends MerakiCardBase {
                   tabindex="0"
                   aria-label="View offline devices"
                 >
-                  <div class="stat-value status-offline">${this._deviceCounts.offline}</div>
+                  <div class="stat-value status-offline">
+                    ${this._deviceCounts.offline}
+                  </div>
                   <div class="stat-label">
                     <ha-icon icon="mdi:close-circle"></ha-icon>
                     Offline
@@ -264,7 +300,7 @@ export class MerakiOverviewCard extends MerakiCardBase {
               `
             : ''}
         </div>
-        ${showAlerts ? this._renderAlerts() : ''}
+        ${showAlerts ? this._renderAlerts() : ''} ${this._renderDebugPanel()}
       </ha-card>
     `;
   }
@@ -339,16 +375,13 @@ export class MerakiOverviewCardEditor extends MerakiEditorBase {
           @input=${this._valueChanged}
         ></ha-textfield>
       </div>
-      <div class="form-row">
-        <label for="config_entry_id">Config Entry ID (required)</label>
-        <ha-textfield
-          id="config_entry_id"
-          .value=${config.config_entry_id || ''}
-          .configValue=${'config_entry_id'}
-          @input=${this._valueChanged}
-          required
-        ></ha-textfield>
-      </div>
+
+      ${renderConfigEntrySelector(
+        this.hass,
+        config.config_entry_id,
+        this._handleConfigEntryChanged.bind(this)
+      )}
+
       <div class="switch-row">
         <label>Show Devices</label>
         <ha-switch
@@ -382,6 +415,13 @@ export class MerakiOverviewCardEditor extends MerakiEditorBase {
         ></ha-switch>
       </div>
     `;
+  }
+
+  _handleConfigEntryChanged(ev) {
+    if (!this.config || !this.hass) return;
+    const newConfig = { ...this.config };
+    newConfig.config_entry_id = ev.detail.value;
+    this._configChanged(newConfig);
   }
 }
 

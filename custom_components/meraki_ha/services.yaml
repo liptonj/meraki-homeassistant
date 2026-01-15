@@ -7,3 +7,34 @@ sync_client_names:
   name: Sync Client Names
   description: Sync client device names from Home Assistant to the Meraki Dashboard.
   fields: {}
+
+create_editable_dashboard:
+  name: Create Editable Meraki Dashboard
+  description: Create a fully editable static Lovelace dashboard with all your Meraki devices. Unlike the strategy-based dashboard, this one can be customized in the Lovelace UI. If you have only one Meraki integration, you don't need to provide any parameters!
+  fields:
+    config_entry_id:
+      name: Config Entry ID
+      description: The Meraki integration config entry ID (auto-detected if you have only one Meraki integration)
+      required: false
+      example: '01KEWXQN207AMKWPF72B4R62CN'
+      selector:
+        text:
+    dashboard_id:
+      name: Dashboard ID
+      description: Custom dashboard URL identifier (optional, auto-generated if not provided)
+      required: false
+      example: 'meraki_main'
+      selector:
+        text:
+
+regenerate_dashboard:
+  name: Regenerate Meraki Dashboard
+  description: Regenerate an existing Meraki dashboard to reflect current devices and configuration.
+  fields:
+    config_entry_id:
+      name: Config Entry ID
+      description: The Meraki integration config entry ID
+      required: true
+      example: '01KEWXQN207AMKWPF72B4R62CN'
+      selector:
+        text:

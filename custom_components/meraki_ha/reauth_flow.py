@@ -44,18 +44,19 @@ async def async_step_reauth(
     if not existing_entry:
         return self.async_abort(reason="unknown_entry")
 
+    org_id = existing_entry.data.get(CONF_MERAKI_ORG_ID, "")
+
     if user_input is not None:
         try:
             await validate_meraki_credentials(
                 self.hass,
                 user_input[CONF_MERAKI_API_KEY],
-                user_input[CONF_MERAKI_ORG_ID],
+                org_id,
             )
 
             updated_data = {
                 **existing_entry.data,
                 CONF_MERAKI_API_KEY: user_input[CONF_MERAKI_API_KEY],
-                CONF_MERAKI_ORG_ID: user_input[CONF_MERAKI_ORG_ID],
             }
 
             self.hass.config_entries.async_update_entry(
@@ -79,14 +80,11 @@ async def async_step_reauth(
             _LOGGER.error("An unexpected error occurred during reauth: %s", e)
             errors["base"] = "unknown"
 
-    org_id = existing_entry.data.get(CONF_MERAKI_ORG_ID, "")
-
     return self.async_show_form(
         step_id="reauth",
         data_schema=vol.Schema(
             {
                 vol.Required(CONF_MERAKI_API_KEY): str,
-                vol.Required(CONF_MERAKI_ORG_ID, default=org_id): str,
             },
         ),
         errors=errors,

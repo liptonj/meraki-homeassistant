@@ -1,6 +1,9 @@
 import { html, fixture, expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { MerakiSwitchPortsCard, MerakiSwitchPortsCardEditor } from '../../www/meraki_ha/meraki-switch-ports-card.js';
+import {
+  MerakiSwitchPortsCard,
+  MerakiSwitchPortsCardEditor,
+} from '../../custom_components/meraki_ha/www/meraki-switch-ports-card.js';
 
 describe('MerakiSwitchPortsCard', () => {
   let element;
@@ -21,21 +24,31 @@ describe('MerakiSwitchPortsCard', () => {
       status: 'online',
     });
 
-    element = await fixture(html`<meraki-switch-ports-card .hass=${hass}></meraki-switch-ports-card>`);
+    element = await fixture(
+      html`<meraki-switch-ports-card .hass=${hass}></meraki-switch-ports-card>`
+    );
   });
 
   it('setConfig throws on missing device_serial', () => {
-    expect(() => element.setConfig({ config_entry_id: 'test' })).to.throw('device_serial is required');
+    expect(() => element.setConfig({ config_entry_id: 'test' })).to.throw(
+      'device_serial is required'
+    );
   });
 
   it('setConfig accepts valid config', () => {
     expect(() =>
-      element.setConfig({ config_entry_id: 'test', device_serial: 'SWITCH-123' })
+      element.setConfig({
+        config_entry_id: 'test',
+        device_serial: 'SWITCH-123',
+      })
     ).to.not.throw();
   });
 
   it('port grid renders', async () => {
-    element.setConfig({ config_entry_id: 'test', device_serial: 'SWITCH-123' });
+    element.setConfig({
+      config_entry_id: 'test',
+      device_serial: 'SWITCH-123',
+    });
     await element.fetchData();
     await element.updateComplete;
 
@@ -44,12 +57,19 @@ describe('MerakiSwitchPortsCard', () => {
   });
 
   it('compact mode reduces size', () => {
-    element.setConfig({ config_entry_id: 'test', device_serial: 'SWITCH-123', compact: true });
+    element.setConfig({
+      config_entry_id: 'test',
+      device_serial: 'SWITCH-123',
+      compact: true,
+    });
     expect(element.getCardSize()).to.equal(2);
   });
 
   it('getGridOptions returns valid config', () => {
-    element.setConfig({ config_entry_id: 'test', device_serial: 'SWITCH-123' });
+    element.setConfig({
+      config_entry_id: 'test',
+      device_serial: 'SWITCH-123',
+    });
     const options = element.getGridOptions();
     expect(options).to.have.property('rows');
     expect(options).to.have.property('columns');
@@ -72,7 +92,9 @@ describe('MerakiSwitchPortsCardEditor', () => {
   let editor;
 
   beforeEach(async () => {
-    editor = await fixture(html`<meraki-switch-ports-card-editor></meraki-switch-ports-card-editor>`);
+    editor = await fixture(
+      html`<meraki-switch-ports-card-editor></meraki-switch-ports-card-editor>`
+    );
     editor.hass = {};
     editor.setConfig({ config_entry_id: 'test', device_serial: 'SWITCH-123' });
     await editor.updateComplete;

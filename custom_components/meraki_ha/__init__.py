@@ -11,7 +11,6 @@ from homeassistant.components import webhook as ha_webhook
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 
-from . import api
 from .const import (
     CONF_AUTO_CREATE_DASHBOARD,
     CONF_ENABLE_MQTT,
@@ -23,7 +22,6 @@ from .const import (
     CONF_MQTT_RELAY_DESTINATIONS,
     CONF_SCAN_INTERVAL,
     CONF_SCANNING_API_VALIDATOR,
-    CONF_SHOW_REACT_PANEL,
     CONF_WEB_UI_PORT,
     CONF_WEBHOOK_SHARED_SECRET,
     DATA_CLIENT,
@@ -35,7 +33,6 @@ from .const import (
     DEFAULT_MQTT_RELAY_DESTINATIONS,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SCANNING_API_VALIDATOR,
-    DEFAULT_SHOW_REACT_PANEL,
     DEFAULT_WEB_UI_PORT,
     DOMAIN,
     PLATFORMS,
@@ -50,7 +47,6 @@ from .core.repository import MerakiRepository
 from .core.timed_access_manager import TimedAccessManager
 from .discovery.service import DeviceDiscoveryService
 from .frontend import (
-    async_register_panel,
     async_register_static_path,
     async_unregister_frontend,
 )
@@ -58,6 +54,7 @@ from .helpers.logging_helper import MerakiLoggers
 
 # sync_helper is used by services/sync_client_names
 from .services.camera_service import CameraService
+from .services.card_diagnostics import async_register_card_diagnostics
 from .services.device_control_service import DeviceControlService
 from .services.mqtt_relay import MqttRelayManager
 from .services.mqtt_service import MerakiMqttService
@@ -100,156 +97,6 @@ def _create_scanning_api_handler(
         return await async_handle_scanning_api(hass, config_entry_id, request)
 
     return handler
-
-
-async def _async_create_lovelace_dashboard(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    dashboard_config: dict[str, Any],
-) -> bool:
-    """Create a Lovelace dashboard using Home Assistant's storage API.
-
-    Parameters
-    ----------
-    hass : HomeAssistant
-        The Home Assistant instance.
-    entry : ConfigEntry
-        The config entry for this integration.
-    dashboard_config : dict[str, Any]
-        The dashboard configuration dictionary.
-
-    Returns
-    -------
-    bool
-        True if dashboard was created successfully, False otherwise.
-    """
-    dashboard_id = f"meraki_{entry.entry_id[:8]}"
-
-    try:
-        # Check if lovelace data is initialized
-        if "lovelace" not in hass.data:
-            _LOGGER.warning(
-                "Lovelace not initialized yet. "
-                "Dashboard will be created on next reload."
-            )
-            return False
-
-        lovelace_data = hass.data["lovelace"]
-        _LOGGER.debug("Lovelace data type: %s", type(lovelace_data).__name__)
-
-        # Check if dashboards collection exists
-        # The lovelace_data might be a LovelaceData object, not a dict
-        dashboards_collection = None
-        if hasattr(lovelace_data, "dashboards"):
-            dashboards_collection = lovelace_data.dashboards
-        elif isinstance(lovelace_data, dict) and "dashboards" in lovelace_data:
-            dashboards_collection = lovelace_data["dashboards"]
-
-        if not dashboards_collection:
-            _LOGGER.warning("Lovelace dashboards collection not available")
-            return False
-
-        # Check if dashboard already exists by iterating through items
-        dashboard_exists = False
-        try:
-            # The dashboards collection might be a StorageCollection
-            if hasattr(dashboards_collection, "async_items"):
-                items = dashboards_collection.async_items()
-                # Check if it's an awaitable/async generator or just a list
-                if hasattr(items, "__aiter__"):
-                    async for item in items:
-                        if item.get("id") == dashboard_id:
-                            dashboard_exists = True
-                            break
-                else:
-                    # It's a regular list
-                    for item in items:
-                        if item.get("id") == dashboard_id:
-                            dashboard_exists = True
-                            break
-            elif hasattr(dashboards_collection, "data"):
-                # Direct dictionary access
-                dashboard_exists = dashboard_id in dashboards_collection.data
-            elif isinstance(dashboards_collection, dict):
-                # It's just a plain dict
-                dashboard_exists = dashboard_id in dashboards_collection
-        except (AttributeError, TypeError) as check_err:
-            _LOGGER.debug("Could not check existing dashboards: %s", check_err)
-
-        if dashboard_exists:
-            _LOGGER.info("Dashboard %s already exists, skipping creation", dashboard_id)
-            return True
-
-        # Create dashboard via storage collection
-        _LOGGER.debug("Creating dashboard with ID: %s", dashboard_id)
-
-        dashboard_data = {
-            "id": dashboard_id,
-            "url_path": dashboard_id,
-            "title": f"Meraki Network - {entry.title}",
-            "icon": "mdi:router-network",
-            "show_in_sidebar": True,
-            "require_admin": False,
-            "mode": "storage",  # Editable mode
-        }
-
-        # Try to create the dashboard
-        if hasattr(dashboards_collection, "async_create_item"):
-            # StorageCollection - pass the full config including strategy
-            dashboard_data["mode"] = "storage"
-            dashboard_data["strategy"] = {"type": "custom:meraki-dashboard-strategy"}
-            await dashboards_collection.async_create_item(dashboard_data)
-            _LOGGER.info(
-                "Created Lovelace dashboard: %s at /%s using strategy",
-                entry.title,
-                dashboard_id,
-            )
-        elif isinstance(dashboards_collection, dict):
-            # Direct dict access (older HA versions or different setup)
-            dashboards_collection[dashboard_id] = dashboard_data
-            _LOGGER.info(
-                "Registered dashboard in dict: %s at /%s",
-                entry.title,
-                dashboard_id,
-            )
-        else:
-            _LOGGER.error(
-                "Unknown dashboards collection type: %s",
-                type(dashboards_collection).__name__,
-            )
-            return False
-
-        # Show notification with dashboard link
-        await hass.services.async_call(
-            "persistent_notification",
-            "create",
-            {
-                "message": (
-                    f"Your Meraki dashboard has been created!\n\n"
-                    f"[Open Dashboard](/{dashboard_id})\n\n"
-                    f"You can edit this dashboard from the Lovelace UI."
-                ),
-                "title": "Meraki Dashboard Ready",
-                "notification_id": f"meraki_dashboard_{entry.entry_id}",
-            },
-            blocking=False,
-        )
-
-        return True
-
-    except AttributeError as err:
-        _LOGGER.error(
-            "Lovelace API not available (HA version compatibility issue): %s",
-            err,
-        )
-        return False
-    except Exception as err:  # pylint: disable=broad-except
-        _LOGGER.error(
-            "Failed to create Lovelace dashboard: %s",
-            err,
-            exc_info=True,
-        )
-        return False
 
 
 def _register_organization_device(
@@ -687,12 +534,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.services.async_register(DOMAIN, "sync_client_names", async_sync_client_names)
 
-    # Register diagnostic service
+    # Register diagnostic services
     async_register_diagnostic_service(hass)
+    async_register_card_diagnostics(hass)
 
     # Register dashboard services
+    # pylint: disable-next=import-outside-toplevel
     from .services.dashboard_service import (
-        async_register_services as async_register_dashboard_services,  # pylint: disable=import-outside-toplevel
+        async_register_services as async_register_dashboard_services,
     )
 
     async_register_dashboard_services(hass)
@@ -700,19 +549,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     discovered_entities = await discovery_service.discover_entities()
     entry_data["entities"] = discovered_entities
 
-    # Register frontend - support both UI modes simultaneously
-    show_react_panel = entry.options.get(
-        CONF_SHOW_REACT_PANEL, DEFAULT_SHOW_REACT_PANEL
-    )
+    # Register frontend static paths for Lovelace cards
     auto_create_dashboard = entry.options.get(
         CONF_AUTO_CREATE_DASHBOARD, DEFAULT_AUTO_CREATE_DASHBOARD
     )
 
-    _LOGGER.info(
-        "Dashboard auto-creation: %s (show_react_panel: %s)",
-        auto_create_dashboard,
-        show_react_panel,
-    )
+    _LOGGER.info("Dashboard auto-creation: %s", auto_create_dashboard)
 
     # Always register static path for cards
     _LOGGER.info("Registering static path for Meraki cards")
@@ -726,141 +568,103 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             exc_info=True,
         )
 
-    # Register React panel if enabled
-    if show_react_panel:
-        _LOGGER.info("Registering Meraki React panel")
-        try:
-            await async_register_panel(hass, entry)
-            _LOGGER.info("React panel registration completed")
-        except Exception as err:
-            _LOGGER.error(
-                "Failed to register React panel: %s. Panel will not be available.",
-                err,
-                exc_info=True,
-            )
-
-    # Auto-create Lovelace dashboard if enabled (independent of React panel)
+    # Show dashboard setup instructions notification
     if auto_create_dashboard:
-        _LOGGER.info("Auto-creating Lovelace dashboard")
-        try:
-            from .dashboard import MerakiDashboardStrategy
-
-            strategy = MerakiDashboardStrategy()
-            dashboard_config = await strategy.async_generate(hass, entry.entry_id)
-
-            if dashboard_config:
-                # Store the generated dashboard config for later retrieval
-                entry_data["dashboard_config"] = dashboard_config
-                _LOGGER.info(
-                    "Generated Meraki Lovelace dashboard configuration with %d views",
-                    len(dashboard_config.get("views", [])),
-                )
-
-                # Auto-create the dashboard
-                await _async_create_lovelace_dashboard(hass, entry, dashboard_config)
-            else:
-                _LOGGER.warning("Failed to generate dashboard configuration")
-        except Exception as err:
-            _LOGGER.error(
-                "Failed to generate/create dashboard: %s",
-                err,
-                exc_info=True,
-            )
-
-    # Register custom cards at HACS-standard path
-    # Per HA custom card docs:
-    # https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/
-    # Cards are built to custom_components/meraki_ha/www/
-    # We register them at /local/community/<domain>/ which is the HACS standard
-    from pathlib import Path
-
-    from homeassistant.components.http import StaticPathConfig
-
-    # Cards are in www/ subdirectory of this integration
-    integration_path = Path(__file__).parent
-    cards_path = integration_path / "www"
-
-    _LOGGER.info("Integration path: %s", integration_path)
-    _LOGGER.info("Cards path: %s", cards_path)
-    _LOGGER.info("Cards path exists: %s", cards_path.exists())
-
-    if cards_path.exists():
-        await hass.http.async_register_static_paths(
-            [
-                StaticPathConfig(
-                    url_path=f"/local/community/{DOMAIN}",
-                    path=str(cards_path),
-                    cache_headers=False,
-                )
-            ]
-        )
-        _LOGGER.info(
-            "Registered custom cards static path at /local/community/%s -> %s",
-            DOMAIN,
-            cards_path,
+        dashboard_id = f"meraki_{entry.entry_id[:8]}"
+        await hass.services.async_call(
+            "persistent_notification",
+            "create",
+            {
+                "title": "📊 Create Your Meraki Dashboard",
+                "message": (
+                    f"**Quick Setup (2 minutes):**\n\n"
+                    f"1. Go to **Settings** → **Dashboards**\n"
+                    f"2. Click **+ ADD DASHBOARD**\n"
+                    f"3. Fill in:\n"
+                    f"   - Title: `Meraki Network`\n"
+                    f"   - Icon: `mdi:router-network`\n"
+                    f"   - URL: `{dashboard_id}`\n"
+                    f"   - Show in sidebar: ✅\n"
+                    f"4. Click **CREATE**\n"
+                    f"5. Open the new dashboard\n"
+                    f"6. Click **⋮** → **Edit Dashboard**\n"
+                    f"7. Click **⋮** → **Raw configuration editor**\n"
+                    f"8. Replace with:\n\n"
+                    f"```yaml\n"
+                    f"strategy:\n"
+                    f"  type: custom:meraki-dashboard-strategy\n"
+                    f"  config_entry_id: {entry.entry_id}\n"
+                    f"```\n\n"
+                    f"9. Click **SAVE**\n\n"
+                    f"Your dashboard will show custom Meraki cards with "
+                    f"live network data!\n\n"
+                    f"[Documentation](https://github.com/liptonj/"
+                    f"meraki-homeassistant)"
+                ),
+                "notification_id": f"meraki_dashboard_setup_{entry.entry_id}",
+            },
+            blocking=False,
         )
 
-        # Register cards as Lovelace resources for automatic loading
-        # This makes the cards available in the Lovelace UI picker
-        cards_url = f"/local/community/{DOMAIN}/meraki-cards.js"
-        _LOGGER.info("Attempting to register Lovelace resource: %s", cards_url)
+    # Note: Static paths and Lovelace resources are registered by
+    # async_register_static_path() called above (line 721)
+    # No need to duplicate that registration here
 
-        try:
-            # pylint: disable=import-outside-toplevel
-            from homeassistant.components.lovelace.resources import (
-                ResourceStorageCollection,
-            )
-
-            # Access lovelace resources via hass.data
-            lovelace_data = hass.data.get("lovelace")
-            if lovelace_data:
-                # Try to get resources - could be attribute or dict key
-                resources = None
-                if hasattr(lovelace_data, "resources"):
-                    resources = lovelace_data.resources
-                elif isinstance(lovelace_data, dict) and "resources" in lovelace_data:
-                    resources = lovelace_data["resources"]
-
-                if resources and isinstance(resources, ResourceStorageCollection):
-                    # Check if resource already exists
-                    existing = False
-                    async for item in resources.async_items():
-                        if item.get("url") == cards_url:
-                            existing = True
-                            break
-
-                    if not existing:
-                        await resources.async_create_item(
-                            {"res_type": "module", "url": cards_url}
-                        )
-                        _LOGGER.info(
-                            "Registered Meraki cards as Lovelace resource: %s",
-                            cards_url,
-                        )
-                    else:
-                        _LOGGER.debug("Meraki cards resource already registered")
-                else:
-                    _LOGGER.debug(
-                        "Lovelace using YAML mode - add resource manually: %s",
-                        cards_url,
-                    )
-            else:
-                _LOGGER.debug(
-                    "Lovelace not initialized - add resource manually: %s",
-                    cards_url,
-                )
-        except ImportError:
-            _LOGGER.debug("Lovelace resources API not available")
-        except Exception as err:  # pylint: disable=broad-except
-            _LOGGER.debug("Could not auto-register Lovelace resource: %s", err)
-    else:
-        _LOGGER.warning(
-            "Custom cards directory not found at %s - cards will not be available",
-            cards_path,
-        )
+    # Register WebSocket APIs
+    # pylint: disable-next=import-outside-toplevel
+    from . import api as meraki_api
 
     async_setup_api(hass)
-    api.async_setup(hass)
+    meraki_api.async_setup(hass)
+
+    # Register dashboard WebSocket API
+    # pylint: disable-next=import-outside-toplevel
+    from .api import dashboard as dashboard_api
+
+    dashboard_api.async_setup(hass)
+
+    # OLD service removed - we now auto-create editable dashboards instead
+    # The create_editable_dashboard service is registered via dashboard_service.py
+
+    # Send one-time notification about integration setup
+    dashboard_id = f"meraki_{entry.entry_id[:8]}"
+
+    if auto_create_dashboard:
+        # Dashboard setup notification
+        notification_message = (
+            "Your Meraki integration is set up!\n\n"
+            "**Next: Create Your Dashboard**\n\n"
+            "A notification with step-by-step instructions has been created.\n"
+            "Follow it to set up your Meraki dashboard with custom cards.\n\n"
+            "Takes only 2 minutes! 🚀\n\n"
+            "[View Documentation]"
+            "(https://github.com/liptonj/meraki-homeassistant)"
+        )
+    else:
+        # Dashboard auto-creation was disabled
+        notification_message = (
+            f"Your Meraki integration is set up!\n\n"
+            f"**Create Dashboard:**\n\n"
+            f"1. Go to Developer Tools → Services\n"
+            f"2. Search for `{DOMAIN}.create_editable_dashboard`\n"
+            f"3. Leave all fields empty (auto-detects)\n"
+            f"4. Click **CALL SERVICE**\n\n"
+            f"This will create a fully editable dashboard with all your "
+            f"Meraki devices.\n\n"
+            f"[View Documentation]"
+            f"(https://github.com/liptonj/meraki-homeassistant)"
+        )
+
+    await hass.services.async_call(
+        "persistent_notification",
+        "create",
+        {
+            "title": "🚀 Meraki Integration Ready",
+            "message": notification_message,
+            "notification_id": f"meraki_ready_{entry.entry_id}",
+        },
+        blocking=False,
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

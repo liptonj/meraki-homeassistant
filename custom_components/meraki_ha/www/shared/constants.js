@@ -3,35 +3,31 @@
  */
 
 export const CARD_TYPES = {
-  OVERVIEW: 'meraki-overview-card',
-  // From cursor-review branch
-  DEVICE: 'meraki-device-card',
-  CLIENTS: 'meraki-clients-card',
-  SWITCH_PORTS: 'meraki-switch-ports-card',
-  // From feature branch
-  DEVICE_LIST: 'meraki-device-list-card',
-  CLIENT_LIST: 'meraki-client-list-card',
-  CLIENT: 'meraki-client-card',
-  DEVICES: 'meraki-devices-card',
-  MQTT_STATUS: 'meraki-mqtt-status-card',
-  CAMERA: 'meraki-camera-card',
-  // New cards
-  SSIDS_LIST: 'meraki-ssids-list-card',
-  EVENTS: 'meraki-events-card',
-  GUEST_ACCESS: 'meraki-guest-access-card',
+  OVERVIEW: 'custom:meraki-overview-card',
+  DEVICE: 'custom:meraki-device-card',
+  DEVICES_BY_TYPE: 'custom:meraki-devices-by-type-card',
+  CLIENTS: 'custom:meraki-clients-card',
+  SWITCH_PORTS: 'custom:meraki-switch-ports-card',
+  CLIENT: 'custom:meraki-client-card',
+  MQTT_STATUS: 'custom:meraki-mqtt-status-card',
+  CAMERA: 'custom:meraki-camera-card',
+  SSIDS_LIST: 'custom:meraki-ssids-list-card',
+  EVENTS: 'custom:meraki-events-card',
+  GUEST_ACCESS: 'custom:meraki-guest-access-card',
 };
 
 export const EDITOR_TYPES = {
   [CARD_TYPES.OVERVIEW]: 'meraki-overview-card-editor',
-  // From cursor-review branch
   [CARD_TYPES.DEVICE]: 'meraki-device-card-editor',
+  [CARD_TYPES.DEVICES_BY_TYPE]: 'meraki-devices-by-type-card-editor',
   [CARD_TYPES.CLIENTS]: 'meraki-clients-card-editor',
   [CARD_TYPES.SWITCH_PORTS]: 'meraki-switch-ports-card-editor',
-  // From feature branch
-  [CARD_TYPES.DEVICE_LIST]: 'meraki-device-list-card-editor',
-  [CARD_TYPES.CLIENT_LIST]: 'meraki-client-list-card-editor',
   [CARD_TYPES.CLIENT]: 'meraki-client-card-editor',
+  [CARD_TYPES.MQTT_STATUS]: 'meraki-mqtt-status-card-editor',
   [CARD_TYPES.CAMERA]: 'meraki-camera-card-editor',
+  [CARD_TYPES.SSIDS_LIST]: 'meraki-ssids-list-card-editor',
+  [CARD_TYPES.EVENTS]: 'meraki-events-card-editor',
+  [CARD_TYPES.GUEST_ACCESS]: 'meraki-guest-access-card-editor',
 };
 
 export const CARD_DEFINITIONS = [
@@ -50,6 +46,12 @@ export const CARD_DEFINITIONS = [
     preview: true,
   },
   {
+    type: CARD_TYPES.DEVICES_BY_TYPE,
+    name: 'Meraki Devices by Type',
+    description: 'Display devices grouped by type with tables and pagination',
+    preview: true,
+  },
+  {
     type: CARD_TYPES.CLIENTS,
     name: 'Meraki Clients',
     description: 'Client list with filtering, sorting, and pagination',
@@ -63,27 +65,21 @@ export const CARD_DEFINITIONS = [
     preview: true,
   },
   {
-    type: CARD_TYPES.DEVICES,
-    name: 'Meraki Devices Card',
-    description: 'A card to display Meraki network devices.',
-    preview: true,
-  },
-  {
-    type: CARD_TYPES.MQTT_STATUS,
-    name: 'Meraki MQTT Status Card',
-    description: 'A card to display the status of the Meraki MQTT service.',
-    preview: true,
-  },
-  {
     type: CARD_TYPES.CLIENT,
     name: 'Meraki Client Card',
     description: 'A card to display details for a single Meraki client.',
     preview: true,
   },
   {
+    type: CARD_TYPES.MQTT_STATUS,
+    name: 'Meraki MQTT Status',
+    description: 'Display the status of the Meraki MQTT service.',
+    preview: true,
+  },
+  {
     type: CARD_TYPES.CAMERA,
-    name: 'Meraki Camera Card',
-    description: 'A card to display Meraki camera snapshots and controls.',
+    name: 'Meraki Camera',
+    description: 'Display Meraki camera snapshots and controls.',
     preview: true,
   },
   {

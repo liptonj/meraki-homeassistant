@@ -327,6 +327,7 @@ export class MerakiMqttStatusCard extends MerakiCardBase {
                   : ''}
               </div>
             `}
+        ${this._renderDebugPanel()}
       </ha-card>
     `;
   }

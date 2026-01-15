@@ -302,9 +302,15 @@ export class MerakiGuestAccessCard extends MerakiCardBase {
 
   static getStubConfig() {
     return {
+      title: 'Guest Access',
       show_all_ssids: false,
       default_duration: 24,
+      show_qr_code: true,
     };
+  }
+
+  static getConfigElement() {
+    return document.createElement('meraki-guest-access-card-editor');
   }
 
   constructor() {
@@ -689,6 +695,7 @@ export class MerakiGuestAccessCard extends MerakiCardBase {
               </div>
             `
           : ''}
+        ${this._renderDebugPanel()}
       </ha-card>
     `;
   }

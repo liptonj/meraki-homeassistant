@@ -1,4 +1,4 @@
-import { merakiCardStyles } from '../../www/meraki_ha/shared/styles.js';
+import { merakiCardStyles } from '../../custom_components/meraki_ha/www/shared/styles.js';
 import { expect } from '@open-wc/testing';
 
 describe('merakiCardStyles', () => {
@@ -14,6 +14,8 @@ describe('merakiCardStyles', () => {
     expect(css).to.include('--meraki-success: var(--success-color, #4caf50)');
     expect(css).to.include('--meraki-warning: var(--warning-color, #ff9800)');
     expect(css).to.include('--meraki-error: var(--error-color, #f44336)');
-    expect(css).to.include('--meraki-offline: var(--disabled-text-color, #bdbdbd)');
+    expect(css).to.include(
+      '--meraki-offline: var(--disabled-text-color, #bdbdbd)'
+    );
   });
 });

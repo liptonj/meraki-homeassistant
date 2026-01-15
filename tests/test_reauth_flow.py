@@ -78,13 +78,18 @@ async def test_reauth_success(
     with patch(
         "custom_components.meraki_ha.reauth_flow.validate_meraki_credentials",
         return_value={"org_name": "Test Org"},
-    ):
+    ) as mock_validate:
         _result = await async_step_reauth(  # noqa: F841
             mock_config_flow,
-            {CONF_MERAKI_API_KEY: "new_key", CONF_MERAKI_ORG_ID: "123456"},
+            {CONF_MERAKI_API_KEY: "new_key"},
         )
 
     mock_config_flow.hass.config_entries.async_update_entry.assert_called_once()
+    mock_validate.assert_called_once_with(
+        mock_config_flow.hass,
+        "new_key",
+        "123456",
+    )
     mock_config_flow.async_abort.assert_called_with(reason="reauth_successful")
 
 
@@ -104,7 +109,7 @@ async def test_reauth_invalid_auth(
     ):
         _result = await async_step_reauth(  # noqa: F841
             mock_config_flow,
-            {CONF_MERAKI_API_KEY: "bad_key", CONF_MERAKI_ORG_ID: "123456"},
+            {CONF_MERAKI_API_KEY: "bad_key"},
         )
 
     mock_config_flow.async_show_form.assert_called_once()
@@ -126,7 +131,7 @@ async def test_reauth_invalid_org_id(
     ):
         _result = await async_step_reauth(  # noqa: F841
             mock_config_flow,
-            {CONF_MERAKI_API_KEY: "key", CONF_MERAKI_ORG_ID: "invalid"},
+            {CONF_MERAKI_API_KEY: "key"},
         )
 
     mock_config_flow.async_show_form.assert_called_once()
@@ -148,7 +153,7 @@ async def test_reauth_connection_error(
     ):
         _result = await async_step_reauth(  # noqa: F841
             mock_config_flow,
-            {CONF_MERAKI_API_KEY: "key", CONF_MERAKI_ORG_ID: "123456"},
+            {CONF_MERAKI_API_KEY: "key"},
         )
 
     mock_config_flow.async_show_form.assert_called_once()
@@ -170,7 +175,7 @@ async def test_reauth_unknown_error(
     ):
         _result = await async_step_reauth(  # noqa: F841
             mock_config_flow,
-            {CONF_MERAKI_API_KEY: "key", CONF_MERAKI_ORG_ID: "123456"},
+            {CONF_MERAKI_API_KEY: "key"},
         )
 
     mock_config_flow.async_show_form.assert_called_once()
