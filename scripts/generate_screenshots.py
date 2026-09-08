@@ -9,10 +9,12 @@ This script:
 
 import asyncio
 import http.server
+import importlib.util
 import json
 import socketserver
 import sys
 import threading
+import types
 from functools import partial
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -28,8 +30,69 @@ WWW_DIR = REPO_ROOT / "custom_components" / "meraki_ha" / "www"
 # Add to path
 sys.path.insert(0, str(REPO_ROOT))
 
-from custom_components.meraki_ha.const import DOMAIN
-from custom_components.meraki_ha.dashboard import MerakiDashboardStrategy
+
+def _load_dashboard_strategy(repo_root: Path) -> tuple[str, type]:
+    """
+    Load DOMAIN and MerakiDashboardStrategy without Home Assistant installed.
+
+    Importing ``custom_components.meraki_ha`` runs package ``__init__.py``, which
+    requires Home Assistant, the Meraki SDK, and other integration deps. Screenshot
+    CI only installs Playwright, so load ``const`` and ``dashboard`` as isolated
+    submodules instead.
+    """
+    pkg_name = "custom_components.meraki_ha"
+    pkg_dir = repo_root / "custom_components" / "meraki_ha"
+
+    if "custom_components" not in sys.modules:
+        custom_components = types.ModuleType("custom_components")
+        custom_components.__path__ = [str(repo_root / "custom_components")]
+        sys.modules["custom_components"] = custom_components
+
+    package = types.ModuleType(pkg_name)
+    package.__path__ = [str(pkg_dir)]
+    package.__file__ = str(pkg_dir / "__init__.py")
+    sys.modules[pkg_name] = package
+    sys.modules["custom_components"].meraki_ha = package
+
+    def ensure_module(name: str) -> types.ModuleType:
+        existing = sys.modules.get(name)
+        if isinstance(existing, types.ModuleType) and not isinstance(
+            existing, MagicMock
+        ):
+            return existing
+        module = types.ModuleType(name)
+        sys.modules[name] = module
+        parent_name, _, attr = name.rpartition(".")
+        if parent_name:
+            setattr(ensure_module(parent_name), attr, module)
+        return module
+
+    for ha_name in (
+        "homeassistant",
+        "homeassistant.core",
+        "homeassistant.helpers",
+        "homeassistant.helpers.device_registry",
+    ):
+        ensure_module(ha_name)
+    sys.modules["homeassistant.core"].HomeAssistant = object
+
+    def load_submodule(name: str, filename: str) -> types.ModuleType:
+        full_name = f"{pkg_name}.{name}"
+        spec = importlib.util.spec_from_file_location(full_name, pkg_dir / filename)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Cannot load {full_name} from {filename}")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[full_name] = module
+        spec.loader.exec_module(module)
+        setattr(package, name, module)
+        return module
+
+    const = load_submodule("const", "const.py")
+    dashboard = load_submodule("dashboard", "dashboard.py")
+    return const.DOMAIN, dashboard.MerakiDashboardStrategy
+
+
+DOMAIN, MerakiDashboardStrategy = _load_dashboard_strategy(REPO_ROOT)
 
 # Mock data
 MOCK_DEVICES = [
@@ -631,11 +694,11 @@ def main():
             for i, view in enumerate(views):
                 view_path = view.get("path", f"view_{i}")
                 view_title = view.get("title", "View")
-                
+
                 # Skip full dashboard for individual views
                 if view_path == "full":
                     continue
-                    
+
                 # Create HTML using our inline function
                 html_content = create_view_html_with_data(view, i)
                 html_path = WWW_DIR / f"screenshot_view_{i}.html"

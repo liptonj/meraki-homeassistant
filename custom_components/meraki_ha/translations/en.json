@@ -212,7 +212,7 @@
         },
         "data_description": {
           "enable_webhooks": "Enable receiving real-time alerts from Meraki Dashboard via webhooks.",
-          "webhook_external_url": "Custom external URL for webhooks (e.g., https://ha.example.com). Leave empty to use Home Assistant's configured external URL.",
+          "webhook_external_url": "Custom external URL for webhooks (e.g., {example_url}). Leave empty to use Home Assistant's configured external URL.",
           "webhook_shared_secret": "Shared secret for webhook verification. Meraki will include this in webhook requests.",
           "webhook_auto_register": "Automatically register this webhook URL with Meraki Dashboard for selected networks.",
           "webhook_alert_types": "Select which alert types to receive via webhooks.",
@@ -319,7 +319,7 @@
           "enable_scanning_api": "Enable the Scanning API receiver to receive real-time client presence and location data.",
           "scanning_api_validator": "The validator string from Meraki Dashboard. This will be appended to the webhook URL and returned on GET requests.",
           "scanning_api_secret": "The secret that Meraki will include in POST requests to verify authenticity.",
-          "scanning_api_external_url": "Custom external URL for the webhook (e.g., https://ha.example.com). Leave empty to use Home Assistant's configured external URL."
+          "scanning_api_external_url": "Custom external URL for the webhook (e.g., {example_url}). Leave empty to use Home Assistant's configured external URL."
         }
       },
       "mqtt": {

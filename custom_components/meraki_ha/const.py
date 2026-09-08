@@ -323,6 +323,9 @@ CONF_SCANNING_API_EXTERNAL_URL: Final = "scanning_api_external_url"
 DEFAULT_SCANNING_API_EXTERNAL_URL: Final = ""
 """Default value for custom external URL (empty = use HA's external URL)."""
 
+EXAMPLE_EXTERNAL_URL: Final = "https://ha.example.com"
+"""Example Home Assistant URL shown in options-flow field descriptions."""
+
 # Webhook configuration
 CONF_ENABLE_WEBHOOKS: Final = "enable_webhooks"
 """Configuration key for enabling webhook alerts."""

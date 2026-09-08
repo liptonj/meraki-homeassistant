@@ -10,6 +10,7 @@ from custom_components.meraki_ha.const import (
     CONF_ENABLED_NETWORKS,
     CONF_MQTT_RELAY_DESTINATIONS,
     DOMAIN,
+    EXAMPLE_EXTERNAL_URL,
 )
 from custom_components.meraki_ha.options_flow import MerakiOptionsFlowHandler
 
@@ -517,6 +518,18 @@ async def test_network_selection_with_empty_coordinator_data() -> None:
 
 
 @pytest.mark.asyncio
+async def test_scanning_api_step_includes_example_url_placeholder() -> None:
+    """Ensure Scanning API field descriptions can render a URL placeholder."""
+    handler = create_options_flow_handler()
+
+    result: ConfigFlowResult = await handler.async_step_scanning_api()
+
+    assert result["type"].value == "form"
+    placeholders = result.get("description_placeholders") or {}
+    assert placeholders.get("example_url") == EXAMPLE_EXTERNAL_URL
+
+
+@pytest.mark.asyncio
 async def test_webhooks_step_includes_manual_setup_placeholders() -> None:
     """Ensure webhooks step shows manual setup guidance from WebhookManager."""
     handler = create_options_flow_handler()
@@ -547,6 +560,7 @@ async def test_webhooks_step_includes_manual_setup_placeholders() -> None:
     assert "secret123" in manual
     assert "APs went down" in manual
     assert "Client blocked" in manual
+    assert placeholders.get("example_url") == EXAMPLE_EXTERNAL_URL
 
 
 # --- Tests for async_get_options_flow ---

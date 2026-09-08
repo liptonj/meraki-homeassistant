@@ -1,4 +1,13 @@
-# [3.2.0-beta.1](https://github.com/liptonj/meraki-homeassistant/compare/v3.1.0-beta.12...v3.2.0-beta.1) (2026-09-08)
+# [Unreleased]
+
+### Bug Fixes
+
+- **translations:** Move example webhook URLs into description placeholders so hassfest passes
+- **ci:** Generate screenshots without importing the Home Assistant package
+
+---
+
+# [3.2.0](https://github.com/liptonj/meraki-homeassistant/compare/v3.1.0...v3.2.0) (2026-09-08)
 
 ### Breaking Changes
 
