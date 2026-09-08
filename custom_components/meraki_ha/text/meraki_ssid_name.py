@@ -66,6 +66,7 @@ class MerakiSSIDNameText(CoordinatorEntity, TextEntity):  # type: ignore[type-ar
             entity_data={"networkId": self._network_id},
             config_entry=self._config_entry,
             ssid_data=self._ssid_data,
+            hass=self.hass,
         )
 
     @property

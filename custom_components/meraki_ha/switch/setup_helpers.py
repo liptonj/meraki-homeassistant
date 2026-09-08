@@ -124,7 +124,7 @@ def _setup_mt40_switches(
     config_entry: ConfigEntry,
     coordinator: MerakiDataCoordinator,
     added_entities: set[str],
-    meraki_client: "MerakiAPIClient",
+    meraki_client: MerakiAPIClient,
 ) -> list[Entity]:
     """Set up MT40 power outlet switches."""
     entities: list[Entity] = []
@@ -170,7 +170,7 @@ def async_setup_switches(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     coordinator: MerakiDataCoordinator,
-    meraki_client: "MerakiAPIClient",
+    meraki_client: MerakiAPIClient,
 ) -> list[Entity]:
     """Set up all switch entities from the central coordinator."""
     entities: list[Entity] = []

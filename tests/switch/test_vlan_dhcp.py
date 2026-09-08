@@ -152,7 +152,7 @@ class TestMerakiVLANDHCPSwitch:
         switch = MerakiVLANDHCPSwitch(
             mock_coordinator, mock_config_entry, "N_123", MOCK_VLAN
         )
-        switch.async_write_ha_state = MagicMock()
+        object.__setattr__(switch, "async_write_ha_state", MagicMock())
 
         # Update coordinator data with new DHCP setting
         updated_vlan = dict(MOCK_VLAN)
@@ -182,7 +182,7 @@ class TestMerakiVLANDHCPSwitch:
         switch = MerakiVLANDHCPSwitch(
             mock_coordinator, mock_config_entry, "N_123", vlan_dhcp_off
         )
-        switch.async_write_ha_state = MagicMock()
+        object.__setattr__(switch, "async_write_ha_state", MagicMock())
 
         await switch.async_turn_on()
 
@@ -205,7 +205,7 @@ class TestMerakiVLANDHCPSwitch:
         switch = MerakiVLANDHCPSwitch(
             mock_coordinator, mock_config_entry, "N_123", MOCK_VLAN
         )
-        switch.async_write_ha_state = MagicMock()
+        object.__setattr__(switch, "async_write_ha_state", MagicMock())
 
         await switch.async_turn_off()
 

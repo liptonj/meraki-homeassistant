@@ -103,6 +103,7 @@ class MerakiRtspUrlSensor(CoordinatorEntity, SensorEntity):
         return resolve_device_info(
             entity_data=self._device_data,
             config_entry=self._config_entry,
+            hass=self.hass,
         )
 
     @property

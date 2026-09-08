@@ -5,7 +5,7 @@ on:
     branches: ['main']
 
 env:
-  PYTHON_VERSION: '3.13.2'
+  PYTHON_VERSION: '3.14.2'
   NODE_VERSION: '20'
 
 jobs:
@@ -23,14 +23,14 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: 'uv.lock'
-      - name: Install linters
-        run: uv pip install --system ruff bandit
+      - name: Install dependencies
+        run: uv sync --all-extras --frozen
       - name: Run ruff check
-        run: ruff check .
+        run: uv run ruff check .
       - name: Run ruff format check
-        run: ruff format --check .
+        run: uv run ruff format --check .
       - name: Run bandit
-        run: bandit -r custom_components/meraki_ha/ -c pyproject.toml
+        run: uv run bandit -r custom_components/meraki_ha/ -c pyproject.toml
 
   # Type checking and security audit
   type-check:
@@ -58,20 +58,7 @@ jobs:
       - name: Run mypy
         run: uv run mypy custom_components/meraki_ha/ tests/
       - name: Run pip-audit
-        run: |
-          uv run pip-audit \
-            --ignore-vuln PYSEC-2020-49 \
-            --ignore-vuln PYSEC-2022-42969 \
-            --ignore-vuln GHSA-g7vv-2v7x-gj9p \
-            --ignore-vuln GHSA-6mq8-rvhq-8wgg \
-            --ignore-vuln GHSA-69f9-5gxw-wvc2 \
-            --ignore-vuln GHSA-6jhg-hg63-jvvf \
-            --ignore-vuln GHSA-g84x-mcqj-x9qq \
-            --ignore-vuln GHSA-fh55-r93g-j68g \
-            --ignore-vuln GHSA-54jq-c3m8-4m76 \
-            --ignore-vuln GHSA-jj3x-wxrx-4x23 \
-            --ignore-vuln GHSA-mqqc-3gqh-h2x8 \
-            --ignore-vuln GHSA-qmgc-5h2g-mvrw
+        run: uv run python scripts/pip_audit_ci.py
 
   # Tests with coverage
   test:

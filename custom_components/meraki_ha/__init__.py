@@ -130,7 +130,7 @@ def _register_organization_device(
             model="Organization",
         )
         _LOGGER.debug("Registered organization device: %s", org_name)
-    except (AttributeError, TypeError) as err:
+    except (AttributeError, TypeError, RuntimeError) as err:
         _LOGGER.debug("Could not register organization device: %s", err)
 
 
@@ -169,7 +169,7 @@ def _cleanup_orphaned_devices(
     try:
         device_registry = dr.async_get(hass)
         entity_registry = er.async_get(hass)
-    except (AttributeError, TypeError) as err:
+    except (AttributeError, TypeError, RuntimeError) as err:
         _LOGGER.debug("Could not get registries for cleanup: %s", err)
         return
 
@@ -178,7 +178,7 @@ def _cleanup_orphaned_devices(
 
     try:
         all_devices = list(device_registry.devices.values())
-    except (AttributeError, TypeError):
+    except (AttributeError, TypeError, RuntimeError):
         # Device registry may not be fully initialized in tests
         _LOGGER.debug("Device registry not available for cleanup")
         return

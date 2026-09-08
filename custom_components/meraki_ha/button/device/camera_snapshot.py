@@ -43,7 +43,7 @@ class MerakiSnapshotButton(CoordinatorEntity, ButtonEntity):
     @property
     def device_info(self) -> DeviceInfo | None:
         """Return device information."""
-        return resolve_device_info(self._device, self._config_entry)
+        return resolve_device_info(self._device, self._config_entry, hass=self.hass)
 
     def _get_current_device_data(self) -> dict[str, Any] | None:
         """Retrieve the latest data for this device from the coordinator."""

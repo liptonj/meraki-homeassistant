@@ -45,7 +45,7 @@ async def test_camera_sense_switch(hass, mock_device_coordinator, mock_api_clien
     switch = MerakiCameraSenseSwitch(mock_device_coordinator, mock_api_client, device)
     switch.hass = hass
     switch.entity_id = "switch.mv_sense"
-    switch.async_write_ha_state = MagicMock()
+    object.__setattr__(switch, "async_write_ha_state", MagicMock())
 
     assert switch.unique_id == "cam1_sense_enabled"
     assert switch.name == "MV Sense"
@@ -86,7 +86,7 @@ async def test_camera_audio_detection_switch(
     )
     switch.hass = hass
     switch.entity_id = "switch.audio_detection"
-    switch.async_write_ha_state = MagicMock()
+    object.__setattr__(switch, "async_write_ha_state", MagicMock())
 
     assert switch.unique_id == "cam1_audio_detection"
     assert switch.name == "Audio Detection"

@@ -58,7 +58,7 @@ class MerakiContentFilteringSwitch(
     @property
     def device_info(self) -> DeviceInfo | None:
         """Return the device info."""
-        return resolve_device_info(self._network, self._config_entry)
+        return resolve_device_info(self._network, self._config_entry, hass=self.hass)
 
     @property
     def is_on(self) -> bool:

@@ -42,6 +42,7 @@ class MerakiSsidConnectedClientsSensor(CoordinatorEntity, SensorEntity):
         self._attr_device_info = resolve_device_info(
             entity_data=ssid_data,
             config_entry=self._config_entry,
+            hass=coordinator.hass,
         )
         self._update_state()
 

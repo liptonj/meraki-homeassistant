@@ -10,6 +10,7 @@ from custom_components.meraki_ha.const import (
     CONF_ENABLED_NETWORKS,
     CONF_MQTT_RELAY_DESTINATIONS,
     DOMAIN,
+    EXAMPLE_EXTERNAL_URL,
 )
 from custom_components.meraki_ha.options_flow import MerakiOptionsFlowHandler
 
@@ -61,10 +62,6 @@ def create_options_flow_handler(
 
     # Set the handler property (this is what the framework sets - it's the entry ID)
     handler.handler = entry_id
-
-    # Mock the config_entry property to return our mock
-    # We need to patch it on the instance
-    handler._config_entry = mock_entry
 
     return handler
 
@@ -508,12 +505,23 @@ async def test_network_selection_with_empty_coordinator_data() -> None:
     handler = MerakiOptionsFlowHandler()
     handler.hass = hass
     handler.handler = "test_entry_id"
-    handler._config_entry = mock_entry
 
     result: ConfigFlowResult = await handler.async_step_network_selection()
 
     assert result["type"].value == "form"
     assert result["step_id"] == "network_selection"
+
+
+@pytest.mark.asyncio
+async def test_scanning_api_step_includes_example_url_placeholder() -> None:
+    """Ensure Scanning API field descriptions can render a URL placeholder."""
+    handler = create_options_flow_handler()
+
+    result: ConfigFlowResult = await handler.async_step_scanning_api()
+
+    assert result["type"].value == "form"
+    placeholders = result.get("description_placeholders") or {}
+    assert placeholders.get("example_url") == EXAMPLE_EXTERNAL_URL
 
 
 @pytest.mark.asyncio
@@ -547,6 +555,7 @@ async def test_webhooks_step_includes_manual_setup_placeholders() -> None:
     assert "secret123" in manual
     assert "APs went down" in manual
     assert "Client blocked" in manual
+    assert placeholders.get("example_url") == EXAMPLE_EXTERNAL_URL
 
 
 # --- Tests for async_get_options_flow ---
@@ -605,9 +614,6 @@ async def test_options_flow_simulates_real_ha_behavior() -> None:
 
     handler.hass = mock_hass
     handler.handler = "test_entry_id"
-    # In real HA, the config_entry property uses handler to look up the entry
-    # For testing, we set _config_entry directly
-    handler._config_entry = mock_entry
 
     # Step 4: Now the flow should work
     result = await handler.async_step_init()

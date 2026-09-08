@@ -26,9 +26,9 @@ WWW_DIR = REPO_ROOT / "custom_components" / "meraki_ha" / "www"
 
 # Add to path
 sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(Path(__file__).parent))
 
-from custom_components.meraki_ha.const import DOMAIN
-from custom_components.meraki_ha.dashboard import MerakiDashboardStrategy
+from generate_screenshots import DOMAIN, MerakiDashboardStrategy
 
 # Mock data
 MOCK_DEVICES = [

@@ -533,8 +533,8 @@ class TestMerakiClientDeviceTracker:
         assert (DOMAIN, "client_00:11:22:33:44:55") in device_info["identifiers"]
         assert device_info["name"] == "Test Laptop"
         assert device_info["manufacturer"] == "Apple Inc."
-        # Client is linked to its network
-        assert device_info["via_device"] == (DOMAIN, "network_N_12345")
+        # Parent link uses via_device_id when the network is in the registry
+        assert "via_device" not in device_info
 
     def test_handle_coordinator_update(
         self,
@@ -555,7 +555,7 @@ class TestMerakiClientDeviceTracker:
         mock_coordinator.data = {"clients": [updated_client]}
 
         # Mock async_write_ha_state
-        tracker.async_write_ha_state = MagicMock()
+        object.__setattr__(tracker, "async_write_ha_state", MagicMock())
 
         tracker._handle_coordinator_update()
 
@@ -764,10 +764,11 @@ class TestAsyncSetupEntry:
         async_add_entities.assert_called_once()
         entities = async_add_entities.call_args[0][0]
         assert len(entities) == 1
-        # Client should have device_info linked to its network
+        # Client should have device_info; parent via_device_id needs a real registry
         device_info = entities[0]._attr_device_info
         assert device_info is not None
-        assert device_info["via_device"] == (DOMAIN, "network_N_12345")
+        assert "via_device" not in device_info
+        assert (DOMAIN, "client_00:11:22:33:44:55") in device_info["identifiers"]
 
     async def test_setup_no_clients(
         self,

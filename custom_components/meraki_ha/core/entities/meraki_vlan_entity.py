@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 
 from ...const import DOMAIN
 from ...core.utils.naming_utils import format_device_name
+from ...helpers.device_info_helpers import apply_via_identifier
 from ...meraki_data_coordinator import MerakiDataCoordinator
 from ...types import MerakiVlan
 from . import BaseMerakiEntity
@@ -41,15 +42,21 @@ class MerakiVLANEntity(BaseMerakiEntity):
         )
 
         # Link VLAN directly to its network (device type groups removed)
-        self._attr_device_info = DeviceInfo(
+        device_info = DeviceInfo(
             identifiers={(DOMAIN, f"vlan_{network_id}_{vlan['id']}")},
             name=formatted_name,
             manufacturer="Cisco Meraki",
             model="VLAN",
-            via_device=(DOMAIN, f"network_{network_id}"),
         )
+        apply_via_identifier(
+            device_info,
+            hass=coordinator.hass,
+            config_entry_id=config_entry.entry_id,
+            identifier=(DOMAIN, f"network_{network_id}"),
+        )
+        self._attr_device_info = device_info
 
     @property
-    def device_info(self) -> DeviceInfo | None:
-        """Return the device info."""
+    def device_info(self) -> DeviceInfo | ChildDeviceInfo | None:
+        """Return the VLAN device info."""
         return self._attr_device_info

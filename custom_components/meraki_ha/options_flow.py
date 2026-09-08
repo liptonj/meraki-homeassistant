@@ -112,6 +112,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             CONF_SCANNING_API_VALIDATOR,
             DEFAULT_SCANNING_API_EXTERNAL_URL,
             DEFAULT_SCANNING_API_VALIDATOR,
+            EXAMPLE_EXTERNAL_URL,
         )
         from .core.errors import MerakiConnectionError
         from .schemas import SCHEMA_SCANNING_API
@@ -153,7 +154,10 @@ class MerakiOptionsFlowHandler(OptionsFlow):
         return self.async_show_form(
             step_id="scanning_api",
             data_schema=schema_with_defaults,
-            description_placeholders={"webhook_url": webhook_url},
+            description_placeholders={
+                "webhook_url": webhook_url,
+                "example_url": EXAMPLE_EXTERNAL_URL,
+            },
         )
 
     async def async_step_network_selection(
@@ -919,6 +923,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
         from .const import (
             CONF_WEBHOOK_EXTERNAL_URL,
             DEFAULT_WEBHOOK_EXTERNAL_URL,
+            EXAMPLE_EXTERNAL_URL,
         )
         from .core.errors import MerakiConnectionError
         from .webhook import get_webhook_url
@@ -969,6 +974,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                 "webhook_url": webhook_url,
                 "status": status,
                 "manual_setup": manual_setup,
+                "example_url": EXAMPLE_EXTERNAL_URL,
             },
         )
 

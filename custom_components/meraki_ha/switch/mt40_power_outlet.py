@@ -69,7 +69,9 @@ class MerakiMt40PowerOutlet(
     @property
     def device_info(self) -> DeviceInfo | None:
         """Return device information."""
-        return resolve_device_info(self._device_info, self._config_entry)
+        return resolve_device_info(
+            self._device_info, self._config_entry, hass=self.hass
+        )
 
     @callback
     def _handle_coordinator_update(self) -> None:

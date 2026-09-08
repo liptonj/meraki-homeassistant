@@ -38,10 +38,9 @@ def find_root_device(
     while current.via_device_id and current.id not in visited:
         visited.add(current.id)
         parent = device_registry.async_get(current.via_device_id)
-        if parent:
-            current = parent
-        else:
+        if parent is None or not hasattr(parent, "via_device_id"):
             break
+        current = parent  # type: ignore[assignment]
     return current
 
 

@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "meraki-homeassistant"
 version = "0.0.0"
 description = "Meraki integration for Home Assistant"
-requires-python = ">=3.13.2"
+requires-python = ">=3.14.2"
 readme = "README.md"
 license = {text = "MIT"}
 dependencies = [
@@ -18,7 +18,7 @@ packages = ["custom_components/meraki_ha"]
 
 [project.optional-dependencies]
 dev = [
-    "homeassistant==2025.11.0",
+    "homeassistant==2026.9.1",
     "uv>=0.9.6",
     "urllib3>=2.6.0",
     "aiofiles==23.2.1",
@@ -28,22 +28,25 @@ dev = [
     "PyTurboJPEG==1.7.2",
     "ruff>=0.8.0",
     "pip-audit==2.7.3",
-    "bandit[toml]==1.7.9",
+    "bandit[toml]==1.9.4",
     "mypy==1.11.0",
     "pylint>=3.0.0",
     "voluptuous==0.15.2",
     "pyyaml==6.0.3",
     "playwright",
     "pydantic>=2.0.0",
-    "pytest-homeassistant-custom-component==0.13.294",
-    "pytest==8.4.2",
-    "pytest-cov==7.0.0",
-    "pytest-asyncio==1.2.0",
+    "pytest-homeassistant-custom-component==0.13.364",
+    "pytest>=8.4.2",
+    "pytest-cov==7.1.0",
+    "pytest-asyncio>=1.2.0",
     "codecov",
-    "pycares==4.11.0",
+    "pycares>=5.0.0",
 ]
 
 [tool.pytest.ini_options]
+testpaths = [
+  "tests",
+]
 pythonpath = [
   ".",
   "custom_components"

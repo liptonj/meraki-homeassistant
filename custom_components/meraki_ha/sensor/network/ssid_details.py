@@ -37,6 +37,7 @@ class MerakiSSIDDetailSensor(SensorEntity):
             entity_data={"networkId": self._ssid_data["networkId"]},
             config_entry=self._config_entry,
             ssid_data=self._ssid_data,
+            hass=coordinator.hass,
         )
 
 

@@ -4,7 +4,7 @@ from abc import ABC
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -12,6 +12,7 @@ from ...const import (
     DOMAIN,
     MANUFACTURER,
 )
+from ...helpers.device_info_helpers import apply_via_identifier
 from ...meraki_data_coordinator import MerakiDataCoordinator
 from ..utils.naming_utils import format_device_name
 
@@ -53,7 +54,7 @@ class BaseMerakiEntity(CoordinatorEntity, Entity, ABC):  # type: ignore[type-arg
         self._attr_has_entity_name = True
 
     @property
-    def device_info(self) -> DeviceInfo | None:
+    def device_info(self) -> DeviceInfo | ChildDeviceInfo | None:
         """Get device info for this entity.
 
         Device Hierarchy:
@@ -78,7 +79,12 @@ class BaseMerakiEntity(CoordinatorEntity, Entity, ABC):  # type: ignore[type-arg
                 )
                 # Link network to its parent organization
                 if org_id:
-                    device_info["via_device"] = (DOMAIN, f"org_{org_id}")
+                    apply_via_identifier(
+                        device_info,
+                        hass=self.hass,
+                        config_entry_id=self._config_entry.entry_id,
+                        identifier=(DOMAIN, f"org_{org_id}"),
+                    )
                 return device_info
 
         # Handle device-based entities (linked to device type group)
@@ -103,12 +109,22 @@ class BaseMerakiEntity(CoordinatorEntity, Entity, ABC):  # type: ignore[type-arg
                 # Link device to its device type group (if product type known)
                 # Otherwise fall back to linking directly to network
                 if network_id and product_type:
-                    device_info["via_device"] = (
-                        DOMAIN,
-                        f"devicetype_{network_id}_{product_type}",
+                    apply_via_identifier(
+                        device_info,
+                        hass=self.hass,
+                        config_entry_id=self._config_entry.entry_id,
+                        identifier=(
+                            DOMAIN,
+                            f"devicetype_{network_id}_{product_type}",
+                        ),
                     )
                 elif network_id:
-                    device_info["via_device"] = (DOMAIN, f"network_{network_id}")
+                    apply_via_identifier(
+                        device_info,
+                        hass=self.hass,
+                        config_entry_id=self._config_entry.entry_id,
+                        identifier=(DOMAIN, f"network_{network_id}"),
+                    )
                 return device_info
 
         return None
