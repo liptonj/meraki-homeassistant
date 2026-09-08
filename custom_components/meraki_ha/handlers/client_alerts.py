@@ -33,6 +33,14 @@ async def async_handle_client_alert(
 
     """
     _LOGGER.debug("Handling client alert: %s", alert_type)
+
+    # Store alert in history for Events card
+    coordinator.add_alert_to_history(
+        alert_type=alert_type,
+        category="client",
+        data=data,
+    )
+
     alert_data = data.get("alertData", {})
     alert_lower = alert_type.lower()
 

@@ -24,6 +24,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_ENABLE_DEVICE_TRACKER, CONF_MANUAL_CLIENT_ASSOCIATIONS, DOMAIN
+from .helpers.client_tracking import is_client_tracked, normalize_client_mac
 from .helpers.logging_helper import MerakiLoggers
 from .meraki_data_coordinator import MerakiDataCoordinator
 
@@ -241,13 +242,14 @@ def _find_existing_device_by_manual_association(
         return None
 
     # Normalize MAC address for comparison
-    normalized_mac = mac_address.lower().replace("-", ":")
+    normalized_mac = normalize_client_mac(mac_address)
 
-    # Check for manual association
     device_id = associations.get(normalized_mac)
     if not device_id:
-        # Also try with the original MAC format
-        device_id = associations.get(mac_address)
+        for stored_mac, stored_device_id in associations.items():
+            if normalize_client_mac(str(stored_mac)) == normalized_mac:
+                device_id = stored_device_id
+                break
 
     if not device_id:
         return None
@@ -384,6 +386,9 @@ async def async_setup_entry(
                 )
                 continue
 
+            if not is_client_tracked(config_entry, client_mac):
+                continue
+
             if client_mac not in tracked_clients:
                 tracked_clients.add(client_mac)
                 new_entities.append(
@@ -472,13 +477,14 @@ class MerakiClientDeviceTracker(
         )
 
         if existing_device:
-            # Link to the existing device - add our entity to that device
+            # Link to the existing device (e.g. iCloud iPhone) so GPS and
+            # Wi-Fi presence share one Home Assistant device.
             _LOGGER.info(
                 "Linking Meraki client %s to existing device '%s'",
                 self._client_mac,
                 existing_device.name,
             )
-            # Use the existing device's identifiers to add our entity to it
+            self._attr_name = "Wi-Fi"
             self._attr_device_info = DeviceInfo(
                 identifiers=existing_device.identifiers,
             )

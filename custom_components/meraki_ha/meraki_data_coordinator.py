@@ -6,9 +6,11 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .async_logging import async_log_time
 from .const import (
@@ -16,6 +18,7 @@ from .const import (
     CONF_DASHBOARD_DEVICE_TYPE_FILTER,
     CONF_DEVICE_SCAN_INTERVAL,
     CONF_ENABLE_MQTT,
+    CONF_ENABLE_PUSH_API,
     CONF_ENABLE_WEBHOOKS,
     CONF_ENABLED_NETWORKS,
     CONF_NETWORK_SCAN_INTERVAL,
@@ -34,7 +37,7 @@ from .const import (
     WEBHOOK_SSID_SCAN_INTERVAL,
 )
 from .core.api.client import MerakiAPIClient as ApiClient
-from .core.errors import ApiClientCommunicationError
+from .core.errors import ApiClientCommunicationError, MerakiAuthenticationError
 from .helpers.logging_helper import MerakiLoggers
 from .types import MerakiDevice, MerakiNetwork
 
@@ -92,6 +95,8 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._webhooks_active: bool = False
         self._last_webhook_received: datetime | None = None
         self._webhook_received_count: int = 0
+        self._last_push_received: datetime | None = None
+        self._push_received_count: int = 0
 
         # Debouncing: track pending refreshes to avoid duplicate API calls
         self._pending_refreshes: dict[str, datetime] = {}  # key -> scheduled time
@@ -100,6 +105,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Event deduplication: track recently processed alert IDs
         self._processed_alert_ids: dict[str, datetime] = {}  # alertId -> processed time
         self._alert_dedup_ttl_seconds: int = 300  # 5 minutes TTL for dedup cache
+
+        # Alert history storage for Events card
+        self._alert_history: list[dict[str, Any]] = []  # Stores recent alerts
+        self._max_alert_history: int = 200  # Keep last 200 alerts
 
         # Prometheus-style metrics for monitoring
         self._webhook_counts_by_type: dict[str, int] = {}  # alert_type -> count
@@ -135,7 +144,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         if unique_id is None:
             return
-        expiry_time = datetime.now() + timedelta(seconds=expiry_seconds)
+        expiry_time = dt_util.utcnow() + timedelta(seconds=expiry_seconds)
         self._pending_updates[unique_id] = expiry_time
         _LOGGER.debug(
             "Registered pending update for %s, ignoring coordinator updates until %s",
@@ -159,7 +168,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if unique_id is None or unique_id not in self._pending_updates:
             return False
 
-        now = datetime.now()
+        now = dt_util.utcnow()
         expiry_time = self._pending_updates[unique_id]
 
         if now > expiry_time:
@@ -250,7 +259,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             return False
 
-        self._last_webhook_received = datetime.now()
+        self._last_webhook_received = dt_util.utcnow()
         self._webhook_received_count += 1
         _LOGGER.debug(
             "Webhook received (type=%s, total=%d, last=%s)",
@@ -262,7 +271,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _is_duplicate_alert(self, alert_id: str) -> bool:
         """Check if an alert was recently processed (deduplication)."""
-        now = datetime.now()
+        now = dt_util.utcnow()
 
         # Clean up old entries
         self._cleanup_dedup_cache()
@@ -276,7 +285,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _cleanup_dedup_cache(self) -> None:
         """Remove expired entries from the deduplication cache."""
-        now = datetime.now()
+        now = dt_util.utcnow()
         ttl = timedelta(seconds=self._alert_dedup_ttl_seconds)
         expired = [
             aid
@@ -310,7 +319,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             True if refresh was scheduled, False if already pending.
 
         """
-        now = datetime.now()
+        now = dt_util.utcnow()
         delay = delay_seconds or self._refresh_debounce_seconds
 
         # Check if a refresh is already pending for this key
@@ -352,6 +361,30 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ),
             "is_active": self._is_webhooks_active(),
         }
+
+    def mark_push_received(self) -> None:
+        """Record that a Push API message or heartbeat was received."""
+        self._last_push_received = dt_util.utcnow()
+        self._push_received_count += 1
+
+    def _is_push_api_active(self) -> bool:
+        """Return True if Push API is enabled and recently received data."""
+        if not self.config_entry:
+            return False
+        if not self.config_entry.options.get(CONF_ENABLE_PUSH_API, False):
+            return False
+        polling_reduction_enabled = self.config_entry.options.get(
+            CONF_WEBHOOK_POLLING_REDUCTION, True
+        )
+        if not polling_reduction_enabled:
+            return False
+        if self._last_push_received is None:
+            return False
+        return (dt_util.utcnow() - self._last_push_received) < timedelta(minutes=15)
+
+    def _is_realtime_feed_active(self) -> bool:
+        """Return True if alert webhooks or Push API can replace polling."""
+        return self._is_webhooks_active() or self._is_push_api_active()
 
     @property
     def mqtt_enabled(self) -> bool:
@@ -443,7 +476,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         device["readings"] = self._process_sensor_readings_for_frontend(readings_raw)
 
         # Track MQTT update timestamp
-        mqtt_update_time = datetime.now()
+        mqtt_update_time = dt_util.utcnow()
         self._mqtt_last_updates[serial] = mqtt_update_time
 
         # Update readings_meta with timestamp and data source
@@ -633,11 +666,13 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         ent_reg = er.async_get(self.hass)
 
         # Get identifiers for all devices associated with this config entry
-        device_ids_in_registry = {
-            list(device.identifiers)[0][1]
-            for device in dev_reg.devices.values()
-            if self.config_entry.entry_id in device.config_entries
-        }
+        device_ids_in_registry: set[str] = set()
+        for device in dev_reg.devices.values():
+            if self.config_entry.entry_id not in device.config_entries:
+                continue
+            for domain, identifier in device.identifiers:
+                if domain == DOMAIN:
+                    device_ids_in_registry.add(identifier)
 
         # Build a set of all valid identifiers from the latest coordinator data
         # Physical devices use serial number as identifier
@@ -865,7 +900,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             last_ts = ts
                             break
                     device["readings_meta"] = {
-                        "last_updated": last_ts or datetime.now().isoformat(),
+                        "last_updated": last_ts or dt_util.utcnow().isoformat(),
                         "data_source": "api",
                     }
 
@@ -1011,7 +1046,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # Consider webhooks active if we've received one in the last 15 minutes.
         # This allows for a grace period if webhooks stop arriving.
-        return (datetime.now() - self._last_webhook_received) < timedelta(minutes=15)
+        return (dt_util.utcnow() - self._last_webhook_received) < timedelta(minutes=15)
 
     def _get_effective_poll_interval(self, data_type: str) -> timedelta:
         """Get the polling interval, reduced if webhooks are active."""
@@ -1019,7 +1054,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Fallback to default if config_entry is not available
             return timedelta(seconds=DEFAULT_NETWORK_SCAN_INTERVAL)
 
-        webhooks_active = self._is_webhooks_active()
+        webhooks_active = self._is_realtime_feed_active()
 
         if data_type == "network":
             default_seconds = self.config_entry.options.get(
@@ -1058,7 +1093,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @async_log_time(MerakiLoggers.COORDINATOR, slow_threshold=10.0)
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from API endpoint based on tiered polling intervals."""
-        now = datetime.now()
+        now = dt_util.utcnow()
 
         # Get intervals from config entry options
         if not self.config_entry:
@@ -1092,6 +1127,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return self.last_successful_data
 
         try:
+            await self.api.async_ensure_token_valid()
             enabled_network_ids = self._get_enabled_network_ids()
 
             data = await self.api.get_all_data(
@@ -1168,6 +1204,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.last_successful_update = now
             self.last_successful_data = data
             return data
+        except ConfigEntryAuthFailed:
+            raise
+        except MerakiAuthenticationError as err:
+            raise ConfigEntryAuthFailed("Meraki OAuth authentication failed") from err
         except ApiClientCommunicationError as err:
             if self.last_successful_data:
                 _LOGGER.warning(
@@ -1289,7 +1329,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         last_check = check_timestamps.get(network_id)
         if not last_check:
             return True
-        return (datetime.now() - last_check) > timedelta(hours=interval_hours)
+        return (dt_util.utcnow() - last_check) > timedelta(hours=interval_hours)
 
     def is_vlan_check_due(self, network_id: str) -> bool:
         """
@@ -1330,7 +1370,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             network_id: The ID of the network.
 
         """
-        self._vlan_check_timestamps[network_id] = datetime.now()
+        self._vlan_check_timestamps[network_id] = dt_util.utcnow()
 
     def mark_traffic_check_done(self, network_id: str) -> None:
         """
@@ -1341,7 +1381,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             network_id: The ID of the network.
 
         """
-        self._traffic_check_timestamps[network_id] = datetime.now()
+        self._traffic_check_timestamps[network_id] = dt_util.utcnow()
 
     async def async_handle_scanning_api_data(self, data: dict[str, Any]) -> None:
         """
@@ -1613,3 +1653,220 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             new_status,
                         )
                     break
+
+    def add_alert_to_history(
+        self,
+        alert_type: str,
+        category: str,
+        data: dict[str, Any],
+        severity: str | None = None,
+    ) -> None:
+        """
+        Add an alert to the history for display in the Events card.
+
+        Args:
+        ----
+            alert_type: The type of alert (e.g., "APs came up").
+            category: The alert category (device, client, network, security, sensor).
+            data: The raw alert data from the webhook.
+            severity: Optional severity level (critical, warning, info).
+                     If not provided, it will be auto-determined.
+
+        """
+        # Auto-determine severity if not provided
+        if severity is None:
+            severity = self._determine_alert_severity(alert_type)
+
+        # Format a human-readable description
+        description = self._format_alert_description(alert_type, data)
+
+        # Create the alert entry
+        alert_entry = {
+            "type": alert_type,
+            "category": category,
+            "severity": severity,
+            "description": description,
+            "timestamp": data.get("occurredAt") or dt_util.utcnow().isoformat(),
+            "device_serial": data.get("deviceSerial"),
+            "device_name": data.get("deviceName") or data.get("deviceSerial"),
+            "network_id": data.get("networkId"),
+            "network_name": data.get("networkName"),
+            "alert_id": data.get("alertId"),
+            "raw_data": data,
+        }
+
+        # Add to front of list (most recent first)
+        self._alert_history.insert(0, alert_entry)
+
+        # Trim to max size
+        if len(self._alert_history) > self._max_alert_history:
+            self._alert_history = self._alert_history[: self._max_alert_history]
+
+        _LOGGER.debug(
+            "Added %s alert to history: %s (total: %d)",
+            category,
+            alert_type,
+            len(self._alert_history),
+        )
+
+    def get_alert_history(
+        self,
+        limit: int = 50,
+        category: str | None = None,
+        severity: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Get recent alert history, optionally filtered by category and/or severity.
+
+        Args:
+        ----
+            limit: Maximum number of alerts to return (default: 50).
+            category: Optional category filter.
+                (device, client, network, security, sensor).
+            severity: Optional severity filter (critical, warning, info).
+
+        Returns
+        -------
+            List of alert entries, most recent first.
+
+        """
+        alerts = self._alert_history
+
+        # Apply filters if specified
+        if category:
+            alerts = [a for a in alerts if a.get("category") == category]
+        if severity:
+            alerts = [a for a in alerts if a.get("severity") == severity]
+
+        return alerts[:limit]
+
+    @staticmethod
+    def _determine_alert_severity(alert_type: str) -> str:
+        """
+        Determine alert severity from alert type.
+
+        Args:
+        ----
+            alert_type: The type of alert.
+
+        Returns
+        -------
+            Severity level: "critical", "warning", or "info".
+
+        """
+        alert_lower = alert_type.lower()
+
+        # Critical alerts
+        if any(
+            word in alert_lower
+            for word in [
+                "offline",
+                "went down",
+                "malware",
+                "intrusion",
+                "power outage",
+                "power loss",
+                "down",
+            ]
+        ):
+            return "critical"
+
+        # Warning alerts
+        if any(
+            word in alert_lower
+            for word in [
+                "rogue",
+                "threshold",
+                "blocked",
+                "disconnected",
+                "exceeded",
+                "water",
+                "door opened",
+            ]
+        ):
+            return "warning"
+
+        # Info alerts (default)
+        return "info"
+
+    @staticmethod
+    def _format_alert_description(alert_type: str, data: dict[str, Any]) -> str:
+        """
+        Format a human-readable alert description.
+
+        Args:
+        ----
+            alert_type: The type of alert.
+            data: The raw alert data from the webhook.
+
+        Returns
+        -------
+            A formatted description string.
+
+        """
+        alert_data = data.get("alertData", {})
+        device = data.get("deviceName") or data.get("deviceSerial", "Unknown")
+        network = data.get("networkName", "Unknown Network")
+        alert_lower = alert_type.lower()
+
+        # Device status alerts
+        if "came up" in alert_lower or "came online" in alert_lower:
+            return f"{device} came online in {network}"
+        if "went down" in alert_lower or "went offline" in alert_lower:
+            return f"{device} went offline in {network}"
+        if "rebooted" in alert_lower:
+            return f"{device} was rebooted in {network}"
+
+        # Client alerts
+        if "client" in alert_lower:
+            mac = data.get("deviceMac", "Unknown")
+            if "connect" in alert_lower:
+                return f"Client {mac} connected to {network}"
+            if "disconnect" in alert_lower:
+                return f"Client {mac} disconnected from {network}"
+            if "blocked" in alert_lower:
+                return f"Client {mac} was blocked on {network}"
+            return f"Client {mac}: {alert_type}"
+
+        # Security alerts
+        if "rogue" in alert_lower:
+            return f"Rogue AP detected in {network}"
+        if "intrusion" in alert_lower or "malware" in alert_lower:
+            return f"Security alert in {network}: {alert_type}"
+
+        # Sensor alerts
+        if "temperature" in alert_lower:
+            value = alert_data.get("value", "N/A")
+            threshold = alert_data.get("threshold", "N/A")
+            units = alert_data.get("temperatureUnits", "C")
+            return f"{device}: Temperature {value}°{units} (threshold: {threshold}°)"
+
+        if "humidity" in alert_lower:
+            value = alert_data.get("value", "N/A")
+            threshold = alert_data.get("threshold", "N/A")
+            return f"{device}: Humidity {value}% (threshold: {threshold}%)"
+
+        if "water" in alert_lower:
+            return f"{device}: Water detected"
+
+        if "door" in alert_lower:
+            status = "opened" if "open" in alert_lower else "closed"
+            return f"{device}: Door {status}"
+
+        if "power" in alert_lower:
+            if "outage" in alert_lower or "loss" in alert_lower:
+                return f"{device}: Power outage detected"
+            return f"{device}: {alert_type}"
+
+        # Network/configuration alerts
+        if "settings changed" in alert_lower:
+            return f"Network settings changed in {network}"
+        if "ssid" in alert_lower:
+            return f"SSID configuration changed in {network}"
+        if "vlan" in alert_lower:
+            return f"VLAN configuration changed in {network}"
+        if "firewall" in alert_lower:
+            return f"Firewall rules changed in {network}"
+
+        # Default: use alert type as-is
+        return f"{network}: {alert_type}"

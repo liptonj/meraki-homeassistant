@@ -41,6 +41,13 @@ async def async_handle_security_alert(
     """
     _LOGGER.info("Security alert received: %s", alert_type)
 
+    # Store alert in history for Events card
+    coordinator.add_alert_to_history(
+        alert_type=alert_type,
+        category="security",
+        data=data,
+    )
+
     # Extract useful information from the alert
     network_id = data.get("networkId")
     network_name = data.get("networkName", "Unknown Network")

@@ -68,3 +68,31 @@ jobs:
 
             echo "✅ Label added - jules-needs-help workflow will trigger"
           fi
+
+      - name: Trigger jules-needs-help workflow
+        if: steps.check.outputs.is_handoff == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUM="${{ steps.check.outputs.pr_number }}"
+
+          # Fetch branch and try to derive issue number for payload
+          PR_JSON=$(gh pr view "$PR_NUM" --repo "${{ github.repository }}" --json headRefName,body)
+          PR_BRANCH=$(echo "$PR_JSON" | jq -r '.headRefName // empty')
+          PR_BODY=$(echo "$PR_JSON" | jq -r '.body // empty')
+
+          ISSUE_NUM=$(echo "$PR_BODY" | grep -oiE '(closes|fixes|resolves) #[0-9]+' | grep -oE '[0-9]+' | head -1)
+          if [[ -z "$ISSUE_NUM" ]]; then
+            ISSUE_NUM=$(echo "$PR_BRANCH" | grep -oE '[-/][0-9]+[-/]' | grep -oE '[0-9]+' | head -1)
+          fi
+
+          echo "Dispatching jules-needs-help for PR #$PR_NUM (branch: $PR_BRANCH, issue: $ISSUE_NUM)"
+
+          gh api repos/${{ github.repository }}/dispatches \
+            --method POST \
+            -f event_type='jules-needs-help' \
+            -f client_payload[pr_number]="$PR_NUM" \
+            -f client_payload[branch]="$PR_BRANCH" \
+            -f client_payload[issue_number]="$ISSUE_NUM"
+
+          echo "✅ repository_dispatch sent"

@@ -1,0 +1,57 @@
+/**
+ * Meraki Lovelace Cards
+ *
+ * This file is the main entry point for all Meraki Lovelace cards.
+ * It imports and registers all cards with Home Assistant.
+ */
+
+import { CARD_DEFINITIONS } from './shared/constants.js';
+
+// Import shared components (from feature branch)
+import './shared/meraki-card-base.js';
+import './shared/meraki-editor-base.js';
+
+// Import badges
+import './badges/meraki-status-badge.js';
+import './badges/meraki-clients-badge.js';
+import './badges/meraki-alerts-badge.js';
+
+// Import all card components
+import './meraki-overview-card.js';
+import './meraki-device-card.js';
+import './meraki-devices-by-type-card.js'; // Groups devices by type with tables
+import './meraki-clients-card.js';
+import './meraki-switch-ports-card.js';
+import './meraki-mqtt-status-card.js'; // MQTT status card
+import './meraki-mqtt-status-card-editor.js';
+import './meraki-client-card/meraki-client-card.js';
+import './meraki-client-card/meraki-client-card-editor.js';
+import './meraki-camera-card/meraki-camera-card.js';
+import './meraki-camera-card/meraki-camera-card-editor.js';
+
+// Import new Lovelace cards
+import './meraki-ssids-list-card.js';
+import './meraki-ssids-list-card-editor.js';
+import './meraki-events-card.js';
+import './meraki-events-card-editor.js';
+import './meraki-guest-access-card.js';
+import './meraki-guest-access-card-editor.js';
+import './meraki-switch-ports-card-editor.js';
+
+// Register cards with Home Assistant's custom cards registry
+window.customCards = window.customCards || [];
+
+CARD_DEFINITIONS.forEach((card) => {
+  // Avoid duplicate registrations
+  if (!window.customCards.some((c) => c.type === card.type)) {
+    window.customCards.push(card);
+  }
+});
+
+console.info(
+  '%c MERAKI CARDS v2.0 ',
+  'color: #fff; background: #2980b9; font-weight: 700; padding: 4px 8px; border-radius: 4px;',
+  `Loaded ${CARD_DEFINITIONS.length} cards: ${CARD_DEFINITIONS.map(
+    (c) => c.type
+  ).join(', ')}`
+);

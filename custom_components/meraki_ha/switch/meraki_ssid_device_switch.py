@@ -89,6 +89,53 @@ class MerakiSSIDBaseSwitch(CoordinatorEntity, SwitchEntity):  # type: ignore[typ
             return False
         return self._get_current_ssid_data() is not None
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return extra state attributes for the SSID switch.
+
+        These attributes are used by the Meraki cards to display
+        detailed SSID information without additional API calls.
+        """
+        current_ssid_data = self._get_current_ssid_data()
+        if not current_ssid_data:
+            return {}
+
+        # Get network name from coordinator data
+        network_name = None
+        if self.coordinator.data and "networks" in self.coordinator.data:
+            for network in self.coordinator.data["networks"]:
+                if network.get("id") == self._network_id:
+                    network_name = network.get("name")
+                    break
+
+        attributes = {
+            "network_id": self._network_id,
+            "network_name": network_name or self._network_id,
+            "ssid_number": self._ssid_number,
+            "ssid_name": current_ssid_data.get("name", f"SSID {self._ssid_number}"),
+        }
+
+        # Add optional SSID attributes if available
+        if "authMode" in current_ssid_data:
+            attributes["auth_mode"] = current_ssid_data["authMode"]
+        if "enabled" in current_ssid_data:
+            attributes["ssid_enabled"] = current_ssid_data["enabled"]
+        if "visible" in current_ssid_data:
+            attributes["ssid_visible"] = current_ssid_data["visible"]
+        if "vlanId" in current_ssid_data:
+            attributes["vlan_id"] = current_ssid_data["vlanId"]
+
+        # Determine SSID status for display
+        if current_ssid_data.get("enabled"):
+            if current_ssid_data.get("visible", True):
+                attributes["ssid_status"] = "enabled"
+            else:
+                attributes["ssid_status"] = "hidden"
+        else:
+            attributes["ssid_status"] = "disabled"
+
+        return attributes
+
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""

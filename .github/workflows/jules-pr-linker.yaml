@@ -178,10 +178,12 @@ jobs:
         run: |
           ISSUE_NUM="${{ steps.check.outputs.issue_number }}"
 
-          # Remove in-progress, add pr-pending
+          # Remove in-progress and cursor-working, add pr-pending
+          # (cursor-working is removed because agent has created PR - work phase complete)
           gh issue edit "$ISSUE_NUM" \
             --repo "${{ github.repository }}" \
             --remove-label "in-progress" \
+            --remove-label "cursor-working" \
             --add-label "pr-pending" 2>/dev/null || true
 
       - name: Add issue reference to PR if missing

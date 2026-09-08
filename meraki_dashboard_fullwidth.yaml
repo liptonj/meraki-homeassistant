@@ -1,0 +1,113 @@
+# Meraki Home Assistant Dashboard - FULL WIDTH VERSION
+# Your config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+#
+# This version uses custom layout settings for maximum width usage
+
+title: Meraki Network
+icon: mdi:router-network
+
+views:
+  # ============================================================================
+  # OVERVIEW VIEW - Full Width Layout
+  # ============================================================================
+  - title: Overview
+    path: overview
+    icon: mdi:view-dashboard
+    # Use masonry layout with max columns
+    type: masonry
+    max_cols: 2
+
+    badges:
+      - type: custom:meraki-status-badge
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+      - type: custom:meraki-clients-badge
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+      - type: custom:meraki-alerts-badge
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+
+    cards:
+      # Main overview card - spans both columns (FULL WIDTH)
+      - type: custom:meraki-overview-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+        view_layout:
+          grid-column: span 2 # Takes both columns = full width
+
+      # Clients card - left column (HALF WIDTH)
+      - type: custom:meraki-clients-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+        limit: 10
+        view_layout:
+          grid-column: span 1 # Takes 1 column = half width
+
+      # SSIDs card - right column (HALF WIDTH)
+      - type: custom:meraki-ssids-list-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+        view_layout:
+          grid-column: span 1 # Takes 1 column = half width
+
+  # ============================================================================
+  # DEVICES VIEW
+  # ============================================================================
+  - title: Devices
+    path: devices
+    icon: mdi:devices
+    cards:
+      - type: custom:meraki-devices-by-type-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+        title: Meraki Devices
+        show_switches: true
+        show_wireless: true
+        show_cameras: true
+        show_sensors: true
+        show_appliances: true
+        devices_per_page: 10
+
+  # ============================================================================
+  # CLIENTS VIEW
+  # ============================================================================
+  - title: Clients
+    path: clients
+    icon: mdi:account-multiple
+    cards:
+      - type: custom:meraki-clients-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+        title: Network Clients
+        limit: 50
+        show_offline: false
+
+  # ============================================================================
+  # EVENTS VIEW
+  # ============================================================================
+  - title: Events
+    path: events
+    icon: mdi:history
+    cards:
+      - type: custom:meraki-events-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+        events_per_page: 10
+
+  # ============================================================================
+  # GUEST ACCESS VIEW
+  # ============================================================================
+  - title: Guest Access
+    path: guest
+    icon: mdi:account-key
+    cards:
+      - type: custom:meraki-guest-access-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+
+  # ============================================================================
+  # SETTINGS VIEW
+  # ============================================================================
+  - title: Settings
+    path: settings
+    icon: mdi:cog
+    cards:
+      - type: custom:meraki-mqtt-status-card
+        config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+        title: MQTT Integration
+        show_relay_destinations: true
+        show_message_stats: true
+        show_sensor_count: true
+        collapsible: true
+        default_collapsed: false

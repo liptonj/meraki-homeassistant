@@ -10,14 +10,15 @@ from typing import Any
 from homeassistant.components import webhook as ha_webhook
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
-from .api.websocket import async_setup_websocket_api
 from .const import (
+    CONF_AUTO_CREATE_DASHBOARD,
     CONF_ENABLE_MQTT,
+    CONF_ENABLE_PUSH_API,
     CONF_ENABLE_SCANNING_API,
     CONF_ENABLE_WEB_UI,
     CONF_ENABLE_WEBHOOKS,
-    CONF_MERAKI_API_KEY,
     CONF_MERAKI_ORG_ID,
     CONF_MQTT_RELAY_DESTINATIONS,
     CONF_SCAN_INTERVAL,
@@ -25,7 +26,10 @@ from .const import (
     CONF_WEB_UI_PORT,
     CONF_WEBHOOK_SHARED_SECRET,
     DATA_CLIENT,
+    DATA_OAUTH_SESSION,
+    DEFAULT_AUTO_CREATE_DASHBOARD,
     DEFAULT_ENABLE_MQTT,
+    DEFAULT_ENABLE_PUSH_API,
     DEFAULT_ENABLE_SCANNING_API,
     DEFAULT_ENABLE_WEB_UI,
     DEFAULT_ENABLE_WEBHOOKS,
@@ -46,21 +50,25 @@ from .core.repository import MerakiRepository
 from .core.timed_access_manager import TimedAccessManager
 from .discovery.service import DeviceDiscoveryService
 from .frontend import (
-    async_register_panel,
     async_register_static_path,
     async_unregister_frontend,
 )
 from .helpers.logging_helper import MerakiLoggers
+from .oauth import async_create_oauth_session
 
 # sync_helper is used by services/sync_client_names
 from .services.camera_service import CameraService
+from .services.card_diagnostics import async_register_card_diagnostics
 from .services.device_control_service import DeviceControlService
 from .services.mqtt_relay import MqttRelayManager
 from .services.mqtt_service import MerakiMqttService
 from .services.network_control_service import NetworkControlService
+from .services.panel_diagnostics import async_register_diagnostic_service
+from .services.push_api import PushApiManager
 from .web_api import async_setup_api
 from .web_server import MerakiWebServer
 from .webhook import (
+    async_handle_push_webhook,
     async_handle_scanning_api,
     async_handle_webhook,
     async_unregister_webhook,
@@ -277,6 +285,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     ------
         ConfigEntryNotReady: If the coordinator fails to fetch initial data.
     """
+    _LOGGER.info("🔧🔧🔧 async_setup_entry CALLED for entry: %s", entry.entry_id[:8])
     hass.data.setdefault(DOMAIN, {})
     entry_data = hass.data.setdefault(DOMAIN, {}).setdefault(entry.entry_id, {})
 
@@ -288,17 +297,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         if DATA_CLIENT not in entry_data:
+            oauth_session = await async_create_oauth_session(hass, entry)
+            try:
+                await oauth_session.async_ensure_token_valid()
+            except ConfigEntryAuthFailed:
+                raise
+            except Exception as err:
+                raise ConfigEntryNotReady(
+                    "Could not refresh Meraki OAuth token"
+                ) from err
             client = MerakiAPIClient(
                 hass,
-                api_key=entry.data[CONF_MERAKI_API_KEY],
+                api_key=oauth_session.token["access_token"],
                 org_id=entry.data[CONF_MERAKI_ORG_ID],
+                oauth_session=oauth_session,
             )
             await client.async_setup()
             entry_data[DATA_CLIENT] = client
+            entry_data[DATA_OAUTH_SESSION] = oauth_session
         api_client = entry_data[DATA_CLIENT]
+    except ConfigEntryAuthFailed:
+        raise
     except KeyError as err:
         _LOGGER.error("Missing required configuration: %s", err)
-        return False
+        raise ConfigEntryAuthFailed(
+            "Meraki now requires OAuth2. Reauthenticate this integration."
+        ) from err
 
     try:
         scan_interval = int(
@@ -531,14 +555,137 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.services.async_register(DOMAIN, "sync_client_names", async_sync_client_names)
 
+    # Register diagnostic services
+    async_register_diagnostic_service(hass)
+    async_register_card_diagnostics(hass)
+
+    # Register dashboard services
+    # pylint: disable-next=import-outside-toplevel
+    from .services.dashboard_service import (
+        async_register_services as async_register_dashboard_services,
+    )
+
+    async_register_dashboard_services(hass)
+
     discovered_entities = await discovery_service.discover_entities()
     entry_data["entities"] = discovered_entities
 
-    # Register frontend panel and WebSocket API
-    await async_register_static_path(hass)
-    await async_register_panel(hass, entry)
+    # Register frontend static paths for Lovelace cards
+    auto_create_dashboard = entry.options.get(
+        CONF_AUTO_CREATE_DASHBOARD, DEFAULT_AUTO_CREATE_DASHBOARD
+    )
+
+    _LOGGER.info("Dashboard auto-creation: %s", auto_create_dashboard)
+
+    # Always register static path for cards
+    _LOGGER.info("Registering static path for Meraki cards")
+    try:
+        await async_register_static_path(hass)
+        _LOGGER.info("Static path registration completed")
+    except Exception as err:
+        _LOGGER.error(
+            "Failed to register static path: %s",
+            err,
+            exc_info=True,
+        )
+
+    # Show dashboard setup instructions notification
+    if auto_create_dashboard:
+        dashboard_id = f"meraki_{entry.entry_id[:8]}"
+        await hass.services.async_call(
+            "persistent_notification",
+            "create",
+            {
+                "title": "📊 Create Your Meraki Dashboard",
+                "message": (
+                    f"**Quick Setup (2 minutes):**\n\n"
+                    f"1. Go to **Settings** → **Dashboards**\n"
+                    f"2. Click **+ ADD DASHBOARD**\n"
+                    f"3. Fill in:\n"
+                    f"   - Title: `Meraki Network`\n"
+                    f"   - Icon: `mdi:router-network`\n"
+                    f"   - URL: `{dashboard_id}`\n"
+                    f"   - Show in sidebar: ✅\n"
+                    f"4. Click **CREATE**\n"
+                    f"5. Open the new dashboard\n"
+                    f"6. Click **⋮** → **Edit Dashboard**\n"
+                    f"7. Click **⋮** → **Raw configuration editor**\n"
+                    f"8. Replace with:\n\n"
+                    f"```yaml\n"
+                    f"strategy:\n"
+                    f"  type: custom:meraki-dashboard-strategy\n"
+                    f"  config_entry_id: {entry.entry_id}\n"
+                    f"```\n\n"
+                    f"9. Click **SAVE**\n\n"
+                    f"Your dashboard will show custom Meraki cards with "
+                    f"live network data!\n\n"
+                    f"[Documentation](https://github.com/liptonj/"
+                    f"meraki-homeassistant)"
+                ),
+                "notification_id": f"meraki_dashboard_setup_{entry.entry_id}",
+            },
+            blocking=False,
+        )
+
+    # Note: Static paths and Lovelace resources are registered by
+    # async_register_static_path() called above (line 721)
+    # No need to duplicate that registration here
+
+    # Register WebSocket APIs
+    # pylint: disable-next=import-outside-toplevel
+    from . import api as meraki_api
+
     async_setup_api(hass)
-    async_setup_websocket_api(hass)
+    meraki_api.async_setup(hass)
+
+    # Register dashboard WebSocket API
+    # pylint: disable-next=import-outside-toplevel
+    from .api import dashboard as dashboard_api
+
+    dashboard_api.async_setup(hass)
+
+    # OLD service removed - we now auto-create editable dashboards instead
+    # The create_editable_dashboard service is registered via dashboard_service.py
+
+    # Send one-time notification about integration setup
+    dashboard_id = f"meraki_{entry.entry_id[:8]}"
+
+    if auto_create_dashboard:
+        # Dashboard setup notification
+        notification_message = (
+            "Your Meraki integration is set up!\n\n"
+            "**Next: Create Your Dashboard**\n\n"
+            "A notification with step-by-step instructions has been created.\n"
+            "Follow it to set up your Meraki dashboard with custom cards.\n\n"
+            "Takes only 2 minutes! 🚀\n\n"
+            "[View Documentation]"
+            "(https://github.com/liptonj/meraki-homeassistant)"
+        )
+    else:
+        # Dashboard auto-creation was disabled
+        notification_message = (
+            f"Your Meraki integration is set up!\n\n"
+            f"**Create Dashboard:**\n\n"
+            f"1. Go to Developer Tools → Services\n"
+            f"2. Search for `{DOMAIN}.create_editable_dashboard`\n"
+            f"3. Leave all fields empty (auto-detects)\n"
+            f"4. Click **CALL SERVICE**\n\n"
+            f"This will create a fully editable dashboard with all your "
+            f"Meraki devices.\n\n"
+            f"[View Documentation]"
+            f"(https://github.com/liptonj/meraki-homeassistant)"
+        )
+
+    await hass.services.async_call(
+        "persistent_notification",
+        "create",
+        {
+            "title": "🚀 Meraki Integration Ready",
+            "message": notification_message,
+            "notification_id": f"meraki_ready_{entry.entry_id}",
+        },
+        blocking=False,
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -672,6 +819,42 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     entry.entry_id,
                 )
 
+    # Register Push API independently of alert webhooks. Auto-creates
+    # the org HTTP server, receiver profile, and topic subscriptions.
+    enable_push_api = entry.options.get(CONF_ENABLE_PUSH_API, DEFAULT_ENABLE_PUSH_API)
+    if enable_push_api:
+        if "secret" not in entry.data or entry.data.get("secret") != webhook_secret:
+            hass.config_entries.async_update_entry(
+                entry,
+                data={**entry.data, "secret": webhook_secret},
+            )
+        push_webhook_id = f"{entry.entry_id}_push"
+        try:
+            ha_webhook.async_unregister(hass, push_webhook_id)
+        except ValueError:
+            pass
+        ha_webhook.async_register(
+            hass,
+            DOMAIN,
+            "Meraki Push API",
+            push_webhook_id,
+            async_handle_push_webhook,
+        )
+        entry_data["push_webhook_id"] = push_webhook_id
+        push_manager = PushApiManager(hass, api_client, entry)
+        entry_data["push_api_manager"] = push_manager
+        if await push_manager.async_register():
+            _LOGGER.info(
+                "Registered Push API and created topic profiles for %s",
+                push_webhook_id,
+            )
+        else:
+            _LOGGER.warning(
+                "Push API topic registration failed for %s. "
+                "Check org beta enrollment and HTTPS webhook URL.",
+                push_webhook_id,
+            )
+
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
@@ -686,6 +869,21 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a Meraki config entry."""
     entry_data = hass.data[DOMAIN].get(entry.entry_id)
     if entry_data:
+        if "push_api_manager" in entry_data:
+            await entry_data["push_api_manager"].async_unregister()
+        if "push_webhook_id" in entry_data:
+            try:
+                ha_webhook.async_unregister(hass, entry_data["push_webhook_id"])
+                _LOGGER.info(
+                    "Unregistered Push API webhook: %s",
+                    entry_data["push_webhook_id"],
+                )
+            except ValueError:
+                _LOGGER.debug(
+                    "Push API webhook already unregistered: %s",
+                    entry_data["push_webhook_id"],
+                )
+
         if DATA_CLIENT in entry_data:
             client = entry_data[DATA_CLIENT]
             await client.async_close()
@@ -733,6 +931,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 await entry_data["webhook_manager"].async_unregister_webhooks()
             else:
                 await async_unregister_webhook(hass, entry.entry_id, api_client)
+
+        # Clean up dashboard config if it exists
+        entry_data.pop("dashboard_config", None)
 
         async_unregister_frontend(hass)
 

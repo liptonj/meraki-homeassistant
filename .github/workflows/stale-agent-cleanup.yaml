@@ -1,0 +1,125 @@
+name: Stale Agent Cleanup
+
+run-name: 'Cleanup stale agent labels'
+
+# Cleans up issues/PRs where agents started but never finished
+# This handles cases where Jules or Cursor began work but crashed/timed out
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Every 6 hours
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  cleanup-stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find and cleanup stale issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🧹 Checking for stale in-progress issues..."
+
+          # Get issues with in-progress label that haven't been updated in 2 hours
+          STALE_THRESHOLD=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-2H +%Y-%m-%dT%H:%M:%SZ)
+
+          ISSUES=$(gh issue list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --label "in-progress" \
+            --json number,title,updatedAt \
+            --jq ".[] | select(.updatedAt < \"$STALE_THRESHOLD\") | .number")
+
+          if [[ -z "$ISSUES" ]]; then
+            echo "✅ No stale issues found"
+            exit 0
+          fi
+
+          echo "Found stale issues: $ISSUES"
+
+          for ISSUE_NUM in $ISSUES; do
+            echo "Processing stale issue #$ISSUE_NUM"
+
+            # Check if there's a PR for this issue
+            PR_EXISTS=$(gh pr list \
+              --repo "${{ github.repository }}" \
+              --state open \
+              --search "in:body Closes #$ISSUE_NUM OR in:body Fixes #$ISSUE_NUM" \
+              --json number \
+              --jq '.[0].number // empty' 2>/dev/null || echo "")
+
+            if [[ -n "$PR_EXISTS" ]]; then
+              echo "  PR #$PR_EXISTS exists - updating labels"
+              gh issue edit "$ISSUE_NUM" \
+                --repo "${{ github.repository }}" \
+                --remove-label "in-progress" \
+                --add-label "pr-pending" 2>/dev/null || true
+            else
+              echo "  No PR found - removing in-progress, agent may have failed"
+              gh issue edit "$ISSUE_NUM" \
+                --repo "${{ github.repository }}" \
+                --remove-label "in-progress" 2>/dev/null || true
+
+              gh issue comment "$ISSUE_NUM" \
+                --repo "${{ github.repository }}" \
+                --body "## ⚠️ Agent Work Stalled
+
+          This issue was marked as in-progress but no PR was created within the expected timeframe.
+
+          The agent may have encountered an error. Please:
+          1. Check the [workflow runs](https://github.com/${{ github.repository }}/actions) for errors
+          2. Re-add the \`jules-issue\` or \`cursor-work\` label to retry
+
+          ---
+          *Stale Agent Cleanup*"
+            fi
+          done
+
+      - name: Cleanup stale PR labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🧹 Checking for stale cursor-working PRs..."
+
+          # Get PRs with cursor-working label that haven't been updated in 1 hour
+          STALE_THRESHOLD=$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%SZ)
+
+          PRS=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --label "cursor-working" \
+            --json number,updatedAt \
+            --jq ".[] | select(.updatedAt < \"$STALE_THRESHOLD\") | .number")
+
+          if [[ -z "$PRS" ]]; then
+            echo "✅ No stale cursor-working PRs found"
+            exit 0
+          fi
+
+          echo "Found stale PRs: $PRS"
+
+          for PR_NUM in $PRS; do
+            echo "Cleaning up stale cursor-working label on PR #$PR_NUM"
+
+            gh pr edit "$PR_NUM" \
+              --repo "${{ github.repository }}" \
+              --remove-label "cursor-working" 2>/dev/null || true
+
+            gh pr comment "$PR_NUM" \
+              --repo "${{ github.repository }}" \
+              --body "## ⚠️ Cursor Agent Timeout
+
+          The \`cursor-working\` label was removed because no activity was detected for over 1 hour.
+
+          If Cursor is still working, it can continue. If not, you can:
+          1. Re-trigger by adding the appropriate label
+          2. Request manual review
+
+          ---
+          *Stale Agent Cleanup*"
+          done

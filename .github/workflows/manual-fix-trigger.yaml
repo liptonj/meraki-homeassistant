@@ -428,6 +428,7 @@ jobs:
           gh pr edit "$PR_NUMBER" \
             --repo "${{ github.repository }}" \
             --remove-label "cursor-reviewing" \
+            --remove-label "cursor-working" \
             --remove-label "in-progress" \
             --add-label "ready-for-review" 2>/dev/null || true
 

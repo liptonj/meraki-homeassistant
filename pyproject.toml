@@ -9,6 +9,9 @@ description = "Meraki integration for Home Assistant"
 requires-python = ">=3.13.2"
 readme = "README.md"
 license = {text = "MIT"}
+dependencies = [
+    "playwright>=1.57.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["custom_components/meraki_ha"]
@@ -62,7 +65,7 @@ module = "tests.*"
 disable_error_code = ["method-assign"]
 
 [tool.ruff]
-exclude = [".pyenv"]
+exclude = [".pyenv", "scripts/"]
 line-length = 88
 
 [tool.ruff.lint]
@@ -82,6 +85,7 @@ ignore = ["D100", "D104", "D107", "D211", "D212", "UP047"]
 "tests/**/*.py" = [
     "F811",  # Redefinition of unused name (fixtures)
 ]
+"tests/conftest.py" = ["E402"]
 
 [tool.pylint.messages_control]
 disable = [

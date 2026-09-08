@@ -25,6 +25,7 @@ from .const import (
     MQTT_DEST_USE_TLS,
     MQTT_DEST_USERNAME,
 )
+from .helpers.client_tracking import normalize_client_mac
 from .schemas import (
     SCHEMA_CAMERA,
     SCHEMA_DATA_SYNC,
@@ -32,6 +33,8 @@ from .schemas import (
     SCHEMA_LOGGING,
     SCHEMA_NETWORK_SELECTION,
     SCHEMA_POLLING,
+    SCHEMA_PUSH_API,
+    SCHEMA_UI_MODE,
     SCHEMA_WEBHOOKS,
 )
 
@@ -86,12 +89,14 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                 "network_selection",
                 "device_association",
                 "polling",
+                "push_api",
                 "webhooks",
                 "data_sync",
                 "camera",
                 "mqtt",
                 "scanning_api",
                 "display_preferences",
+                "ui_mode",
                 "notifications",
                 "logging",
             ],
@@ -164,11 +169,10 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                 title=CONF_INTEGRATION_TITLE, data=self.options
             )
 
-        coordinator: MerakiDataCoordinator = self.hass.data[DOMAIN][
-            self.config_entry.entry_id
-        ]["coordinator"]
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id, {})
+        coordinator: MerakiDataCoordinator | None = entry_data.get("coordinator")
         network_options: list[selector.SelectOptionDict] = []
-        if coordinator.data and coordinator.data.get("networks"):
+        if coordinator and coordinator.data and coordinator.data.get("networks"):
             network_options = [
                 selector.SelectOptionDict(label=network["name"], value=network["id"])
                 for network in coordinator.data["networks"]
@@ -213,15 +217,14 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         # Build summary of current associations
         association_summary = []
-        coordinator: MerakiDataCoordinator = self.hass.data[DOMAIN][
-            self.config_entry.entry_id
-        ]["coordinator"]
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id, {})
+        coordinator: MerakiDataCoordinator | None = entry_data.get("coordinator")
         device_registry = dr.async_get(self.hass)
 
         for client_mac, device_id in current_associations.items():
             # Find client name
             client_name = client_mac
-            if coordinator.data and coordinator.data.get("clients"):
+            if coordinator and coordinator.data and coordinator.data.get("clients"):
                 for client in coordinator.data["clients"]:
                     if client.get("mac") == client_mac:
                         client_name = (
@@ -284,9 +287,8 @@ class MerakiOptionsFlowHandler(OptionsFlow):
             self._selected_client_mac = user_input.get("client")
             return await self.async_step_select_device()
 
-        coordinator: MerakiDataCoordinator = self.hass.data[DOMAIN][
-            self.config_entry.entry_id
-        ]["coordinator"]
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id, {})
+        coordinator: MerakiDataCoordinator | None = entry_data.get("coordinator")
 
         # Get current associations to filter out already-associated clients
         current_associations: dict[str, str] = self.options.get(
@@ -295,7 +297,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         # Build list of unassociated clients
         client_options: list[selector.SelectOptionDict] = []
-        if coordinator.data and coordinator.data.get("clients"):
+        if coordinator and coordinator.data and coordinator.data.get("clients"):
             for client in coordinator.data["clients"]:
                 client_mac = client.get("mac")
                 if not client_mac or client_mac in current_associations:
@@ -364,7 +366,7 @@ class MerakiOptionsFlowHandler(OptionsFlow):
                 associations = dict(
                     self.options.get(CONF_MANUAL_CLIENT_ASSOCIATIONS, {})
                 )
-                associations[client_mac] = device_id
+                associations[normalize_client_mac(str(client_mac))] = device_id
                 self.options[CONF_MANUAL_CLIENT_ASSOCIATIONS] = associations
 
             # Clean up and return to main menu
@@ -559,6 +561,27 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
         return self.async_show_form(
             step_id="display_preferences",
+            data_schema=schema_with_defaults,
+        )
+
+    async def async_step_ui_mode(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle UI mode selection."""
+        if user_input is not None:
+            self.options.update(user_input)
+            return self.async_create_entry(
+                title=CONF_INTEGRATION_TITLE, data=self.options
+            )
+
+        schema_with_defaults = self._populate_schema_defaults(
+            SCHEMA_UI_MODE,
+            self.options,
+        )
+
+        return self.async_show_form(
+            step_id="ui_mode",
             data_schema=schema_with_defaults,
         )
 
@@ -836,6 +859,57 @@ class MerakiOptionsFlowHandler(OptionsFlow):
 
             new_schema_keys[key] = value
         return vol.Schema(new_schema_keys)
+
+    async def async_step_push_api(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle Push API settings and topic auto-creation."""
+        from .core.errors import MerakiConnectionError
+        from .webhook import get_webhook_url
+
+        if user_input is not None:
+            self.options.update(user_input)
+            return self.async_create_entry(
+                title=CONF_INTEGRATION_TITLE, data=self.options
+            )
+
+        custom_url = self.options.get("webhook_external_url", "")
+        push_webhook_id = f"{self.config_entry.entry_id}_push"
+        try:
+            webhook_url = get_webhook_url(
+                self.hass, push_webhook_id, custom_url or None
+            )
+        except MerakiConnectionError as err:
+            webhook_url = f"⚠️ {err}"
+
+        status = "Not registered"
+        subscribed = "None"
+        available = "Unknown (enable Push API and reload to discover)"
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id, {})
+        push_manager = entry_data.get("push_api_manager")
+        if push_manager:
+            info = push_manager.status
+            status = info.get("message", status)
+            subscribed_topics = info.get("subscribed_topics") or []
+            available_topics = info.get("available_topics") or []
+            subscribed = ", ".join(subscribed_topics) or "None"
+            available = ", ".join(available_topics) or "None"
+
+        schema_with_defaults = self._populate_schema_defaults(
+            SCHEMA_PUSH_API,
+            self.options,
+        )
+        return self.async_show_form(
+            step_id="push_api",
+            data_schema=schema_with_defaults,
+            description_placeholders={
+                "webhook_url": webhook_url,
+                "status": status,
+                "subscribed_topics": subscribed,
+                "available_topics": available,
+            },
+        )
 
     async def async_step_webhooks(
         self,

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest.mock import MagicMock
+
+from homeassistant.util import dt as dt_util
 
 
 class TestWebhookDeduplication:
@@ -42,7 +44,7 @@ class TestWebhookDeduplication:
         )
 
         coordinator = MagicMock(spec=MerakiDataCoordinator)
-        coordinator._processed_alert_ids = {"alert-123": datetime.now()}
+        coordinator._processed_alert_ids = {"alert-123": dt_util.utcnow()}
         coordinator._alert_dedup_ttl_seconds = 300
 
         coordinator._is_duplicate_alert = (
@@ -68,8 +70,8 @@ class TestWebhookDeduplication:
         coordinator = MagicMock(spec=MerakiDataCoordinator)
         coordinator._alert_dedup_ttl_seconds = 300
         coordinator._processed_alert_ids = {
-            "old-alert": datetime.now() - timedelta(seconds=400),
-            "new-alert": datetime.now(),
+            "old-alert": dt_util.utcnow() - timedelta(seconds=400),
+            "new-alert": dt_util.utcnow(),
         }
 
         coordinator._cleanup_dedup_cache = (
@@ -130,7 +132,7 @@ class TestMarkWebhookReceived:
         coordinator = MagicMock(spec=MerakiDataCoordinator)
         coordinator._last_webhook_received = None
         coordinator._webhook_received_count = 0
-        coordinator._processed_alert_ids = {"alert-123": datetime.now()}
+        coordinator._processed_alert_ids = {"alert-123": dt_util.utcnow()}
         coordinator._alert_dedup_ttl_seconds = 300
 
         coordinator.mark_webhook_received = (
@@ -227,7 +229,7 @@ class TestDebouncedRefresh:
         coordinator = MagicMock(spec=MerakiDataCoordinator)
         # Set a pending refresh in the future
         coordinator._pending_refreshes = {
-            "device:serial": datetime.now() + timedelta(seconds=10)
+            "device:serial": dt_util.utcnow() + timedelta(seconds=10)
         }
         coordinator._refresh_debounce_seconds = 5
         coordinator.hass = MagicMock()

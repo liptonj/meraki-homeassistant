@@ -31,6 +31,13 @@ async def async_handle_network_alert(
     """
     _LOGGER.info("Network alert received: %s", alert_type)
 
+    # Store alert in history for Events card
+    coordinator.add_alert_to_history(
+        alert_type=alert_type,
+        category="network",
+        data=data,
+    )
+
     network_id = data.get("networkId")
     if not network_id:
         _LOGGER.warning("Network alert missing 'networkId': %s", data)

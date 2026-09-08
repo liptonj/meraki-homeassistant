@@ -27,6 +27,14 @@ async def async_handle_device_alert(
 
     """
     _LOGGER.debug("Handling device alert: %s", alert_type)
+
+    # Store alert in history for Events card
+    coordinator.add_alert_to_history(
+        alert_type=alert_type,
+        category="device",
+        data=data,
+    )
+
     serial = data.get("deviceSerial")
     if not serial:
         _LOGGER.warning("Device alert missing 'deviceSerial': %s", data)

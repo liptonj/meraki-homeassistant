@@ -1,3 +1,27 @@
+# [3.2.0-beta.1](https://github.com/liptonj/meraki-homeassistant/compare/v3.1.0-beta.12...v3.2.0-beta.1) (2026-09-08)
+
+### Breaking Changes
+
+- **auth:** Replace Dashboard API keys with Cisco Meraki OAuth 2.0
+  - Each Home Assistant user registers a Cisco app at [integrate.cisco.com](https://integrate.cisco.com)
+  - Redirect URI must be exactly `https://my.home-assistant.io/redirect/oauth`
+  - Client ID and Client Secret are stored in Home Assistant Application Credentials (not shipped in the integration)
+  - Existing API-key installs must re-authenticate after upgrade; entity unique IDs stay the same
+  - Access tokens refresh automatically (~60 minutes); failed refresh or HTTP 401 starts reauthentication
+
+### Features
+
+- **auth:** OAuth config flow with organization picker, reauth, and Bearer token API calls
+- **push-api:** Auto-register Meraki Push API topics and a health binary sensor
+- **device-tracker:** Default to an allowlist of associated clients instead of creating entities for every client
+  - New `track_all_clients` option to restore the previous behavior
+
+### Bug Fixes
+
+- **diagnostics:** Redact OAuth access tokens, refresh tokens, and client credentials
+
+---
+
 # [3.1.0-beta.6](https://github.com/liptonj/meraki-homeassistant/compare/v3.1.0-beta.5...v3.1.0-beta.6) (2026-01-12)
 
 ### Features

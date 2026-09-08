@@ -34,7 +34,8 @@ async def test_async_register_static_path(mock_hass: MagicMock) -> None:
     """Test registering static path."""
     await async_register_static_path(mock_hass)
 
-    mock_hass.http.async_register_static_paths.assert_called_once()
+    # Should be called twice: once for panel, once for cards
+    assert mock_hass.http.async_register_static_paths.call_count == 2
 
 
 @pytest.mark.asyncio

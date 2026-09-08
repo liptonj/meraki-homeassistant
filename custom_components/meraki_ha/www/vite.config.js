@@ -1,45 +1,31 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
-// https://vitejs.dev/config/
+// Output directory for built cards - inside custom_components for HACS packaging
+// This directory gets packaged with the integration
+const CARDS_OUTPUT_DIR = resolve(__dirname, '../www');
+
 export default defineConfig({
-  plugins: [react()],
   build: {
-    // Output a single IIFE bundle for Home Assistant panel
     lib: {
-      entry: resolve(__dirname, 'src/main.tsx'),
-      name: 'MerakiPanel',
-      fileName: () => 'meraki-panel.js',
-      formats: ['iife'],
-    },
-    // Output to a build directory, then we'll copy to root
-    outDir: 'build',
-    // Empty the output directory on build
-    emptyOutDir: true,
-    // IMPORTANT: Inline CSS into JS bundle (HA only loads the JS file)
-    cssCodeSplit: false,
-    rollupOptions: {
-      output: {
-        // Ensure all code is in one file
-        inlineDynamicImports: true,
-        // Don't add hash to filename
-        entryFileNames: 'meraki-panel.js',
-        assetFileNames: 'style.css',
+      entry: {
+        'ssid-card': resolve(__dirname, 'src/cards/meraki-ssid-card.ts'),
+        'ssid-card-editor': resolve(__dirname, 'src/cards/meraki-ssid-card-editor.ts'),
+        'camera-card': resolve(__dirname, 'src/cards/meraki-camera-card.ts'),
+        'camera-card-editor': resolve(__dirname, 'src/cards/meraki-camera-card-editor.tsx'),
+        'badges': resolve(__dirname, 'src/badges.ts'),
+        'dashboard-strategy': resolve(__dirname, 'src/strategies/meraki-dashboard-strategy.ts'),
       },
+      formats: ['es'],
     },
-    // Disable sourcemaps for production (prevents 404 errors in HA)
-    sourcemap: false,
-    // Use esbuild minification (built-in, no extra dependency)
-    // Temporarily disabled for debugging
-    minify: 'esbuild',
-  },
-  // Inline CSS into JS
-  css: {
-    // This ensures CSS is injected into the JS bundle
-  },
-  // Define global constants
-  define: {
-    'process.env.NODE_ENV': JSON.stringify('production'),
+    // Output built cards inside custom_components/meraki_ha/www/
+    outDir: CARDS_OUTPUT_DIR,
+    emptyOutDir: false, // Don't delete existing vanilla JS cards
+    rollupOptions: {
+      external: [/^lit/, /^home-assistant-js-websocket/, /^@lit/, /^lit-element/, /^lit-html/, /^superstruct/],
+      output: {
+        entryFileNames: 'meraki-[name].js',
+      }
+    },
   },
 });

@@ -1,703 +1,712 @@
 """
-Script to generate screenshots from the actual React UI.
+Generate screenshots of the Meraki Lovelace Dashboard.
 
-This script builds the React frontend, serves it locally, injects mock data,
-and uses Playwright to capture screenshots of different views.
+This script:
+1. Uses the actual MerakiDashboardStrategy to generate dashboard config
+2. Creates screenshots of each view
+3. Creates a full dashboard screenshot with tabs
 """
 
-# ruff: noqa: E501
-
+import asyncio
 import http.server
 import json
 import socketserver
-import subprocess
 import sys
 import threading
 from functools import partial
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from playwright.sync_api import sync_playwright
 
 # Configuration
 TEST_PORT = 9988
 REPO_ROOT = Path(__file__).parent.parent
-SCREENSHOT_DIR = REPO_ROOT / "docs" / "images"
+SCREENSHOT_DIR = REPO_ROOT / "docs" / "images" / "lovelace"
 WWW_DIR = REPO_ROOT / "custom_components" / "meraki_ha" / "www"
 
+# Add to path
+sys.path.insert(0, str(REPO_ROOT))
 
-# Mock data matching the TypeScript interfaces
-MOCK_DATA = {
-    "enabled_networks": ["N_12345"],
-    "config_entry_id": "mock_config_entry",
-    "version": "2.2.0",
-    "scan_interval": 300,
-    "last_updated": "2025-01-07T12:00:00Z",
-    "dashboard_view_mode": "network",
-    "dashboard_device_type_filter": "all",
-    "dashboard_status_filter": "all",
-    "temperature_unit": "fahrenheit",
-    "networks": [
-        {
-            "id": "N_12345",
-            "name": "Main Office",
-            "productTypes": ["switch", "camera", "wireless", "sensor"],
-            "tags": ["production"],
-            "is_enabled": True,
-            "ssids": [
-                {
-                    "number": 0,
-                    "name": "Corporate WiFi",
-                    "enabled": True,
-                    "networkId": "N_12345",
-                    "entity_id": "switch.corporate_wifi",
-                    "visible": True,
-                    "authMode": "psk",
-                },
-                {
-                    "number": 1,
-                    "name": "Guest Network",
-                    "enabled": True,
-                    "networkId": "N_12345",
-                    "entity_id": "switch.guest_network",
-                    "visible": True,
-                    "authMode": "open",
-                },
-            ],
-        }
-    ],
-    "ssids": [
-        {
-            "number": 0,
-            "name": "Corporate WiFi",
-            "enabled": True,
-            "networkId": "N_12345",
-            "entity_id": "switch.corporate_wifi",
+from custom_components.meraki_ha.const import DOMAIN
+from custom_components.meraki_ha.dashboard import MerakiDashboardStrategy
+
+# Mock data
+MOCK_DEVICES = [
+    {
+        "serial": "Q234-ABCD-SW1",
+        "name": "Office Switch 1",
+        "model": "MS225-24P",
+        "mac": "00:11:22:33:44:55",
+        "productType": "switch",
+        "status": "alerting",
+        "statusMessage": "High CPU usage detected",
+        "firmware": "switch-15-21",
+        "lanIp": "192.168.1.2",
+    },
+    {
+        "serial": "Q234-ABCD-SW2",
+        "name": "Office Switch 2",
+        "model": "MS225-24P",
+        "mac": "00:11:22:33:44:66",
+        "productType": "switch",
+        "status": "online",
+        "firmware": "switch-15-21",
+        "lanIp": "192.168.1.3",
+    },
+    {
+        "serial": "Q234-ABCD-SW3",
+        "name": "Warehouse Switch",
+        "model": "MS120-8",
+        "mac": "00:11:22:33:44:67",
+        "productType": "switch",
+        "status": "online",
+        "firmware": "switch-15-21",
+        "lanIp": "192.168.1.4",
+    },
+    {
+        "serial": "Q234-ABCD-AP1",
+        "name": "Lobby AP",
+        "model": "MR46",
+        "mac": "00:11:22:33:44:57",
+        "productType": "wireless",
+        "status": "online",
+        "firmware": "wireless-29-5",
+        "lanIp": "192.168.1.10",
+    },
+    {
+        "serial": "Q234-ABCD-CAM1",
+        "name": "Front Door Camera",
+        "model": "MV12WE",
+        "mac": "00:11:22:33:44:56",
+        "productType": "camera",
+        "status": "online",
+        "firmware": "camera-4-18",
+        "lanIp": "192.168.1.50",
+    },
+    {
+        "serial": "Q234-ABCD-MT1",
+        "name": "Server Room Sensor",
+        "model": "MT10",
+        "mac": "00:11:22:33:44:58",
+        "productType": "sensor",
+        "status": "online",
+        "firmware": "sensor-1-12",
+    },
+]
+
+MOCK_CLIENTS = [
+    {
+        "id": "k12345",
+        "mac": "a4:83:e7:12:34:56",
+        "description": "John's MacBook Pro",
+        "ip": "192.168.1.101",
+        "manufacturer": "Apple",
+        "os": "macOS",
+        "status": "Online",
+        "vlan": 100,
+        "ssid": "Corporate WiFi",
+        "usage": {"sent": 1524288000, "recv": 3048576000},
+        "firstSeen": "2026-01-10T08:00:00Z",
+        "lastSeen": "2026-01-13T14:00:00Z",
+    },
+    {
+        "id": "k12346",
+        "mac": "f0:18:98:aa:bb:cc",
+        "description": "Sarah's iPhone",
+        "ip": "192.168.1.150",
+        "manufacturer": "Apple",
+        "os": "iOS",
+        "status": "Online",
+        "vlan": 100,
+        "ssid": "Corporate WiFi",
+        "usage": {"sent": 524288000, "recv": 1048576000},
+        "firstSeen": "2026-01-12T09:00:00Z",
+        "lastSeen": "2026-01-13T14:05:00Z",
+    },
+    {
+        "id": "k12347",
+        "mac": "5c:aa:fd:11:22:33",
+        "description": "Living Room Sonos",
+        "ip": "192.168.1.205",
+        "manufacturer": "Sonos",
+        "os": "",
+        "status": "Online",
+        "vlan": 100,
+        "ssid": "Corporate WiFi",
+        "usage": {"sent": 104857600, "recv": 209715200},
+        "firstSeen": "2026-01-08T10:00:00Z",
+        "lastSeen": "2026-01-13T14:10:00Z",
+        "ha_device_id": "sonos_living_room",  # Links to HA device
+    },
+    {
+        "id": "k12348",
+        "mac": "a0:99:88:77:66:55",
+        "description": "Guest Laptop",
+        "ip": "192.168.2.50",
+        "manufacturer": "Dell",
+        "os": "Windows",
+        "status": "Online",
+        "vlan": 200,
+        "ssid": "Guest Network",
+        "usage": {"sent": 52428800, "recv": 104857600},
+        "firstSeen": "2026-01-13T13:00:00Z",
+        "lastSeen": "2026-01-13T14:00:00Z",
+    },
+]
+
+MOCK_SSIDS = [
+    {"number": 0, "name": "Corporate WiFi", "enabled": True},
+    {"number": 1, "name": "Guest Network", "enabled": True},
+]
+
+MOCK_EVENTS = [
+    {
+        "type": "device_status",
+        "description": "Office Switch 1 went offline",
+        "timestamp": "2026-01-13T10:45:00Z",
+        "severity": "critical",
+        "network": "Main Office",
+        "device": "Office Switch 1",
+    },
+    {
+        "type": "client_connected",
+        "description": "John's MacBook Pro connected to Corporate WiFi",
+        "timestamp": "2026-01-13T11:30:00Z",
+        "severity": "info",
+        "network": "Main Office",
+    },
+    {
+        "type": "ssid_change",
+        "description": "Guest Network SSID was disabled",
+        "timestamp": "2026-01-13T09:15:00Z",
+        "severity": "warning",
+        "network": "Main Office",
+    },
+]
+
+MOCK_ALERTS = [
+    {
+        "type": "connectivity",
+        "message": "Switch offline: Office Switch 1",
+        "severity": "critical",
+        "timestamp": "2026-01-13T10:45:00Z",
+    },
+    {
+        "type": "usage",
+        "message": "High bandwidth usage on Lobby AP",
+        "severity": "warning",
+        "timestamp": "2026-01-13T11:20:00Z",
+    },
+]
+
+# MQTT status entity
+MOCK_MQTT_STATUS = {
+    "binary_sensor.meraki_mqtt_status": {
+        "entity_id": "binary_sensor.meraki_mqtt_status",
+        "state": "on",
+        "attributes": {
+            "friendly_name": "MQTT Connection",
+            "device_class": "connectivity",
+            "connected_topics": 4,
+            "last_message": "2026-01-13T14:20:00Z",
         },
-        {
-            "number": 1,
-            "name": "Guest Network",
-            "enabled": True,
-            "networkId": "N_12345",
-            "entity_id": "switch.guest_network",
-        },
-    ],
-    "devices": [
-        {
-            "serial": "Q234-ABCD-SW1",
-            "name": "Office Switch 1",
-            "model": "MS225-24P",
-            "networkId": "N_12345",
-            "productType": "switch",
-            "status": "online",
-            "firmware": "switch-15-21",
-            "lanIp": "192.168.1.2",
-            "mac": "00:11:22:33:44:55",
-            "entity_id": "switch.office_switch_1",
-            "ports_statuses": [
-                {
-                    "portId": "1",
-                    "status": "Connected",
-                    "enabled": True,
-                    "speed": "1 Gbps",
-                    "duplex": "full",
-                    "usageInKb": {"total": 2456000, "sent": 1200000, "recv": 1256000},
-                    "trafficInKbps": {"total": 45000, "sent": 22000, "recv": 23000},
-                    "poe": {"isAllocated": True, "enabled": True},
-                    "powerUsageInWh": 12.5,
-                    "clientName": "John's MacBook Pro",
-                    "clientMac": "a4:83:e7:12:34:56",
-                    "clientCount": 1,
-                    "vlan": 100,
-                    "lldp": {
-                        "systemName": "Johns-MacBook-Pro",
-                        "portId": "en0",
-                        "managementAddress": "192.168.1.101",
-                    },
-                },
-                {
-                    "portId": "2",
-                    "status": "Connected",
-                    "enabled": True,
-                    "speed": "1 Gbps",
-                    "duplex": "full",
-                    "usageInKb": {"total": 890000},
-                    "trafficInKbps": {"total": 12000},
-                    "poe": {"isAllocated": True, "enabled": True},
-                    "powerUsageInWh": 8.2,
-                    "clientName": "Conference Room Phone",
-                    "clientMac": "00:50:56:ab:cd:ef",
-                    "clientCount": 1,
-                    "vlan": 200,
-                },
-                {
-                    "portId": "3",
-                    "status": "Connected",
-                    "enabled": True,
-                    "speed": "100 Mbps",
-                    "duplex": "full",
-                    "usageInKb": {"total": 45000},
-                    "poe": {"isAllocated": False},
-                    "powerUsageInWh": 0,
-                    "clientName": "Printer-HP",
-                    "clientMac": "b8:27:eb:12:34:56",
-                    "clientCount": 1,
-                    "vlan": 100,
-                },
-                {
-                    "portId": "4",
-                    "status": "Disconnected",
-                    "enabled": True,
-                    "poe": {"isAllocated": False},
-                },
-                {
-                    "portId": "5",
-                    "status": "Disconnected",
-                    "enabled": True,
-                    "poe": {"isAllocated": False},
-                },
-                {
-                    "portId": "6",
-                    "status": "Connected",
-                    "enabled": True,
-                    "speed": "1 Gbps",
-                    "duplex": "full",
-                    "usageInKb": {"total": 1200000},
-                    "poe": {"isAllocated": True, "enabled": True},
-                    "powerUsageInWh": 15.3,
-                    "clientName": "Lobby AP",
-                    "clientMac": "00:11:22:33:44:57",
-                    "clientCount": 1,
-                    "vlan": 1,
-                    "cdp": {
-                        "deviceId": "MR46-Lobby",
-                        "platform": "Meraki MR46",
-                        "portId": "Port 0",
-                        "managementAddress": "192.168.1.10",
-                    },
-                },
-                {
-                    "portId": "7",
-                    "status": "Disconnected",
-                    "enabled": True,
-                    "poe": {"isAllocated": False},
-                },
-                {
-                    "portId": "8",
-                    "status": "Connected",
-                    "enabled": True,
-                    "speed": "1 Gbps",
-                    "duplex": "full",
-                    "usageInKb": {"total": 3400000},
-                    "poe": {"isAllocated": False},
-                    "clientName": "NAS Storage",
-                    "clientMac": "d8:3b:bf:aa:bb:cc",
-                    "clientCount": 1,
-                    "vlan": 100,
-                },
-            ],
-        },
-        {
-            "serial": "Q234-ABCD-CAM1",
-            "name": "Front Door Camera",
-            "model": "MV12WE",
-            "networkId": "N_12345",
-            "productType": "camera",
-            "status": "online",
-            "firmware": "camera-4-18",
-            "lanIp": "192.168.1.50",
-            "mac": "00:11:22:33:44:56",
-            "entity_id": "camera.front_door_camera",
-        },
-        {
-            "serial": "Q234-ABCD-AP1",
-            "name": "Lobby AP",
-            "model": "MR46",
-            "networkId": "N_12345",
-            "productType": "wireless",
-            "status": "online",
-            "firmware": "wireless-29-5",
-            "lanIp": "192.168.1.10",
-            "mac": "00:11:22:33:44:57",
-            "entity_id": "update.lobby_ap_firmware",
-            "basicServiceSets": [
-                {
-                    "ssidName": "Corporate WiFi",
-                    "ssidNumber": 0,
-                    "enabled": True,
-                    "band": "2.4 GHz",
-                    "bssid": "00:11:22:33:44:58",
-                    "channel": 6,
-                    "channelWidth": "20 MHz",
-                    "power": "17 dBm",
-                    "visible": True,
-                    "broadcasting": True,
-                },
-                {
-                    "ssidName": "Corporate WiFi",
-                    "ssidNumber": 0,
-                    "enabled": True,
-                    "band": "5 GHz",
-                    "bssid": "00:11:22:33:44:59",
-                    "channel": 36,
-                    "channelWidth": "80 MHz",
-                    "power": "19 dBm",
-                    "visible": True,
-                    "broadcasting": True,
-                },
-                {
-                    "ssidName": "Guest Network",
-                    "ssidNumber": 1,
-                    "enabled": True,
-                    "band": "2.4 GHz",
-                    "bssid": "00:11:22:33:44:5a",
-                    "channel": 6,
-                    "channelWidth": "20 MHz",
-                    "power": "14 dBm",
-                    "visible": True,
-                    "broadcasting": True,
-                },
-            ],
-        },
-        {
-            "serial": "Q234-ABCD-MT1",
-            "name": "Server Room Sensor",
-            "model": "MT10",
-            "networkId": "N_12345",
-            "productType": "sensor",
-            "status": "online",
-            "firmware": "sensor-1-12",
-            "lanIp": None,
-            "mac": "00:11:22:33:44:58",
-            "entity_id": "sensor.server_room_temperature",
-            "readings": {
-                "temperature": 21.5,
-                "humidity": 45,
-                "battery": 98,
-            },
-        },
-    ],
-    "clients": [
-        {
-            "id": "k12345",
-            "mac": "a4:83:e7:12:34:56",
-            "description": "John's MacBook Pro",
-            "ip": "192.168.1.101",
-            "manufacturer": "Apple",
-            "os": "macOS",
-            "status": "Online",
-            "recentDeviceSerial": "Q234-ABCD-SW1",
-            "recentDeviceName": "Office Switch 1",
-            "switchport": "1",
-            "vlan": 100,
-            "usage": {"sent": 1256000000, "recv": 2456000000},
-            "firstSeen": "2024-12-01T08:00:00Z",
-            "lastSeen": "2025-01-07T12:00:00Z",
-        },
-        {
-            "id": "k12346",
-            "mac": "00:50:56:ab:cd:ef",
-            "description": "Conference Room Phone",
-            "ip": "192.168.1.102",
-            "manufacturer": "Cisco",
-            "os": None,
-            "status": "Online",
-            "recentDeviceSerial": "Q234-ABCD-SW1",
-            "recentDeviceName": "Office Switch 1",
-            "switchport": "2",
-            "vlan": 200,
-            "usage": {"sent": 45000000, "recv": 89000000},
-        },
-        {
-            "id": "k12347",
-            "mac": "b8:27:eb:12:34:56",
-            "description": "Printer-HP",
-            "ip": "192.168.1.103",
-            "manufacturer": "HP Inc",
-            "status": "Online",
-            "recentDeviceSerial": "Q234-ABCD-SW1",
-            "recentDeviceName": "Office Switch 1",
-            "switchport": "3",
-            "vlan": 100,
-            "usage": {"sent": 12000000, "recv": 45000000},
-        },
-        {
-            "id": "k12348",
-            "mac": "f0:18:98:aa:bb:cc",
-            "description": "Sarah's iPhone",
-            "ip": "192.168.1.150",
-            "manufacturer": "Apple",
-            "os": "iOS",
-            "status": "Online",
-            "recentDeviceSerial": "Q234-ABCD-AP1",
-            "recentDeviceName": "Lobby AP",
-            "ssid": "Corporate WiFi",
-            "vlan": 100,
-            "usage": {"sent": 234000000, "recv": 567000000},
-        },
-        {
-            "id": "k12349",
-            "mac": "dc:a6:32:11:22:33",
-            "description": "Guest Laptop",
-            "ip": "192.168.10.5",
-            "manufacturer": "Dell",
-            "os": "Windows",
-            "status": "Online",
-            "recentDeviceSerial": "Q234-ABCD-AP1",
-            "recentDeviceName": "Lobby AP",
-            "ssid": "Guest Network",
-            "vlan": 10,
-            "usage": {"sent": 78000000, "recv": 123000000},
-        },
-    ],
+    },
 }
 
 
 class ReuseAddrTCPServer(socketserver.TCPServer):
-    """TCPServer that allows address reuse."""
+    """TCP Server that allows address reuse."""
 
     allow_reuse_address = True
 
 
-def create_screenshot_html() -> str:
-    """Create an HTML wrapper that loads the panel with mock data."""
-    mock_data_json = json.dumps(MOCK_DATA)
+async def generate_dashboard_config():
+    """Generate dashboard config using MerakiDashboardStrategy."""
+    mock_hass = MagicMock()
+    mock_hass.data = {
+        DOMAIN: {
+            "test_entry": {
+                "coordinator": MagicMock(
+                    data={
+                        "devices": MOCK_DEVICES,
+                        "clients": MOCK_CLIENTS,
+                        "ssids": MOCK_SSIDS,
+                    }
+                )
+            }
+        }
+    }
+
+    # Mock device registry
+    from homeassistant.helpers import device_registry as dr
+
+    original_get = dr.async_get
+
+    def mock_async_get(hass):
+        mock_registry = MagicMock()
+        mock_registry.async_get_device = (
+            lambda **kwargs: None
+        )  # Forces fallback to device_serial
+        return mock_registry
+
+    dr.async_get = mock_async_get
+
+    try:
+        strategy = MerakiDashboardStrategy()
+        config = await strategy.async_generate(mock_hass, "test_entry")
+        return config
+    finally:
+        dr.async_get = original_get
+
+
+def create_full_dashboard_html(dashboard_config):
+    """Create HTML showing full dashboard with working tabs."""
+    views = dashboard_config.get("views", [])
+
+    # Build tabs
+    tabs_html = "\n".join(
+        [
+            f'<button class="tab {("active" if i == 0 else "")}" onclick="showView({i})">{view["title"]}</button>'
+            for i, view in enumerate(views)
+        ]
+    )
 
     return f"""<!DOCTYPE html>
             <html>
             <head>
                 <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Meraki Panel Screenshot</title>
+    <title>Meraki Dashboard</title>
+    <script type="importmap">
+    {{
+        "imports": {{
+            "lit": "https://cdn.jsdelivr.net/npm/lit@3.1.0/+esm",
+            "lit/": "https://cdn.jsdelivr.net/npm/lit@3.1.0/"
+        }}
+    }}
+    </script>
                 <style>
-        /* Dark theme CSS variables - matches useHaTheme DARK_THEME */
         :root {{
             --primary-color: #03a9f4;
-            --accent-color: #ff9800;
-            --primary-text-color: #f1f5f9;
-            --secondary-text-color: #94a3b8;
-            --disabled-text-color: #64748b;
             --primary-background-color: #0f172a;
             --secondary-background-color: #1e293b;
-            --card-background-color: #1e293b;
             --divider-color: #334155;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --error-color: #ef4444;
-            --ha-card-border-radius: 12px;
+            --primary-text-color: #f1f5f9;
         }}
         body {{
-            font-family: Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
             margin: 0;
-            padding: 16px;
+            padding: 0;
+            font-family: Roboto, sans-serif;
             background: var(--primary-background-color);
-            min-height: 100vh;
+            color: var(--primary-text-color);
         }}
-        meraki-panel {{
-            display: block;
+        .header {{
+            background: var(--secondary-background-color);
+            padding: 16px 24px;
+            font-size: 24px;
+            font-weight: 500;
+            border-bottom: 1px solid var(--divider-color);
+        }}
+        .tabs {{
+            display: flex;
+            gap: 4px;
+            padding: 12px 24px 0;
+            border-bottom: 2px solid var(--divider-color);
+        }}
+        .tab {{
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+        }}
+        .tab:hover {{
+            background: var(--secondary-background-color);
+            color: var(--primary-text-color);
+        }}
+        .tab.active {{
+            background: var(--secondary-background-color);
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }}
+        .view-content {{
+            padding: 24px;
+            min-height: 800px;
+        }}
+        .placeholder {{
+            text-align: center;
+            padding: 48px;
+            color: #64748b;
+            font-size: 18px;
+        }}
+        iframe {{
+            width: 100%;
+            height: 1000px;
+            border: none;
         }}
                 </style>
             </head>
             <body>
-    <meraki-panel id="panel"></meraki-panel>
-    <script type="module" src="/meraki-panel.js"></script>
+    <div class="header">🔷 {dashboard_config.get("title", "Meraki Dashboard")}</div>
+    <div class="tabs">{tabs_html}</div>
+    <div class="view-content">
+        <iframe id="content-frame" src="/screenshot_view_0.html"></iframe>
+    </div>
     <script>
-        // Wait for the custom element to be defined
-        customElements.whenDefined('meraki-panel').then(() => {{
-            const panel = document.getElementById('panel');
+        function showView(index) {{
+            // Update tabs
+            document.querySelectorAll('.tab').forEach((t, i) => {{
+                t.classList.toggle('active', i === index);
+            }});
 
-            // Mock data for the panel
-            const mockData = {mock_data_json};
+            // Load view in iframe
+            document.getElementById('content-frame').src = `/screenshot_view_${{index}}.html`;
+        }}
 
-            // Create mock panel config - MUST be set before hass to ensure configEntryId is available
-            const mockPanel = {{
-                component_name: 'meraki-panel',
-                url_path: 'meraki',
-                title: 'Meraki',
-                icon: 'mdi:router-network',
-                config: {{
-                    config_entry_id: 'mock_config_entry',
-                }},
-            }};
-
-            // Create a mock hass object with connection for WebSocket subscription
-            const mockHass = {{
-                callWS: async (params) => {{
-                    console.log('Mock callWS called with:', params);
-                    if (params.type === 'meraki_ha/get_config') {{
-                        return mockData;
-                    }}
-                    // Return empty arrays for registry/states queries
-                    if (params.type === 'config/device_registry/list' ||
-                        params.type === 'config/entity_registry/list' ||
-                        params.type === 'get_states') {{
-                        return [];
-                    }}
-                    return {{}};
-                }},
-                callService: async (domain, service, data, target) => {{
-                    console.log('Mock callService called:', domain, service, data, target);
-                }},
-                connection: {{
-                    subscribeMessage: async (callback, params) => {{
-                        console.log('Mock subscribeMessage called with:', params);
-                        if (params.type === 'meraki_ha/subscribe_meraki_data') {{
-                            // Immediately call callback with mock data (simulates initial data)
-                            setTimeout(() => callback(mockData), 100);
-                        }}
-                        // Return unsubscribe function
-                        return () => {{}};
-                    }},
-                    sendMessagePromise: async (message) => {{
-                        console.log('Mock sendMessagePromise called with:', message);
-                        return {{}};
-                    }},
-                    subscribeEvents: async (callback, eventType) => {{
-                        console.log('Mock subscribeEvents called for:', eventType);
-                        return () => {{}};
-                    }},
-                }},
-                states: {{}},
-                services: {{}},
-                user: {{ id: 'demo', name: 'Demo User', is_admin: true, is_owner: true }},
-                themes: {{
-                    default_theme: 'default',
-                    default_dark_theme: null,
-                    themes: {{}},
-                    darkMode: true,
-                }},
-                locale: {{
-                    language: 'en',
-                    number_format: 'language',
-                    time_format: 'language',
-                }},
-                language: 'en',
-            }};
-
-            // Set properties on the panel - panel config FIRST so configEntryId is available
-            panel.panel = mockPanel;
-            panel.narrow = false;
-            panel.route = {{ path: '/', prefix: '/meraki' }};
-            // Set hass LAST to trigger the render with all data ready
-            panel.hass = mockHass;
-
-            // Signal that panel is ready after mock data callback fires (100ms) + extra time for React
+        // Wait for iframe to load, then signal ready
             setTimeout(() => {{
-                window.__PANEL_READY__ = true;
-                console.log('Panel initialized with mock data');
-            }}, 300);
-        }});
+            window.__DASHBOARD_READY__ = true;
+            console.log('Dashboard ready');
+        }}, 6000);
     </script>
             </body>
-            </html>
-"""
+</html>"""
 
 
-def build_frontend() -> bool:
-    """Build the React frontend if needed."""
-    panel_js = WWW_DIR / "meraki-panel.js"
-
-    # Check if we need to build
-    if panel_js.exists():
-        # Check if source is newer than build
-        src_dir = WWW_DIR / "src"
-        if src_dir.exists():
-            src_mtime = max(
-                f.stat().st_mtime for f in src_dir.rglob("*") if f.is_file()
-            )
-            if panel_js.stat().st_mtime >= src_mtime:
-                print("Frontend is up to date, skipping build")
-                return True
-
-    print("Building frontend...")
-    try:
-        # Check if node_modules exists
-        node_modules = WWW_DIR / "node_modules"
-        if not node_modules.exists():
-            print("Installing npm dependencies...")
-            subprocess.run(
-                ["npm", "ci"],
-                cwd=WWW_DIR,
-                check=True,
-                capture_output=True,
-            )
-
-        # Build the frontend
-        subprocess.run(
-            ["npm", "run", "build"],
-            cwd=WWW_DIR,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        print("Frontend build complete")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"Frontend build failed: {e}")
-        if e.stdout:
-            print(f"stdout: {e.stdout}")
-        if e.stderr:
-            print(f"stderr: {e.stderr}")
-        return False
-    except FileNotFoundError:
-        print("npm not found. Please install Node.js")
-        return False
-
-
-def run_server(port: int, directory: Path) -> socketserver.TCPServer:
-    """Start a simple HTTP server."""
+def run_server(port, directory):
+    """Start HTTP server."""
     handler = partial(http.server.SimpleHTTPRequestHandler, directory=str(directory))
-    httpd = ReuseAddrTCPServer(("", port), handler)
-    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    server = ReuseAddrTCPServer(("", port), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    return httpd
+    return server
 
 
-def generate_screenshots() -> None:
-    """Generate screenshots using Playwright."""
-    # Ensure screenshot directory exists
+def main():
+    """Main function."""
+    print("=" * 70)
+    print("MERAKI DASHBOARD SCREENSHOT GENERATOR")
+    print("=" * 70)
+
+    # Ensure directories exist
     SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Build frontend
-    if not build_frontend():
-        print("Failed to build frontend, exiting")
-        sys.exit(1)
+    # Generate dashboard config
+    print("\n📋 Generating dashboard configuration...")
+    dashboard_config = asyncio.run(generate_dashboard_config())
 
-    # Create the screenshot HTML wrapper
-    html_path = WWW_DIR / "screenshot.html"
-    html_path.write_text(create_screenshot_html())
+    if not dashboard_config:
+        print("❌ Failed to generate dashboard")
+        return 1
 
-    # Start the server
-    print(f"Starting server on port {TEST_PORT}...")
+    views = dashboard_config.get("views", [])
+    print(f"✓ Generated {len(views)} views:")
+    for view in views:
+        print(f"  - {view['title']}: {len(view['cards'])} cards")
+
+    # Start server
+    print(f"\n🌐 Starting server on port {TEST_PORT}...")
     server = run_server(TEST_PORT, WWW_DIR)
+
+    # Import the working script's functions for individual views
+    sys.path.insert(0, str(Path(__file__).parent))
+
+    # We need the full create_view_html function - let me inline a simplified version
+    def create_view_html_with_data(view, view_index):
+        """Create HTML for view with proper mock data."""
+        # Create proper SSID entities
+        entities_json = json.dumps(
+            {
+                "switch.main_office_corporate_wifi_enabled_switch": {
+                    "entity_id": "switch.main_office_corporate_wifi_enabled_switch",
+                    "state": "on",
+                    "attributes": {
+                        "friendly_name": "Corporate WiFi Enabled",
+                        "entity_category": "config",
+                        "network_id": "N_12345",
+                        "network_name": "Main Office",
+                        "ssid_number": 0,
+                        "ssid_name": "Corporate WiFi",
+                        "auth_mode": "psk",
+                        "vlan_id": 100,
+                    },
+                },
+                "switch.main_office_guest_network_enabled_switch": {
+                    "entity_id": "switch.main_office_guest_network_enabled_switch",
+                    "state": "on",
+                    "attributes": {
+                        "friendly_name": "Guest Network Enabled",
+                        "entity_category": "config",
+                        "network_id": "N_12345",
+                        "network_name": "Main Office",
+                        "ssid_number": 1,
+                        "ssid_name": "Guest Network",
+                        "auth_mode": "open",
+                        "vlan_id": 200,
+                    },
+                },
+                "sensor.main_office_ssid_0_client_count": {
+                    "entity_id": "sensor.main_office_ssid_0_client_count",
+                    "state": "12",
+                    "attributes": {"friendly_name": "Corporate WiFi Clients"},
+                },
+                "sensor.main_office_ssid_1_client_count": {
+                    "entity_id": "sensor.main_office_ssid_1_client_count",
+                    "state": "3",
+                    "attributes": {"friendly_name": "Guest Network Clients"},
+                },
+                "binary_sensor.meraki_mqtt_status": {
+                    "entity_id": "binary_sensor.meraki_mqtt_status",
+                    "state": "on",
+                    "attributes": {
+                        "friendly_name": "MQTT Connection",
+                        "device_class": "connectivity",
+                        "connected": True,
+                    },
+                },
+                # Sonos HA entities (linked to Meraki client)
+                "media_player.living_room_sonos": {
+                    "entity_id": "media_player.living_room_sonos",
+                    "state": "playing",
+                    "attributes": {
+                        "friendly_name": "Living Room Sonos",
+                        "volume_level": 0.35,
+                        "media_title": "Jazz Vibes",
+                        "media_artist": "Various Artists",
+                        "device_class": "speaker",
+                    },
+                },
+                "switch.living_room_sonos_shuffle": {
+                    "entity_id": "switch.living_room_sonos_shuffle",
+                    "state": "off",
+                    "attributes": {"friendly_name": "Shuffle"},
+                },
+                "sensor.living_room_sonos_battery": {
+                    "entity_id": "sensor.living_room_sonos_battery",
+                    "state": "95",
+                    "attributes": {
+                        "friendly_name": "Battery",
+                        "unit_of_measurement": "%",
+                    },
+                },
+            }
+        )
+
+        events_json = json.dumps(MOCK_EVENTS)
+        alerts_json = json.dumps(MOCK_ALERTS)
+        devices_json = json.dumps(MOCK_DEVICES)
+        clients_json = json.dumps(MOCK_CLIENTS)
+        ssids_json = json.dumps(MOCK_SSIDS)
+
+        # Build cards HTML
+        cards_html = ""
+        for i, card in enumerate(view.get("cards", [])):
+            card_type = card["type"].replace("custom:", "")
+            card_config = {**card, "config_entry_id": "test_entry"}
+
+            # Handle device serial mapping
+            if card_type == "meraki-device-card" and "device_id" in card_config:
+                if i < len(MOCK_DEVICES):
+                    card_config["device_serial"] = MOCK_DEVICES[i]["serial"]
+                    card_config.pop("device_id", None)
+
+            cards_html += f"<{card_type} id=\"card_{i}\" data-config='{json.dumps(card_config)}'></{card_type}>\n"
+
+        # Build badges HTML if present
+        badges_html = ""
+        if view.get("badges"):
+            badges_section = '<div class="badges-container">\n'
+            for i, badge in enumerate(view["badges"]):
+                badge_type = badge["type"].replace("custom:", "")
+                badge_config = {**badge, "config_entry_id": "test_entry"}
+                badges_section += f"<{badge_type} id=\"badge_{i}\" data-config='{json.dumps(badge_config)}'></{badge_type}>\n"
+            badges_section += "</div>\n"
+            badges_html = badges_section
+
+        return f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{view["title"]}</title>
+    <script type="importmap">
+    {{"imports": {{"lit": "https://cdn.jsdelivr.net/npm/lit@3.1.0/+esm", "lit/": "https://cdn.jsdelivr.net/npm/lit@3.1.0/"}}}}
+    </script>
+    <style>
+        :root {{
+            --primary-color: #03a9f4;
+            --primary-background-color: #0f172a;
+            --secondary-background-color: #1e293b;
+            --card-background-color: #1e293b;
+            --divider-color: #334155;
+            --primary-text-color: #f1f5f9;
+            --secondary-text-color: #94a3b8;
+            --meraki-success: #10b981;
+            --meraki-warning: #f59e0b;
+            --meraki-error: #ef4444;
+            --ha-card-border-radius: 12px;
+            --ha-card-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }}
+        body {{ margin: 0; padding: 24px; background: var(--primary-background-color); color: var(--primary-text-color); font-family: Roboto, sans-serif; }}
+        .view-header {{ font-size: 24px; font-weight: 500; margin-bottom: 16px; }}
+        .badges-container {{ display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }}
+        .cards-container {{ display: grid; grid-template-columns: 1fr; gap: 16px; max-width: 1200px; }}
+    </style>
+</head>
+<body>
+    <div class="view-header">{view["title"]}</div>
+    {badges_html}
+    <div class="cards-container">{cards_html}</div>
+    <script type="module" src="/local/community/meraki_ha/shared/meraki-card-base.js"></script>
+    <script type="module">
+        import '/local/community/meraki_ha/meraki-overview-card.js';
+        import '/local/community/meraki_ha/meraki-device-card.js';
+        import '/local/community/meraki_ha/meraki-devices-by-type-card.js';
+        import '/local/community/meraki_ha/meraki-clients-card.js';
+        import '/local/community/meraki_ha/meraki-client-card/meraki-client-card.js';
+        import '/local/community/meraki_ha/meraki-ssids-list-card.js';
+        import '/local/community/meraki_ha/meraki-events-card.js';
+        import '/local/community/meraki_ha/meraki-guest-access-card.js';
+        import '/local/community/meraki_ha/meraki-mqtt-status-card.js';
+        import '/local/community/meraki_ha/badges/meraki-status-badge.js';
+        import '/local/community/meraki_ha/badges/meraki-clients-badge.js';
+        import '/local/community/meraki_ha/badges/meraki-alerts-badge.js';
+
+        // Wait for card elements
+        await Promise.all(['meraki-overview-card', 'meraki-devices-by-type-card', 'meraki-clients-card', 'meraki-client-card', 'meraki-ssids-list-card', 'meraki-events-card', 'meraki-guest-access-card', 'meraki-mqtt-status-card', 'meraki-status-badge', 'meraki-clients-badge', 'meraki-alerts-badge'].map(t => customElements.whenDefined(t)));
+
+        const mockHass = {{
+            connection: {{
+                sendMessagePromise: async (msg) => {{
+                    if (msg.type === 'meraki/get_overview') return {{ devices: {devices_json}, clients: {clients_json}, ssids: {ssids_json}, alerts: {alerts_json} }};
+                    if (msg.type === 'meraki/get_events') return {{ events: {events_json} }};
+                    if (msg.type === 'meraki/get_device' && msg.serial) return {devices_json}.find(d => d.serial === msg.serial) || null;
+                    if (msg.type === 'meraki/get_clients') return {clients_json};  // Return array directly
+                    if (msg.type === 'meraki/get_client' && msg.client_id) return {clients_json}.find(c => c.id === msg.client_id) || null;
+                    if (msg.type === 'meraki/get_client' && msg.mac) return {clients_json}.find(c => c.mac.toLowerCase() === msg.mac.toLowerCase()) || null;
+                    if (msg.type === 'meraki/get_mqtt_status') return {{
+                        enabled: true,
+                        connected: true,
+                        messages_received: 1247,
+                        messages_sent: 893,
+                        sensors_monitored: 4,
+                        relay_destinations: [
+                            {{ host: 'mqtt.local', port: 1883, connected: true }},
+                            {{ host: 'backup.mqtt.local', port: 1883, connected: false }}
+                        ]
+                    }};
+                    return {{}};
+                }},
+                subscribeMessage: (cb, params) => (setTimeout(() => cb({{}}), 100), () => {{}})
+            }},
+            states: {entities_json},
+            callService: async () => ({{}}),
+            language: 'en',
+            locale: {{ language: 'en' }}
+        }};
+
+        // Initialize all cards
+        document.querySelectorAll('[data-config]').forEach((el, i) => {{
+            const config = JSON.parse(el.dataset.config);
+            el.hass = mockHass;
+            if (el.setConfig) el.setConfig(config);
+        }});
+
+        setTimeout(() => {{ window.__VIEW_READY__ = true; }}, 4000);
+    </script>
+</body>
+</html>"""
 
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch()
+            page = browser.new_page(viewport={"width": 1600, "height": 1200})
 
-            # Screenshot 1: Dashboard View
-            print("Capturing Dashboard view...")
-            page = browser.new_page(viewport={"width": 1400, "height": 1000})
-            page.goto(f"http://localhost:{TEST_PORT}/screenshot.html")
+            # Generate individual view screenshots
+            print("\n📸 Generating view screenshots...")
 
-            # Wait for panel to be ready and data to load
-            page.wait_for_function("window.__PANEL_READY__ === true", timeout=30000)
-            # Wait for Settings button which only appears after data loads
-            page.wait_for_selector(".settings-btn", state="visible", timeout=30000)
-            page.wait_for_timeout(500)  # Allow rendering
+            for i, view in enumerate(views):
+                view_path = view.get("path", f"view_{i}")
+                view_title = view.get("title", "View")
+                
+                # Skip full dashboard for individual views
+                if view_path == "full":
+                    continue
+                    
+                # Create HTML using our inline function
+                html_content = create_view_html_with_data(view, i)
+                html_path = WWW_DIR / f"screenshot_view_{i}.html"
+                html_path.write_text(html_content)
 
-            page.screenshot(path=str(SCREENSHOT_DIR / "dashboard_view.png"))
-            print(f"  Saved: {SCREENSHOT_DIR / 'dashboard_view.png'}")
+                # Load and capture
+                page.goto(f"http://localhost:{TEST_PORT}/screenshot_view_{i}.html")
+                page.wait_for_timeout(5000)
 
-            # Screenshot 2: Settings View
-            # Note: The Settings button now opens HA's native options flow
-            # which cannot be captured in our standalone mock environment.
-            # We skip this screenshot and use a placeholder or existing image.
-            print("Skipping Settings view (uses HA native options flow)...")
-            # If a settings_view.png already exists, keep it
-            # Otherwise this screenshot will be missing from docs
+                try:
+                    page.wait_for_function(
+                        "window.__VIEW_READY__ === true", timeout=45000
+                    )
+                except:
+                    pass
 
-            # Screenshot 3: Switch Detail View
-            print("Capturing Switch detail view...")
-            # Click on the switch device to open detail view
-            page.click("text=Office Switch 1")
-            page.wait_for_timeout(1500)
-            page.set_viewport_size({"width": 1400, "height": 1300})
-            page.screenshot(path=str(SCREENSHOT_DIR / "switch_detail_view.png"))
-            print(f"  Saved: {SCREENSHOT_DIR / 'switch_detail_view.png'}")
+                page.wait_for_timeout(3000)
 
-            # Click on first port to show port details
-            page.click(".port.connected >> nth=0")
-            page.wait_for_timeout(500)
-            page.screenshot(path=str(SCREENSHOT_DIR / "switch_detail_view.png"))
-            print(
-                f"  Updated: {SCREENSHOT_DIR / 'switch_detail_view.png'} (with port details)"
-            )
+                # Get page height for screenshot
+                height = page.evaluate("document.body.scrollHeight")
+                page.set_viewport_size({"width": 1270, "height": max(height + 50, 900)})
+                page.wait_for_timeout(1000)
 
-            # Screenshot 4: Sensor Detail View
-            print("Capturing Sensor detail view...")
-            # Go back to dashboard
-            page.click("text=Back to Dashboard")
-            page.wait_for_timeout(1000)
-            # Click on the sensor device
-            page.click("text=Server Room Sensor")
-            page.wait_for_timeout(1500)
-            page.set_viewport_size({"width": 1200, "height": 1000})
-            page.screenshot(path=str(SCREENSHOT_DIR / "sensor_detail_view.png"))
-            print(f"  Saved: {SCREENSHOT_DIR / 'sensor_detail_view.png'}")
+                filename = f"view_{view_path}.png"
+                screenshot_path = SCREENSHOT_DIR / filename
+                page.screenshot(path=str(screenshot_path), full_page=True)
+                print(f"  ✓ {filename} ({view_title})")
 
-            # Screenshot 5: AP Detail View
-            print("Capturing AP detail view...")
-            # Go back to dashboard
-            page.click("text=Back to Dashboard")
-            page.wait_for_timeout(1000)
-            # Click on the AP device
-            page.click("text=Lobby AP")
-            page.wait_for_timeout(1500)
-            page.set_viewport_size({"width": 1400, "height": 1200})
-            page.screenshot(path=str(SCREENSHOT_DIR / "ap_detail_view.png"))
-            print(f"  Saved: {SCREENSHOT_DIR / 'ap_detail_view.png'}")
+            # Generate full dashboard
+            print("\n📸 Generating full dashboard screenshot...")
+            html_content = create_full_dashboard_html(dashboard_config)
+            html_path = WWW_DIR / "full_dashboard.html"
+            html_path.write_text(html_content)
 
-            # Screenshot 6: Clients View
-            print("Capturing Clients view...")
-            # Go back to dashboard
-            page.click("text=Back to Dashboard")
-            page.wait_for_timeout(1000)
-            # Click on "Connected Clients" stat card
-            page.click("text=Connected Clients")
-            page.wait_for_timeout(1500)
-            page.set_viewport_size({"width": 1400, "height": 1000})
-            page.screenshot(path=str(SCREENSHOT_DIR / "clients_view.png"))
-            print(f"  Saved: {SCREENSHOT_DIR / 'clients_view.png'}")
+            page.set_viewport_size({"width": 1600, "height": 1400})
+            page.goto(f"http://localhost:{TEST_PORT}/full_dashboard.html")
+            page.wait_for_timeout(7000)
 
-            # Screenshot 7: Client Detail View
-            print("Capturing Client detail view...")
-            # Click on a client to show details
-            page.click("text=John's MacBook Pro")
-            page.wait_for_timeout(1500)
-            page.set_viewport_size({"width": 1400, "height": 1100})
-            page.screenshot(path=str(SCREENSHOT_DIR / "client_detail_view.png"))
-            print(f"  Saved: {SCREENSHOT_DIR / 'client_detail_view.png'}")
-
-            # Screenshot 8: SSID View
-            print("Capturing SSID view...")
-            # Go back to dashboard - use the back button (with arrow character)
-            # Try multiple selectors to handle different button text formats
             try:
-                # First try to click Back to Clients (may have arrow prefix)
-                page.click("button:has-text('Back to Clients')", timeout=5000)
-                page.wait_for_timeout(500)
-            except Exception:
-                pass  # May already be on clients view or navigation changed
-            try:
-                # Then back to dashboard
-                page.click("button:has-text('Back to Dashboard')", timeout=5000)
-                page.wait_for_timeout(1500)
-            except Exception:
-                # If we can't find back button, try navigating via dashboard link
-                page.goto(f"http://127.0.0.1:{TEST_PORT}/screenshot.html")
+                page.wait_for_function(
+                    "window.__DASHBOARD_READY__ === true", timeout=10000
+                )
+            except:
+                pass
+
                 page.wait_for_timeout(2000)
-            # Set viewport
-            page.set_viewport_size({"width": 1400, "height": 1000})
-            # Click on "Active SSIDs" stat card to go to SSID view
-            page.click("text=Active SSIDs")
-            page.wait_for_timeout(1500)
-            # Click on Corporate WiFi to expand its details
-            page.click("text=Corporate WiFi")
-            page.wait_for_timeout(1000)
-            page.screenshot(path=str(SCREENSHOT_DIR / "ssid_view.png"))
-            print(f"  Saved: {SCREENSHOT_DIR / 'ssid_view.png'}")
+
+            screenshot_path = SCREENSHOT_DIR / "full_dashboard.png"
+            page.screenshot(path=str(screenshot_path))
+            print("  ✓ full_dashboard.png")
 
             browser.close()
 
-            print("\nAll screenshots generated successfully!")
-            print(f"Screenshots saved to: {SCREENSHOT_DIR}")
+        print("\n" + "=" * 70)
+        print("✅ All screenshots generated successfully!")
+        print(f"📁 Location: {SCREENSHOT_DIR}")
+        print("=" * 70)
 
     finally:
-        # Cleanup
         server.shutdown()
-        if html_path.exists():
-            html_path.unlink()
+        # Cleanup temp files
+        for i in range(len(views)):
+            temp_file = WWW_DIR / f"screenshot_view_{i}.html"
+            if temp_file.exists():
+                temp_file.unlink()
+        temp_file = WWW_DIR / "full_dashboard.html"
+        if temp_file.exists():
+            temp_file.unlink()
+
+    return 0
 
 
 if __name__ == "__main__":
-    generate_screenshots()
+    sys.exit(main())

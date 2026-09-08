@@ -2,13 +2,31 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
-from custom_components.meraki_ha.types import MerakiDevice, MerakiNetwork
+if TYPE_CHECKING:
+    from custom_components.meraki_ha.types import MerakiDevice, MerakiNetwork
 
 MOCK_CONFIG_ENTRY_ID = "test_entry"
 MOCK_CONFIG_ENTRY = MagicMock()
 MOCK_CONFIG_ENTRY.entry_id = MOCK_CONFIG_ENTRY_ID
+
+MOCK_OAUTH_TOKEN: dict[str, object] = {
+    "access_token": "test-access-token",
+    "refresh_token": "test-refresh-token",
+    "token_type": "Bearer",
+    "expires_in": 3600,
+    "expires_at": 9999999999.0,
+    "scope": "dashboard:general:config:read",
+}
+
+MOCK_OAUTH_CONFIG_DATA: dict[str, object] = {
+    "auth_implementation": "meraki_ha",
+    "token": MOCK_OAUTH_TOKEN,
+    "meraki_org_id": "test-org",
+    "org_name": "Test Org",
+}
 
 
 MOCK_NETWORK: MerakiNetwork = {

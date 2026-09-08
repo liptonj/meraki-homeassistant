@@ -6,6 +6,7 @@ import voluptuous as vol
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_AUTO_CREATE_DASHBOARD,
     CONF_CAMERA_LINK_INTEGRATION,
     CONF_CAMERA_SNAPSHOT_INTERVAL,
     CONF_CLIENT_SCAN_INTERVAL,
@@ -15,6 +16,7 @@ from .const import (
     CONF_DEVICE_SCAN_INTERVAL,
     CONF_ENABLE_DEVICE_TRACKER,
     CONF_ENABLE_MQTT,
+    CONF_ENABLE_PUSH_API,
     CONF_ENABLE_SCANNING_API,
     CONF_ENABLE_VLAN_MANAGEMENT,
     CONF_ENABLED_NETWORKS,
@@ -25,22 +27,26 @@ from .const import (
     CONF_LOG_LEVEL_DEVICE_TRACKER,
     CONF_LOG_LEVEL_DISCOVERY,
     CONF_LOG_LEVEL_FRONTEND,
+    CONF_LOG_LEVEL_MAIN,
     CONF_LOG_LEVEL_MQTT,
     CONF_LOG_LEVEL_SCANNING_API,
     CONF_LOG_LEVEL_SENSOR,
     CONF_LOG_LEVEL_SWITCH,
     CONF_MANUAL_CLIENT_ASSOCIATIONS,
-    CONF_MERAKI_API_KEY,
-    CONF_MERAKI_ORG_ID,
     CONF_NETWORK_SCAN_INTERVAL,
+    CONF_PUSH_API_AUTO_REGISTER,
+    CONF_PUSH_API_TOPICS,
     CONF_SCAN_INTERVAL,
     CONF_SCANNING_API_EXTERNAL_URL,
     CONF_SCANNING_API_SECRET,
     CONF_SCANNING_API_VALIDATOR,
     CONF_SSID_SCAN_INTERVAL,
     CONF_TEMPERATURE_UNIT,
+    CONF_TRACK_ALL_CLIENTS,
+    CONF_UI_MODE,
     DASHBOARD_VIEW_MODE_NETWORK,
     DASHBOARD_VIEW_MODE_TYPE,
+    DEFAULT_AUTO_CREATE_DASHBOARD,
     DEFAULT_CAMERA_LINK_INTEGRATION,
     DEFAULT_CAMERA_SNAPSHOT_INTERVAL,
     DEFAULT_CLIENT_SCAN_INTERVAL,
@@ -49,18 +55,23 @@ from .const import (
     DEFAULT_DASHBOARD_VIEW_MODE,
     DEFAULT_DEVICE_SCAN_INTERVAL,
     DEFAULT_ENABLE_MQTT,
+    DEFAULT_ENABLE_PUSH_API,
     DEFAULT_ENABLE_SCANNING_API,
     DEFAULT_ENABLE_VLAN_MANAGEMENT,
     DEFAULT_ENABLED_NETWORKS,
     DEFAULT_LOG_LEVEL,
     DEFAULT_MQTT_PORT,
     DEFAULT_NETWORK_SCAN_INTERVAL,
+    DEFAULT_PUSH_API_AUTO_REGISTER,
+    DEFAULT_PUSH_API_TOPICS,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SCANNING_API_EXTERNAL_URL,
     DEFAULT_SCANNING_API_SECRET,
     DEFAULT_SCANNING_API_VALIDATOR,
     DEFAULT_SSID_SCAN_INTERVAL,
     DEFAULT_TEMPERATURE_UNIT,
+    DEFAULT_TRACK_ALL_CLIENTS,
+    DEFAULT_UI_MODE,
     LOG_LEVEL_CRITICAL,
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_ERROR,
@@ -74,17 +85,11 @@ from .const import (
     MQTT_DEST_TOPIC_FILTER,
     MQTT_DEST_USE_TLS,
     MQTT_DEST_USERNAME,
+    PUSH_API_TOPIC_LABELS,
     TEMPERATURE_UNIT_CELSIUS,
     TEMPERATURE_UNIT_FAHRENHEIT,
-)
-
-CONFIG_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_MERAKI_API_KEY): selector.TextSelector(
-            selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
-        ),
-        vol.Required(CONF_MERAKI_ORG_ID): selector.TextSelector(),
-    }
+    UI_MODE_LEGACY_PANEL,
+    UI_MODE_LOVELACE,
 )
 
 # Section: Network Selection
@@ -102,6 +107,9 @@ SCHEMA_NETWORK_SELECTION = vol.Schema(
         ),
         vol.Required(
             CONF_ENABLE_DEVICE_TRACKER, default=True
+        ): selector.BooleanSelector(),
+        vol.Required(
+            CONF_TRACK_ALL_CLIENTS, default=DEFAULT_TRACK_ALL_CLIENTS
         ): selector.BooleanSelector(),
         vol.Required(
             CONF_ENABLE_VLAN_MANAGEMENT, default=DEFAULT_ENABLE_VLAN_MANAGEMENT
@@ -388,6 +396,14 @@ _LOG_LEVEL_OPTIONS = [
 SCHEMA_LOGGING = vol.Schema(
     {
         vol.Required(
+            CONF_LOG_LEVEL_MAIN, default=DEFAULT_LOG_LEVEL
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=_LOG_LEVEL_OPTIONS,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
+        vol.Required(
             CONF_LOG_LEVEL_MQTT, default=DEFAULT_LOG_LEVEL
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(
@@ -542,6 +558,32 @@ SCHEMA_WEBHOOKS = vol.Schema(
     }
 )
 
+SCHEMA_PUSH_API = vol.Schema(
+    {
+        vol.Required(
+            CONF_ENABLE_PUSH_API,
+            default=DEFAULT_ENABLE_PUSH_API,
+        ): selector.BooleanSelector(),
+        vol.Required(
+            CONF_PUSH_API_AUTO_REGISTER,
+            default=DEFAULT_PUSH_API_AUTO_REGISTER,
+        ): selector.BooleanSelector(),
+        vol.Optional(
+            CONF_PUSH_API_TOPICS,
+            default=DEFAULT_PUSH_API_TOPICS,
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(value=topic_id, label=label)
+                    for topic_id, label in PUSH_API_TOPIC_LABELS.items()
+                ],
+                multiple=True,
+                mode=selector.SelectSelectorMode.LIST,
+            )
+        ),
+    }
+)
+
 SCHEMA_DATA_SYNC = vol.Schema(
     {
         vol.Required(
@@ -571,5 +613,33 @@ SCHEMA_DEVICE_ASSOCIATION = vol.Schema(
         vol.Optional(
             CONF_MANUAL_CLIENT_ASSOCIATIONS,
         ): vol.Schema({str: str}),
+    }
+)
+
+# Section: UI Mode (DEPRECATED - kept for backwards compatibility)
+SCHEMA_UI_MODE = vol.Schema(
+    {
+        vol.Required(CONF_UI_MODE, default=DEFAULT_UI_MODE): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(
+                        value=UI_MODE_LOVELACE, label="Native Lovelace Dashboard"
+                    ),
+                    selector.SelectOptionDict(
+                        value=UI_MODE_LEGACY_PANEL, label="Legacy Panel (React)"
+                    ),
+                ],
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
+    }
+)
+
+# Section: UI Configuration
+SCHEMA_UI_CONFIGURATION = vol.Schema(
+    {
+        vol.Required(
+            CONF_AUTO_CREATE_DASHBOARD, default=DEFAULT_AUTO_CREATE_DASHBOARD
+        ): selector.BooleanSelector(selector.BooleanSelectorConfig()),
     }
 )
