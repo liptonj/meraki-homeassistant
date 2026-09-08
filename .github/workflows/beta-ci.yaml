@@ -123,14 +123,14 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: 'uv.lock'
-      - name: Install linters
-        run: uv pip install --system ruff bandit
+      - name: Install dependencies
+        run: uv sync --all-extras --frozen
       - name: Run ruff check
-        run: ruff check .
+        run: uv run ruff check .
       - name: Run ruff format check
-        run: ruff format --check .
+        run: uv run ruff format --check .
       - name: Run bandit
-        run: bandit -r custom_components/meraki_ha/ -c pyproject.toml
+        run: uv run bandit -r custom_components/meraki_ha/ -c pyproject.toml
 
   # Type checking and security audit
   type-check:
