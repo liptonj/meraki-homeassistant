@@ -1,8 +1,7 @@
 """
 Handles Meraki API authentication for the Meraki Home Assistant integration.
 
-This module provides mechanisms to validate API keys and organization IDs
-against the Meraki Dashboard API using the Meraki SDK.
+This module validates OAuth access tokens against the Meraki Dashboard API.
 """
 
 from __future__ import annotations
@@ -22,35 +21,61 @@ from .helpers.logging_helper import MerakiLoggers
 _LOGGER = MerakiLoggers.MAIN
 
 
+async def async_list_organizations(
+    hass: HomeAssistant,
+    access_token: str,
+) -> list[dict[str, Any]]:
+    """
+    List organizations visible to an OAuth access token.
+
+    Args:
+    ----
+        hass: The Home Assistant instance.
+        access_token: Meraki OAuth access token.
+
+    Returns
+    -------
+        A list of organization dictionaries.
+
+    """
+    client = MerakiAPIClient(
+        hass=hass,
+        api_key=access_token,
+        org_id="",
+    )
+    await client.async_setup()
+    try:
+        organizations = await client.organization.get_organizations()
+        if isinstance(organizations, list):
+            return organizations
+        return []
+    finally:
+        await client.async_close()
+
+
 class MerakiAuthentication:
-    """
-    Class to handle Meraki API authentication using the Meraki SDK.
+    """Validate a Bearer token against a Meraki organization."""
 
-    This class encapsulates the logic for validating API credentials by
-    making a request to the Meraki API via the SDK.
-    """
-
-    def __init__(self, hass: HomeAssistant, api_key: str, organization_id: str) -> None:
+    def __init__(
+        self, hass: HomeAssistant, access_token: str, organization_id: str
+    ) -> None:
         """
         Initialize the Meraki Authentication class.
 
         Args:
         ----
             hass: The Home Assistant instance.
-            api_key: The Meraki API key.
+            access_token: The Meraki OAuth access token.
             organization_id: The Meraki Organization ID.
 
         """
         self.hass = hass
-        self.api_key: str = api_key
+        self.access_token: str = access_token
         self.organization_id: str = organization_id
 
     async def validate_credentials(self) -> dict[str, Any]:
         """
-        Validate Meraki API credentials using the Meraki SDK.
-
-        Makes a request to the Meraki API to fetch organizations and checks
-        if the provided organization ID is present in the response.
+        Validate Meraki OAuth credentials using the Meraki SDK.
 
         Returns
         -------
@@ -63,27 +88,19 @@ class MerakiAuthentication:
             MerakiConnectionError: If there is a connection error.
 
         """
-        client = MerakiAPIClient(
-            hass=self.hass,
-            api_key=self.api_key,
-            org_id=self.organization_id,
-        )
-        await client.async_setup()
-
         try:
-            all_organizations: list[
-                dict[str, Any]
-            ] = await client.organization.get_organizations()
+            all_organizations = await async_list_organizations(
+                self.hass, self.access_token
+            )
 
             org_found = False
             fetched_org_name: str | None = None
 
-            if all_organizations:
-                for org in all_organizations:
-                    if org.get("id") == self.organization_id:
-                        org_found = True
-                        fetched_org_name = org.get("name")
-                        break
+            for org in all_organizations:
+                if org.get("id") == self.organization_id:
+                    org_found = True
+                    fetched_org_name = org.get("name")
+                    break
 
             if not org_found:
                 _LOGGER.warning(
@@ -91,11 +108,11 @@ class MerakiAuthentication:
                     self.organization_id,
                 )
                 raise ValueError(
-                    f"Org ID {self.organization_id} not accessible with this API key.",
+                    f"Org ID {self.organization_id} is not accessible with this token.",
                 )
 
             _LOGGER.info(
-                "API key validated for Organization ID %s (Name: %s)",
+                "OAuth token validated for Organization ID %s (Name: %s)",
                 self.organization_id,
                 fetched_org_name,
             )
@@ -111,42 +128,20 @@ class MerakiAuthentication:
             status = getattr(e, "status", None)
             message = getattr(e, "message", str(e))
             if status == 401:
-                _LOGGER.error(
-                    "Auth failed (HTTP 401) for org %s.",
-                    self.organization_id,
-                )
-                raise ConfigEntryAuthFailed("Invalid API Key (HTTP 401)") from e
+                raise ConfigEntryAuthFailed("Invalid OAuth token (HTTP 401)") from e
             if status == 403:
-                _LOGGER.error(
-                    "Auth failed (HTTP 403) for org %s.",
-                    self.organization_id,
-                )
                 raise ConfigEntryAuthFailed(
-                    f"API key lacks permissions for org {self.organization_id}.",
+                    f"Token lacks permissions for org {self.organization_id}.",
                 ) from e
             if status == 404:
-                _LOGGER.error(
-                    "Query failed (HTTP 404) for org %s.",
-                    self.organization_id,
-                )
                 raise ConfigEntryAuthFailed(
                     f"Organization ID {self.organization_id} not found.",
                 ) from e
 
-            _LOGGER.error(
-                "Meraki API error for org %s (HTTP %s).",
-                self.organization_id,
-                status,
-            )
             raise ConfigEntryAuthFailed(
                 f"Meraki API error for org {self.organization_id}: {message}",
             ) from e
-        except ValueError as e:
-            _LOGGER.warning(
-                "Validation error for Meraki credentials (org %s): %s",
-                self.organization_id,
-                e,
-            )
+        except ValueError:
             raise
         except Exception as e:
             _LOGGER.error(
@@ -165,23 +160,17 @@ async def validate_meraki_credentials(
     organization_id: str,
 ) -> dict[str, Any]:
     """
-    Validate Meraki API credentials via MerakiAuthentication class (SDK version).
+    Validate Meraki OAuth credentials for an organization.
 
     Args:
     ----
         hass: The Home Assistant instance.
-        api_key: The Meraki API key.
+        api_key: The Meraki OAuth access token.
         organization_id: The Meraki Organization ID.
 
     Returns
     -------
         A dictionary with "valid": True and "org_name": "Organization Name".
-
-    Raises
-    ------
-        ConfigEntryAuthFailed: If authentication fails.
-        ValueError: If the organization ID is invalid.
-        MerakiConnectionError: For Meraki connection errors.
 
     """
     auth = MerakiAuthentication(hass, api_key, organization_id)

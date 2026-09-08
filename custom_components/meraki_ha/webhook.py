@@ -24,6 +24,7 @@ from .handlers import (
     security_alerts,
     sensor_alerts,
 )
+from .handlers.push_api import async_handle_push_message
 from .helpers.logging_helper import MerakiLoggers
 
 if TYPE_CHECKING:
@@ -430,6 +431,71 @@ async def _route_by_alert_type(
     if len(durations) > 1000:
         durations = durations[-1000:]
     coordinator._webhook_processing_durations = durations
+
+
+async def async_handle_push_webhook(
+    hass: HomeAssistant,
+    webhook_id: str,
+    request: web.Request,
+) -> web.Response:
+    """Handle a Meraki Push API webhook.
+
+    Parameters
+    ----------
+    hass : HomeAssistant
+        Home Assistant instance.
+    webhook_id : str
+        Home Assistant webhook ID (``{entry_id}_push``).
+    request : web.Request
+        Incoming HTTP request.
+
+    Returns
+    -------
+    web.Response
+        HTTP response for Meraki.
+
+    """
+    try:
+        data = await request.json()
+    except ValueError:
+        _LOGGER_ALERTS.warning(
+            "Received invalid JSON in Push API webhook %s", webhook_id
+        )
+        return web.Response(status=400)
+
+    entry_id = webhook_id.removesuffix("_push")
+    config_entry = hass.config_entries.async_get_entry(entry_id)
+    if not config_entry:
+        _LOGGER_ALERTS.warning(
+            "Push API webhook for unknown config entry: %s", webhook_id
+        )
+        return web.Response(status=404)
+
+    secret = data.get("sharedSecret")
+    if not isinstance(secret, str):
+        meta = data.get("meta")
+        if isinstance(meta, dict):
+            nested_secret = meta.get("sharedSecret")
+            secret = nested_secret if isinstance(nested_secret, str) else None
+    if not await _validate_shared_secret(
+        secret if isinstance(secret, str) else None,
+        config_entry,
+    ):
+        return web.Response(status=401)
+
+    entry_data = hass.data.get(DOMAIN, {}).get(config_entry.entry_id, {})
+    push_manager = entry_data.get("push_api_manager")
+    if push_manager is not None:
+        push_manager.mark_message_received()
+
+    coordinator: MerakiDataCoordinator | None = entry_data.get("coordinator")
+    if coordinator is None:
+        _LOGGER_ALERTS.warning("Push API webhook received with no coordinator")
+        return web.Response(status=503)
+
+    coordinator.mark_push_received()
+    await async_handle_push_message(coordinator, data)
+    return web.Response(status=200)
 
 
 async def async_handle_webhook(

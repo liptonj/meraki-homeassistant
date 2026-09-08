@@ -25,7 +25,13 @@ def mock_config_entry_for_diagnostics() -> MagicMock:
         "entry_id": "test_entry_id",
         "domain": DOMAIN,
         "title": "Meraki Integration",
-        "data": {"api_key": "REDACTED"},
+        "data": {
+            "token": {
+                "access_token": "secret-access",
+                "refresh_token": "secret-refresh",
+            },
+            "meraki_org_id": "123",
+        },
         "options": {"scan_interval": 30},
     }
     return entry
@@ -63,6 +69,9 @@ async def test_async_get_config_entry_diagnostics(
     # Verify config entry data
     assert result["config_entry"]["entry_id"] == "test_entry_id"
     assert result["config_entry"]["domain"] == DOMAIN
+    token = result["config_entry"]["data"]["token"]
+    assert token["access_token"] != "secret-access"
+    assert token["refresh_token"] != "secret-refresh"
 
     # Verify coordinator data
     assert result["coordinator_data"] == MOCK_ALL_DATA

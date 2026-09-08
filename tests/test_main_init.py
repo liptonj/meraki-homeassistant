@@ -1,5 +1,6 @@
 """Tests for the main __init__.py module."""
 
+from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -8,12 +9,12 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from custom_components.meraki_ha import async_setup_entry, async_unload_entry
 from custom_components.meraki_ha.const import (
     CONF_ENABLE_SCANNING_API,
-    CONF_MERAKI_API_KEY,
     CONF_MERAKI_ORG_ID,
     CONF_SCANNING_API_VALIDATOR,
     DATA_CLIENT,
     DOMAIN,
 )
+from tests.const import MOCK_OAUTH_CONFIG_DATA
 
 
 @pytest.fixture
@@ -36,34 +37,46 @@ def mock_config_entry() -> MagicMock:
     """Create a mock config entry."""
     entry = MagicMock()
     entry.entry_id = "test_entry"
-    entry.data = {
-        CONF_MERAKI_API_KEY: "test_api_key",
-        CONF_MERAKI_ORG_ID: "test_org_id",
-    }
+    entry.data = dict(MOCK_OAUTH_CONFIG_DATA)
     entry.options = {}
     entry.domain = DOMAIN
     return entry
 
 
+@pytest.fixture
+def mock_oauth_session() -> Generator[MagicMock]:
+    """Patch OAuth session creation during setup."""
+    session = MagicMock()
+    session.async_ensure_token_valid = AsyncMock()
+    session.token = {"access_token": "test-access-token"}
+    with patch(
+        "custom_components.meraki_ha.async_create_oauth_session",
+        new=AsyncMock(return_value=session),
+    ):
+        yield session
+
+
 @pytest.mark.asyncio
-async def test_async_setup_entry_missing_api_key(
+async def test_async_setup_entry_missing_token(
     mock_hass: MagicMock,
 ) -> None:
-    """Test setup fails when API key is missing."""
+    """Test setup fails closed when OAuth tokens are missing."""
+    from homeassistant.exceptions import ConfigEntryAuthFailed
+
     mock_entry = MagicMock()
     mock_entry.entry_id = "test_entry"
-    mock_entry.data = {}  # Missing API key
+    mock_entry.data = {CONF_MERAKI_ORG_ID: "test_org_id"}
     mock_entry.options = {}
 
-    result = await async_setup_entry(mock_hass, mock_entry)
-
-    assert result is False
+    with pytest.raises(ConfigEntryAuthFailed):
+        await async_setup_entry(mock_hass, mock_entry)
 
 
 @pytest.mark.asyncio
 async def test_async_setup_entry_success(
     mock_hass: MagicMock,
     mock_config_entry: MagicMock,
+    mock_oauth_session: MagicMock,
 ) -> None:
     """Test successful setup entry."""
     mock_api_client = MagicMock()
@@ -138,6 +151,7 @@ async def test_async_setup_entry_success(
 async def test_async_setup_entry_coordinator_not_ready(
     mock_hass: MagicMock,
     mock_config_entry: MagicMock,
+    mock_oauth_session: MagicMock,
 ) -> None:
     """Test setup raises ConfigEntryNotReady on coordinator failure."""
     mock_api_client = MagicMock()
@@ -311,6 +325,7 @@ async def test_async_unload_entry_no_web_server(
 async def test_scanning_api_webhook_registered_when_enabled(
     mock_hass: MagicMock,
     mock_config_entry: MagicMock,
+    mock_oauth_session: MagicMock,
 ) -> None:
     """Test HA webhook is registered when Scanning API is enabled with validator."""
     mock_api_client = MagicMock()
@@ -378,6 +393,7 @@ async def test_scanning_api_webhook_registered_when_enabled(
 async def test_scanning_api_webhook_not_registered_when_disabled(
     mock_hass: MagicMock,
     mock_config_entry: MagicMock,
+    mock_oauth_session: MagicMock,
 ) -> None:
     """Test that Scanning API webhook is NOT registered when disabled."""
     mock_api_client = MagicMock()
@@ -439,6 +455,7 @@ async def test_scanning_api_webhook_not_registered_when_disabled(
 async def test_scanning_api_webhook_not_registered_without_validator(
     mock_hass: MagicMock,
     mock_config_entry: MagicMock,
+    mock_oauth_session: MagicMock,
 ) -> None:
     """Test that webhook is NOT registered when enabled but validator is missing."""
     mock_api_client = MagicMock()

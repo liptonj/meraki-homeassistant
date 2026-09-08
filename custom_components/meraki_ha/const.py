@@ -39,10 +39,56 @@ CONF_INTEGRATION_TITLE: Final = "Meraki"
 """Title for the integration."""
 
 CONF_MERAKI_API_KEY: Final = "meraki_api_key"
-"""Configuration key for the Meraki API key."""
+"""Legacy configuration key for Dashboard API keys (removed on OAuth reauth)."""
 
 CONF_MERAKI_ORG_ID: Final = "meraki_org_id"
 """Configuration key for the Meraki organization ID."""
+
+CONF_AUTH_IMPLEMENTATION: Final = "auth_implementation"
+"""Config entry key for the Application Credentials implementation id."""
+
+OAUTH2_AUTHORIZE: Final = "https://as.meraki.com/oauth/authorize"
+"""Cisco Meraki OAuth2 authorization endpoint."""
+
+OAUTH2_TOKEN: Final = "https://as.meraki.com/oauth/token"
+"""Cisco Meraki OAuth2 token endpoint."""
+
+OAUTH_REDIRECT_URI: Final = "https://my.home-assistant.io/redirect/oauth"
+"""Redirect URI users must register on their Cisco OAuth app."""
+
+OAUTH_CONSOLE_URL: Final = "https://integrate.cisco.com"
+"""Cisco application registry for creating OAuth Client ID/Secret."""
+
+OAUTH_SCOPES: Final[tuple[str, ...]] = (
+    "dashboard:general:config:read",
+    "dashboard:general:config:write",
+    "dashboard:general:telemetry:read",
+    "dashboard:general:telemetry:write",
+    "wireless:config:read",
+    "wireless:config:write",
+    "wireless:telemetry:read",
+    "wireless:telemetry:write",
+    "switch:config:read",
+    "switch:config:write",
+    "switch:telemetry:read",
+    "switch:telemetry:write",
+    "sdwan:config:read",
+    "sdwan:config:write",
+    "sdwan:telemetry:read",
+    "sdwan:telemetry:write",
+    "camera:config:read",
+    "camera:config:write",
+    "camera:telemetry:read",
+    "camera:telemetry:write",
+    "sensor:config:read",
+    "sensor:config:write",
+    "sensor:telemetry:read",
+    "sensor:telemetry:write",
+)
+"""OAuth scopes matching current integration read/write capabilities."""
+
+DATA_OAUTH_SESSION: Final = "oauth_session"
+"""Key for storing the Home Assistant OAuth2 session."""
 
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 """Configuration key for the scan interval in seconds."""
@@ -160,6 +206,12 @@ DEFAULT_TEMPERATURE_UNIT: Final = TEMPERATURE_UNIT_CELSIUS
 
 CONF_ENABLE_DEVICE_TRACKER: Final = "enable_device_tracker"
 """Configuration key for enabling device tracker."""
+
+CONF_TRACK_ALL_CLIENTS: Final = "track_all_clients"
+"""Configuration key for creating entities for every network client."""
+
+DEFAULT_TRACK_ALL_CLIENTS: Final = False
+"""Default to tracking only clients linked under Device Association."""
 
 CONF_ENABLE_VLAN_MANAGEMENT: Final = "enable_vlan_management"
 """Configuration key for enabling vlan management."""
@@ -335,6 +387,43 @@ DEFAULT_SYNC_ON_NEW_CLIENT: Final = True
 
 WEBHOOK_DETAIL_REFRESH_DELAY: Final = 5
 """Delay in seconds after receiving a webhook before fetching full details."""
+
+# Push API (event-driven HTTPS delivery; currently Meraki beta)
+CONF_ENABLE_PUSH_API: Final = "enable_push_api"
+"""Configuration key for enabling Meraki Push API subscriptions."""
+
+DEFAULT_ENABLE_PUSH_API: Final = False
+"""Default value for Push API enable toggle."""
+
+CONF_PUSH_API_AUTO_REGISTER: Final = "push_api_auto_register"
+"""Configuration key for auto-creating Push API receiver and topic profiles."""
+
+DEFAULT_PUSH_API_AUTO_REGISTER: Final = True
+"""Default value for auto-registering Push API receiver and topics."""
+
+CONF_PUSH_API_TOPICS: Final = "push_api_topics"
+"""Configuration key for Push API topic IDs to subscribe to."""
+
+PUSH_TOPIC_DEVICE_AVAILABILITY: Final = "organizationDevicesAvailabilitiesChangeHistory"
+"""Push API topic for device availability changes."""
+
+PUSH_TOPIC_CONFIG_CHANGES: Final = "organizationConfigurationChanges"
+"""Push API topic for organization configuration changes."""
+
+DEFAULT_PUSH_API_TOPICS: Final[list[str]] = [
+    PUSH_TOPIC_DEVICE_AVAILABILITY,
+    PUSH_TOPIC_CONFIG_CHANGES,
+]
+"""Default Push API topics to create when enabled."""
+
+PUSH_API_PAYLOAD_TEMPLATE_ID: Final = "wpt_00008"
+"""Built-in Meraki payload template required for Push API HTTP servers."""
+
+PUSH_API_TOPIC_LABELS: Final[dict[str, str]] = {
+    PUSH_TOPIC_DEVICE_AVAILABILITY: "Device availability changes",
+    PUSH_TOPIC_CONFIG_CHANGES: "Configuration changes",
+}
+"""Human-readable labels for known Push API topics."""
 
 CONF_ENABLE_MQTT: Final = "enable_mqtt"
 """Configuration key for enabling MQTT functionality."""

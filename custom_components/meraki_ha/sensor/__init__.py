@@ -19,6 +19,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from ..const import CONF_ENABLE_DEVICE_TRACKER, DOMAIN
+from ..helpers.client_tracking import is_client_tracked
 from ..helpers.logging_helper import MerakiLoggers
 from .client import (  # Re-export for backwards compatibility
     MerakiClientConnectedDeviceSensor,
@@ -158,6 +159,9 @@ async def _async_setup_client_sensors(
 
             # Skip if this "client" is actually a Meraki device
             if client_mac.lower() in meraki_device_macs:
+                continue
+
+            if not is_client_tracked(config_entry, client_mac):
                 continue
 
             if client_mac not in tracked_clients:

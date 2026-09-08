@@ -146,8 +146,8 @@ See [Webhook Documentation](docs/architecture/webhooks.md) for complete details.
 ### Prerequisites
 
 - Home Assistant 2024.1.0 or newer
-- A Cisco Meraki account with API access enabled
-- Your Meraki API key and Organization ID
+- A Cisco.com account to register a Meraki OAuth app
+- Home Assistant Application Credentials (Client ID and Client Secret)
 
 ### Via HACS (Recommended)
 
@@ -165,19 +165,31 @@ See [Webhook Documentation](docs/architecture/webhooks.md) for complete details.
 
 ## Configuration
 
-### Obtaining API Credentials
+### Register a Cisco OAuth app
 
-1. Log in to [Meraki Dashboard](https://dashboard.meraki.com/)
-2. Navigate to **Organization** > **Settings** and enable API access
-3. Go to **My profile** > **API access** and generate a new API key
-4. Note your Organization ID (shown at the bottom of every dashboard page)
+1. Sign in at [integrate.cisco.com](https://integrate.cisco.com)
+2. Create an application and set the redirect URI to exactly:
+   `https://my.home-assistant.io/redirect/oauth`
+3. Enable dashboard, wireless, switch, SD-WAN, camera, and sensor **config** and **telemetry** scopes (read and write)
+4. Copy the Client ID and Client Secret (the secret is shown only once)
+
+### Add Application Credentials in Home Assistant
+
+1. Go to **Settings** → **Devices & services**
+2. Open the three-dot menu (top right) → **Application credentials**
+3. Add credentials for **Meraki for Home Assistant** and paste the Client ID and Secret
+
+Meraki does not appear in that list until this OAuth version of the integration is installed.
 
 ### Setting up the Integration
 
-1. Go to **Settings** > **Devices & Services**
+1. Go to **Settings** → **Devices & services**
 2. Click **+ ADD INTEGRATION** and search for "Meraki"
-3. Enter your API Key and Organization ID
-4. Configure options as needed
+3. Sign in to Cisco Meraki and approve access
+4. If the token can see more than one organization, pick the organization to add
+5. Configure network options as needed
+
+Existing installs that used a Dashboard API key must re-authenticate with OAuth after upgrading. Entities keep the same unique IDs.
 
 ### Configuration Options
 
@@ -348,12 +360,12 @@ automation:
 
 ### Common Issues
 
-| Issue                | Solution                                          |
-| -------------------- | ------------------------------------------------- |
-| No devices appearing | Verify API key has access to the organization     |
-| Entities unavailable | Check Home Assistant logs for API errors          |
-| Slow updates         | Increase scan interval if hitting API rate limits |
-| Camera not streaming | Ensure RTSP is enabled in Meraki Dashboard        |
+| Issue                | Solution                                           |
+| -------------------- | -------------------------------------------------- |
+| No devices appearing | Verify the OAuth token can access the organization |
+| Entities unavailable | Check Home Assistant logs for API errors           |
+| Slow updates         | Increase scan interval if hitting API rate limits  |
+| Camera not streaming | Ensure RTSP is enabled in Meraki Dashboard         |
 
 ### Debug Logging
 

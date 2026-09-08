@@ -15,8 +15,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.meraki_ha.const import (
     CONF_CAMERA_ENTITY_MAPPINGS,
     CONF_ENABLED_NETWORKS,
-    CONF_MERAKI_API_KEY,
-    CONF_MERAKI_ORG_ID,
     DATA_CLIENT,
     DOMAIN,
 )
@@ -32,7 +30,7 @@ from custom_components.meraki_ha.web_api import (
     handle_update_enabled_networks,
 )
 
-from .const import MOCK_ALL_DATA
+from .const import MOCK_ALL_DATA, MOCK_OAUTH_CONFIG_DATA
 
 # Type alias for websocket handler functions
 WebSocketHandler = Callable[
@@ -58,7 +56,7 @@ def mock_config_entry_with_options() -> MockConfigEntry:
     return MockConfigEntry(
         domain=DOMAIN,
         entry_id="test_entry_id",
-        data={CONF_MERAKI_API_KEY: "test-key", CONF_MERAKI_ORG_ID: "test-org"},
+        data=dict(MOCK_OAUTH_CONFIG_DATA),
         options={
             CONF_ENABLED_NETWORKS: ["N_12345"],
             CONF_CAMERA_ENTITY_MAPPINGS: {"Q234-CAM1": "camera.blue_iris_front"},
@@ -221,7 +219,7 @@ class TestHandleGetConfig:
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             entry_id="test_entry_id",
-            data={CONF_MERAKI_API_KEY: "test-key", CONF_MERAKI_ORG_ID: "test-org"},
+            data=dict(MOCK_OAUTH_CONFIG_DATA),
             options={},  # No enabled_networks
         )
         config_entry.add_to_hass(hass)

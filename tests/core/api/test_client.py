@@ -5,6 +5,8 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from aiohttp import ClientResponseError
+from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from custom_components.meraki_ha.core.api.client import MerakiAPIClient
 from custom_components.meraki_ha.core.errors import (
@@ -74,6 +76,59 @@ class TestMerakiAPIClient:
                 nginx_429_retry_wait_time=2,
             )
             await api_client.async_close()
+
+    @pytest.mark.asyncio
+    async def test_ensure_token_valid_updates_bearer_header(
+        self, mock_hass: MagicMock
+    ) -> None:
+        """Test OAuth refresh updates the SDK Authorization header."""
+        oauth_session = MagicMock()
+        oauth_session.async_ensure_token_valid = AsyncMock()
+        oauth_session.token = {"access_token": "new-access-token"}
+
+        client = MerakiAPIClient(
+            hass=mock_hass,
+            api_key="old-access-token",
+            org_id="test_org_id",
+            oauth_session=oauth_session,
+        )
+        rest_session = MagicMock()
+        rest_session._headers = {"Authorization": "Bearer old-access-token"}
+        req_session = MagicMock()
+        req_session.headers = {"Authorization": "Bearer old-access-token"}
+        rest_session._req_session = req_session
+        api_session = MagicMock()
+        api_session._session = rest_session
+        client._api_session = api_session
+
+        await client.async_ensure_token_valid()
+
+        assert client._api_key == "new-access-token"
+        assert rest_session._headers["Authorization"] == "Bearer new-access-token"
+        assert req_session.headers["Authorization"] == "Bearer new-access-token"
+
+    @pytest.mark.asyncio
+    async def test_ensure_token_valid_401_raises_auth_failed(
+        self, mock_hass: MagicMock
+    ) -> None:
+        """Test expired refresh tokens fail closed for reauthentication."""
+        oauth_session = MagicMock()
+        oauth_session.async_ensure_token_valid = AsyncMock(
+            side_effect=ClientResponseError(
+                request_info=MagicMock(),
+                history=(),
+                status=401,
+            )
+        )
+        client = MerakiAPIClient(
+            hass=mock_hass,
+            api_key="old-access-token",
+            org_id="test_org_id",
+            oauth_session=oauth_session,
+        )
+
+        with pytest.raises(ConfigEntryAuthFailed):
+            await client.async_ensure_token_valid()
 
     @pytest.mark.asyncio
     async def test_run_with_semaphore(self, api_client: MerakiAPIClient) -> None:

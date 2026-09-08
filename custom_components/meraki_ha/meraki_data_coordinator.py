@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -17,6 +18,7 @@ from .const import (
     CONF_DASHBOARD_DEVICE_TYPE_FILTER,
     CONF_DEVICE_SCAN_INTERVAL,
     CONF_ENABLE_MQTT,
+    CONF_ENABLE_PUSH_API,
     CONF_ENABLE_WEBHOOKS,
     CONF_ENABLED_NETWORKS,
     CONF_NETWORK_SCAN_INTERVAL,
@@ -35,7 +37,7 @@ from .const import (
     WEBHOOK_SSID_SCAN_INTERVAL,
 )
 from .core.api.client import MerakiAPIClient as ApiClient
-from .core.errors import ApiClientCommunicationError
+from .core.errors import ApiClientCommunicationError, MerakiAuthenticationError
 from .helpers.logging_helper import MerakiLoggers
 from .types import MerakiDevice, MerakiNetwork
 
@@ -93,6 +95,8 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._webhooks_active: bool = False
         self._last_webhook_received: datetime | None = None
         self._webhook_received_count: int = 0
+        self._last_push_received: datetime | None = None
+        self._push_received_count: int = 0
 
         # Debouncing: track pending refreshes to avoid duplicate API calls
         self._pending_refreshes: dict[str, datetime] = {}  # key -> scheduled time
@@ -357,6 +361,30 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ),
             "is_active": self._is_webhooks_active(),
         }
+
+    def mark_push_received(self) -> None:
+        """Record that a Push API message or heartbeat was received."""
+        self._last_push_received = dt_util.utcnow()
+        self._push_received_count += 1
+
+    def _is_push_api_active(self) -> bool:
+        """Return True if Push API is enabled and recently received data."""
+        if not self.config_entry:
+            return False
+        if not self.config_entry.options.get(CONF_ENABLE_PUSH_API, False):
+            return False
+        polling_reduction_enabled = self.config_entry.options.get(
+            CONF_WEBHOOK_POLLING_REDUCTION, True
+        )
+        if not polling_reduction_enabled:
+            return False
+        if self._last_push_received is None:
+            return False
+        return (dt_util.utcnow() - self._last_push_received) < timedelta(minutes=15)
+
+    def _is_realtime_feed_active(self) -> bool:
+        """Return True if alert webhooks or Push API can replace polling."""
+        return self._is_webhooks_active() or self._is_push_api_active()
 
     @property
     def mqtt_enabled(self) -> bool:
@@ -1026,7 +1054,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Fallback to default if config_entry is not available
             return timedelta(seconds=DEFAULT_NETWORK_SCAN_INTERVAL)
 
-        webhooks_active = self._is_webhooks_active()
+        webhooks_active = self._is_realtime_feed_active()
 
         if data_type == "network":
             default_seconds = self.config_entry.options.get(
@@ -1099,6 +1127,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return self.last_successful_data
 
         try:
+            await self.api.async_ensure_token_valid()
             enabled_network_ids = self._get_enabled_network_ids()
 
             data = await self.api.get_all_data(
@@ -1175,6 +1204,10 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.last_successful_update = now
             self.last_successful_data = data
             return data
+        except ConfigEntryAuthFailed:
+            raise
+        except MerakiAuthenticationError as err:
+            raise ConfigEntryAuthFailed("Meraki OAuth authentication failed") from err
         except ApiClientCommunicationError as err:
             if self.last_successful_data:
                 _LOGGER.warning(

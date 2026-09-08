@@ -4,10 +4,14 @@ from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from custom_components.meraki_ha.core.errors import ApiClientCommunicationError
+from custom_components.meraki_ha.core.errors import (
+    ApiClientCommunicationError,
+    MerakiAuthenticationError,
+)
 from custom_components.meraki_ha.meraki_data_coordinator import MerakiDataCoordinator
 from tests.const import MOCK_NETWORK
 
@@ -17,6 +21,7 @@ def mock_api_client():
     """Fixture for a mocked MerakiAPIClient."""
     client = MagicMock()
     client.get_all_data = AsyncMock()
+    client.async_ensure_token_valid = AsyncMock()
     return client
 
 
@@ -162,6 +167,30 @@ async def test_coordinator_api_failure_handling(coordinator, mock_api_client):
     mock_api_client.get_all_data.side_effect = Exception("API Error")
 
     with pytest.raises(Exception, match="API Error"):
+        await coordinator._async_update_data()
+
+
+@pytest.mark.asyncio
+async def test_update_data_auth_error_triggers_reauth(
+    coordinator, mock_api_client
+) -> None:
+    """Test expired OAuth tokens raise ConfigEntryAuthFailed."""
+    mock_api_client.async_ensure_token_valid.side_effect = ConfigEntryAuthFailed(
+        "token expired"
+    )
+
+    with pytest.raises(ConfigEntryAuthFailed):
+        await coordinator._async_update_data()
+
+
+@pytest.mark.asyncio
+async def test_update_data_meraki_auth_error_triggers_reauth(
+    coordinator, mock_api_client
+) -> None:
+    """Test Meraki 401 responses become ConfigEntryAuthFailed."""
+    mock_api_client.get_all_data.side_effect = MerakiAuthenticationError("401")
+
+    with pytest.raises(ConfigEntryAuthFailed):
         await coordinator._async_update_data()
 
 

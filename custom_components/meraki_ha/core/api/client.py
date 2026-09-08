@@ -12,6 +12,9 @@ from collections.abc import Awaitable
 from typing import TYPE_CHECKING, Any
 
 import meraki.aio
+from aiohttp import ClientResponseError
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.config_entry_oauth2_flow import OAuth2Session
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -28,6 +31,7 @@ from .endpoints.cellular import CellularEndpoint
 from .endpoints.devices import DevicesEndpoints
 from .endpoints.network import NetworkEndpoints
 from .endpoints.organization import OrganizationEndpoints
+from .endpoints.push import PushApiEndpoints
 from .endpoints.sensor import SensorEndpoints
 from .endpoints.switch import SwitchEndpoints
 from .endpoints.wireless import WirelessEndpoints
@@ -53,21 +57,24 @@ class MerakiAPIClient:
         api_key: str,
         org_id: str,
         base_url: str = "https://api.meraki.com/api/v1",
+        oauth_session: OAuth2Session | None = None,
     ) -> None:
         """
         Initialize the API client.
 
         Args:
             hass: The Home Assistant instance.
-            api_key: The Meraki API key.
+            api_key: OAuth access token (Dashboard API v1 Bearer credential).
             org_id: The organization ID.
             base_url: The base URL for the Meraki API.
+            oauth_session: Optional Home Assistant OAuth2 session for refresh.
 
         """
         self._api_key = api_key
         self._org_id = org_id
         self._hass = hass
         self._base_url = base_url
+        self._oauth_session = oauth_session
 
         self.dashboard: meraki.aio.AsyncDashboardAPI | None = None
         self._api_session: meraki.aio.AsyncDashboardAPI | None = None
@@ -79,6 +86,7 @@ class MerakiAPIClient:
         self.devices = DevicesEndpoints(self)
         self.network = NetworkEndpoints(self)
         self.organization = OrganizationEndpoints(self)
+        self.push = PushApiEndpoints(self)
         self.switch = SwitchEndpoints(self)
         self.wireless = WirelessEndpoints(self)
         self.sensor = SensorEndpoints(self)
@@ -104,6 +112,39 @@ class MerakiAPIClient:
             nginx_429_retry_wait_time=2,
         )
         self.dashboard = await self._api_session.__aenter__()
+        self._apply_access_token(self._api_key)
+
+    def _apply_access_token(self, access_token: str) -> None:
+        """Update the SDK session so Dashboard calls use the current Bearer token."""
+        self._api_key = access_token
+        header_value = f"Bearer {access_token}"
+        rest_session = getattr(self._api_session, "_session", None)
+        if rest_session is None:
+            return
+        rest_session._api_key = str(access_token)
+        headers = getattr(rest_session, "_headers", None)
+        if isinstance(headers, dict):
+            headers["Authorization"] = header_value
+        req_session = getattr(rest_session, "_req_session", None)
+        req_headers = getattr(req_session, "headers", None) if req_session else None
+        if req_headers is not None:
+            req_headers["Authorization"] = header_value
+
+    async def async_ensure_token_valid(self) -> None:
+        """Refresh the OAuth access token if it is expired and update the SDK."""
+        if self._oauth_session is None:
+            return
+        try:
+            await self._oauth_session.async_ensure_token_valid()
+        except ClientResponseError as err:
+            if err.status in (400, 401, 403):
+                raise ConfigEntryAuthFailed(
+                    "Meraki OAuth token refresh failed"
+                ) from err
+            raise
+        new_token = str(self._oauth_session.token["access_token"])
+        if new_token != self._api_key:
+            self._apply_access_token(new_token)
 
     async def async_close(self) -> None:
         """Close the API client session."""
@@ -610,6 +651,7 @@ class MerakiAPIClient:
             A dictionary of all data.
 
         """
+        await self.async_ensure_token_valid()
         if previous_data is None:
             previous_data = {}
 

@@ -16,6 +16,7 @@ from .const import (
     CONF_DEVICE_SCAN_INTERVAL,
     CONF_ENABLE_DEVICE_TRACKER,
     CONF_ENABLE_MQTT,
+    CONF_ENABLE_PUSH_API,
     CONF_ENABLE_SCANNING_API,
     CONF_ENABLE_VLAN_MANAGEMENT,
     CONF_ENABLED_NETWORKS,
@@ -32,15 +33,16 @@ from .const import (
     CONF_LOG_LEVEL_SENSOR,
     CONF_LOG_LEVEL_SWITCH,
     CONF_MANUAL_CLIENT_ASSOCIATIONS,
-    CONF_MERAKI_API_KEY,
-    CONF_MERAKI_ORG_ID,
     CONF_NETWORK_SCAN_INTERVAL,
+    CONF_PUSH_API_AUTO_REGISTER,
+    CONF_PUSH_API_TOPICS,
     CONF_SCAN_INTERVAL,
     CONF_SCANNING_API_EXTERNAL_URL,
     CONF_SCANNING_API_SECRET,
     CONF_SCANNING_API_VALIDATOR,
     CONF_SSID_SCAN_INTERVAL,
     CONF_TEMPERATURE_UNIT,
+    CONF_TRACK_ALL_CLIENTS,
     CONF_UI_MODE,
     DASHBOARD_VIEW_MODE_NETWORK,
     DASHBOARD_VIEW_MODE_TYPE,
@@ -53,18 +55,22 @@ from .const import (
     DEFAULT_DASHBOARD_VIEW_MODE,
     DEFAULT_DEVICE_SCAN_INTERVAL,
     DEFAULT_ENABLE_MQTT,
+    DEFAULT_ENABLE_PUSH_API,
     DEFAULT_ENABLE_SCANNING_API,
     DEFAULT_ENABLE_VLAN_MANAGEMENT,
     DEFAULT_ENABLED_NETWORKS,
     DEFAULT_LOG_LEVEL,
     DEFAULT_MQTT_PORT,
     DEFAULT_NETWORK_SCAN_INTERVAL,
+    DEFAULT_PUSH_API_AUTO_REGISTER,
+    DEFAULT_PUSH_API_TOPICS,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SCANNING_API_EXTERNAL_URL,
     DEFAULT_SCANNING_API_SECRET,
     DEFAULT_SCANNING_API_VALIDATOR,
     DEFAULT_SSID_SCAN_INTERVAL,
     DEFAULT_TEMPERATURE_UNIT,
+    DEFAULT_TRACK_ALL_CLIENTS,
     DEFAULT_UI_MODE,
     LOG_LEVEL_CRITICAL,
     LOG_LEVEL_DEBUG,
@@ -79,19 +85,11 @@ from .const import (
     MQTT_DEST_TOPIC_FILTER,
     MQTT_DEST_USE_TLS,
     MQTT_DEST_USERNAME,
+    PUSH_API_TOPIC_LABELS,
     TEMPERATURE_UNIT_CELSIUS,
     TEMPERATURE_UNIT_FAHRENHEIT,
     UI_MODE_LEGACY_PANEL,
     UI_MODE_LOVELACE,
-)
-
-CONFIG_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_MERAKI_API_KEY): selector.TextSelector(
-            selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
-        ),
-        vol.Required(CONF_MERAKI_ORG_ID): selector.TextSelector(),
-    }
 )
 
 # Section: Network Selection
@@ -109,6 +107,9 @@ SCHEMA_NETWORK_SELECTION = vol.Schema(
         ),
         vol.Required(
             CONF_ENABLE_DEVICE_TRACKER, default=True
+        ): selector.BooleanSelector(),
+        vol.Required(
+            CONF_TRACK_ALL_CLIENTS, default=DEFAULT_TRACK_ALL_CLIENTS
         ): selector.BooleanSelector(),
         vol.Required(
             CONF_ENABLE_VLAN_MANAGEMENT, default=DEFAULT_ENABLE_VLAN_MANAGEMENT
@@ -554,6 +555,32 @@ SCHEMA_WEBHOOKS = vol.Schema(
             "webhook_polling_reduction",
             default=True,
         ): selector.BooleanSelector(),
+    }
+)
+
+SCHEMA_PUSH_API = vol.Schema(
+    {
+        vol.Required(
+            CONF_ENABLE_PUSH_API,
+            default=DEFAULT_ENABLE_PUSH_API,
+        ): selector.BooleanSelector(),
+        vol.Required(
+            CONF_PUSH_API_AUTO_REGISTER,
+            default=DEFAULT_PUSH_API_AUTO_REGISTER,
+        ): selector.BooleanSelector(),
+        vol.Optional(
+            CONF_PUSH_API_TOPICS,
+            default=DEFAULT_PUSH_API_TOPICS,
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(value=topic_id, label=label)
+                    for topic_id, label in PUSH_API_TOPIC_LABELS.items()
+                ],
+                multiple=True,
+                mode=selector.SelectSelectorMode.LIST,
+            )
+        ),
     }
 )
 
