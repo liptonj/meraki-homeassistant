@@ -10,6 +10,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from ..const import DOMAIN, ENTITY_CHUNK_DELAY, ENTITY_CHUNK_SIZE
 from ..helpers.logging_helper import MerakiLoggers
 from .mqtt_status import async_setup_mqtt_sensors
+from .push_api_health import MerakiPushApiHealthSensor
 from .webhook_health import MerakiWebhookHealthSensor
 
 _LOGGER = MerakiLoggers.SENSOR
@@ -41,6 +42,12 @@ async def async_setup_entry(
                 coordinator, config_entry, webhook_manager
             )
             binary_sensor_entities.append(webhook_health_sensor)
+
+        push_manager = entry_data.get("push_api_manager")
+        if push_manager:
+            binary_sensor_entities.append(
+                MerakiPushApiHealthSensor(coordinator, config_entry, push_manager)
+            )
 
     if binary_sensor_entities:
         _LOGGER.debug("Adding %d binary_sensor entities", len(binary_sensor_entities))

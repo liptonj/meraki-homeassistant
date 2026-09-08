@@ -8,7 +8,7 @@ import os
 import socketserver
 import threading
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -16,12 +16,10 @@ from playwright.async_api import async_playwright, expect
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.meraki_ha.const import (
-    CONF_MERAKI_API_KEY,
-    CONF_MERAKI_ORG_ID,
     DOMAIN,
 )
 
-from .const import MOCK_ALL_DATA
+from .const import MOCK_ALL_DATA, MOCK_OAUTH_CONFIG_DATA
 
 # Check if hass_frontend is available (required for this test)
 try:
@@ -61,7 +59,7 @@ async def setup_integration_fixture(
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         entry_id="test_e2e_entry",
-        data={CONF_MERAKI_API_KEY: "test-key", CONF_MERAKI_ORG_ID: "test-org"},
+        data=dict(MOCK_OAUTH_CONFIG_DATA),
         options={
             **MOCK_SETTINGS,
         },
@@ -71,7 +69,15 @@ async def setup_integration_fixture(
     # Start patches manually so they persist through teardown
     # Note: async_unregister_webhook must be patched where it's imported
     # (in __init__.py), not where it's defined (in webhook.py)
+    oauth_session = MagicMock()
+    oauth_session.async_ensure_token_valid = AsyncMock()
+    oauth_session.token = {"access_token": "test-access-token"}
+
     patches = [
+        patch(
+            "custom_components.meraki_ha.async_create_oauth_session",
+            new=AsyncMock(return_value=oauth_session),
+        ),
         patch(
             "custom_components.meraki_ha.MerakiDataCoordinator._async_update_data",
             return_value=MOCK_ALL_DATA,

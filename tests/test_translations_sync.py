@@ -146,6 +146,7 @@ class TestOptionsStepsSync:
     REQUIRED_MENU_OPTIONS = [
         "network_selection",
         "polling",
+        "push_api",
         "camera",
         "mqtt",
         "display_preferences",
@@ -157,6 +158,7 @@ class TestOptionsStepsSync:
         "init",
         "network_selection",
         "polling",
+        "push_api",
         "camera",
         "mqtt",
         "display_preferences",
@@ -218,7 +220,14 @@ class TestStructuralSync:
     """Test that translation files have matching structure to strings.json."""
 
     # Required config steps (used by the actual config flow)
-    REQUIRED_CONFIG_STEPS = ["user", "init", "reauth", "reconfigure"]
+    REQUIRED_CONFIG_STEPS = [
+        "pick_implementation",
+        "auth",
+        "pick_org",
+        "init",
+        "reauth_confirm",
+        "reconfigure",
+    ]
 
     @pytest.fixture
     def strings_json(self) -> dict[str, Any]:
@@ -315,6 +324,8 @@ class TestConfigAbortSync:
         "reconfigure_successful",
         "already_configured",
         "unknown_entry",
+        "missing_credentials",
+        "org_mismatch",
     ]
 
     @pytest.mark.parametrize("lang", ["en", "es", "fr"])
@@ -334,16 +345,16 @@ class TestConfigAbortSync:
 class TestReconfigureReauthSync:
     """Test that reconfigure and reauth steps are properly defined."""
 
-    REQUIRED_REAUTH_FIELDS = ["meraki_api_key", "meraki_org_id"]
     REQUIRED_RECONFIGURE_FIELDS = [
         "enabled_networks",
         "enable_device_tracker",
+        "track_all_clients",
         "enable_vlan_management",
     ]
 
     @pytest.mark.parametrize("lang", ["en", "es", "fr"])
     def test_translation_has_reauth_step(self, lang: str) -> None:
-        """Test that translation files have reauth step."""
+        """Test that translation files have reauth confirm step."""
         trans_path = TRANSLATIONS_PATH / f"{lang}.json"
         if not trans_path.exists():
             pytest.skip(f"{lang}.json does not exist")
@@ -351,14 +362,14 @@ class TestReconfigureReauthSync:
         trans_json = load_json(trans_path)
         config_steps = trans_json.get("config", {}).get("step", {})
 
-        assert "reauth" in config_steps, f"{lang}.json missing config.step.reauth"
-        reauth = config_steps["reauth"]
-        assert "title" in reauth, f"{lang}.json reauth missing title"
-        assert "description" in reauth, f"{lang}.json reauth missing description"
-        assert "data" in reauth, f"{lang}.json reauth missing data"
-
-        for field in self.REQUIRED_REAUTH_FIELDS:
-            assert field in reauth["data"], f"{lang}.json reauth.data missing {field}"
+        assert "reauth_confirm" in config_steps, (
+            f"{lang}.json missing config.step.reauth_confirm"
+        )
+        reauth = config_steps["reauth_confirm"]
+        assert "title" in reauth, f"{lang}.json reauth_confirm missing title"
+        assert "description" in reauth, (
+            f"{lang}.json reauth_confirm missing description"
+        )
 
     @pytest.mark.parametrize("lang", ["en", "es", "fr"])
     def test_translation_has_reconfigure_step(self, lang: str) -> None:

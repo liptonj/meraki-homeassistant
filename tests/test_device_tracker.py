@@ -10,7 +10,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from custom_components.meraki_ha.const import CONF_ENABLE_DEVICE_TRACKER, DOMAIN
+from custom_components.meraki_ha.const import (
+    CONF_ENABLE_DEVICE_TRACKER,
+    CONF_MANUAL_CLIENT_ASSOCIATIONS,
+    CONF_TRACK_ALL_CLIENTS,
+    DOMAIN,
+)
 from custom_components.meraki_ha.device_tracker import (
     MerakiClientDeviceTracker,
     _get_friendly_client_name,
@@ -643,6 +648,48 @@ class TestAsyncSetupEntry:
 
         async_add_entities.assert_not_called()
 
+    async def test_setup_skips_unassociated_clients_by_default(
+        self,
+        mock_hass: MagicMock,
+        mock_config_entry: MagicMock,
+        mock_coordinator: MagicMock,
+    ) -> None:
+        """Default is not all clients; unassociated clients get no entities."""
+        mock_config_entry.options = {CONF_ENABLE_DEVICE_TRACKER: True}
+        mock_coordinator.data = {
+            "clients": [MOCK_CLIENT_DATA, MOCK_CLIENT_DATA_OFFLINE]
+        }
+        async_add_entities = MagicMock()
+
+        await async_setup_entry(mock_hass, mock_config_entry, async_add_entities)
+
+        async_add_entities.assert_not_called()
+
+    async def test_setup_adds_associated_client_only(
+        self,
+        mock_hass: MagicMock,
+        mock_config_entry: MagicMock,
+        mock_coordinator: MagicMock,
+    ) -> None:
+        """Only Device Association MACs get tracker entities by default."""
+        mock_config_entry.options = {
+            CONF_ENABLE_DEVICE_TRACKER: True,
+            CONF_MANUAL_CLIENT_ASSOCIATIONS: {
+                MOCK_CLIENT_DATA["mac"]: "icloud_device_id",
+            },
+        }
+        mock_coordinator.data = {
+            "clients": [MOCK_CLIENT_DATA, MOCK_CLIENT_DATA_OFFLINE]
+        }
+        async_add_entities = MagicMock()
+
+        await async_setup_entry(mock_hass, mock_config_entry, async_add_entities)
+
+        async_add_entities.assert_called_once()
+        entities = async_add_entities.call_args[0][0]
+        assert len(entities) == 1
+        assert entities[0]._client_mac == MOCK_CLIENT_DATA["mac"]
+
     async def test_setup_adds_clients(
         self,
         mock_hass: MagicMock,
@@ -650,6 +697,10 @@ class TestAsyncSetupEntry:
         mock_coordinator: MagicMock,
     ) -> None:
         """Test setup adds device trackers for clients."""
+        mock_config_entry.options = {
+            CONF_ENABLE_DEVICE_TRACKER: True,
+            CONF_TRACK_ALL_CLIENTS: True,
+        }
         mock_coordinator.data = {
             "clients": [MOCK_CLIENT_DATA, MOCK_CLIENT_DATA_OFFLINE]
         }
@@ -670,6 +721,10 @@ class TestAsyncSetupEntry:
         mock_coordinator: MagicMock,
     ) -> None:
         """Test setup skips clients without MAC address."""
+        mock_config_entry.options = {
+            CONF_ENABLE_DEVICE_TRACKER: True,
+            CONF_TRACK_ALL_CLIENTS: True,
+        }
         mock_coordinator.data = {
             "clients": [
                 MOCK_CLIENT_DATA,
@@ -696,6 +751,10 @@ class TestAsyncSetupEntry:
         Each client gets a device entry so users can click on it
         and see all associated Meraki entity information.
         """
+        mock_config_entry.options = {
+            CONF_ENABLE_DEVICE_TRACKER: True,
+            CONF_TRACK_ALL_CLIENTS: True,
+        }
         mock_coordinator.data = {"clients": [MOCK_CLIENT_DATA]}
         async_add_entities = MagicMock()
 
@@ -754,6 +813,10 @@ class TestAsyncSetupEntry:
         Meraki devices (APs, switches, sensors) can appear as "clients"
         on the network, but we don't want to create device trackers for them.
         """
+        mock_config_entry.options = {
+            CONF_ENABLE_DEVICE_TRACKER: True,
+            CONF_TRACK_ALL_CLIENTS: True,
+        }
         # Setup: A Meraki AP with a specific MAC
         meraki_ap_mac = "aa:bb:cc:dd:ee:ff"
         mock_coordinator.data = {
@@ -834,8 +897,8 @@ class TestAsyncSetupEntry:
             assert tracker._attr_device_info["identifiers"] == {
                 ("sonos", "RINCON_12345")
             }
-            # Entity name uses friendly name from client data (description)
-            assert tracker._attr_name == "Patio"
+            # Linked entities use a type name so they sit next to iCloud GPS
+            assert tracker._attr_name == "Wi-Fi"
 
 
 class TestDeviceLinkingByIP:
@@ -905,8 +968,8 @@ class TestDeviceLinkingByIP:
             assert tracker._attr_device_info["identifiers"] == {
                 ("nest", "device_12345")
             }
-            # Entity name uses friendly name from client data (description)
-            assert tracker._attr_name == "Unknown Device"
+            # Linked entities use a type name so they sit next to iCloud GPS
+            assert tracker._attr_name == "Wi-Fi"
 
     def test_mac_takes_priority_over_ip(
         self,

@@ -1,88 +1,93 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "Étape 1 sur 2 : Informations d'identification Meraki",
-        "description": "Entrez votre clé API Meraki et votre ID d'organisation.",
+      "pick_implementation": {
+        "title": "Choisir les identifiants Meraki",
+        "description": "Sélectionnez les identifiants de l'application OAuth Cisco pour cette instance Home Assistant.",
         "data": {
-          "meraki_api_key": "Clé API Meraki",
-          "meraki_org_id": "ID d'organisation Meraki"
+          "implementation": "Identifiants"
         },
         "data_description": {
-          "meraki_api_key": "Votre clé API personnelle pour le tableau de bord Meraki.",
-          "meraki_org_id": "L'ID de l'organisation Meraki que vous souhaitez ajouter."
+          "implementation": "Créés dans Paramètres → Appareils et services → Identifiants d'application."
+        }
+      },
+      "auth": {
+        "title": "Lier Cisco Meraki",
+        "description": "Connectez-vous à Cisco Meraki pour autoriser Home Assistant."
+      },
+      "pick_org": {
+        "title": "Sélectionner l'organisation Meraki",
+        "description": "Choisissez l'organisation Meraki à ajouter à Home Assistant.",
+        "data": {
+          "meraki_org_id": "Organisation"
+        },
+        "data_description": {
+          "meraki_org_id": "L'organisation que cette intégration surveillera et gérera."
         }
       },
       "init": {
-        "title": "Étape 2 sur 2 : Paramètres Généraux",
-        "description": "Configurez les paramètres généraux pour l'intégration Meraki.",
+        "title": "Sélection des réseaux",
+        "description": "Configurez les réseaux que cette intégration doit surveiller.",
         "data": {
-          "scan_interval": "Intervalle de mise à jour (secondes)",
-          "enable_device_tracker": "Activer le suivi des clients",
-          "enable_vlan_management": "Activer la gestion des VLAN",
-          "enable_device_status": "Activer les entités d'état des appareils",
-          "enable_org_sensors": "Activer les capteurs d'organisation",
-          "enable_camera_entities": "Activer les entités de caméra",
-          "enable_device_sensors": "Activer les capteurs d'appareils",
-          "enable_network_sensors": "Activer les capteurs de réseau",
-          "enable_vlan_sensors": "Activer les capteurs VLAN",
-          "enable_port_sensors": "Activer les capteurs de port",
-          "enable_ssid_sensors": "Activer les capteurs SSID",
-          "enabled_networks": "Réseaux activés"
+          "enabled_networks": "Enabled Networks",
+          "enable_device_tracker": "Enable Client Tracker",
+          "track_all_clients": "Track all clients",
+          "enable_vlan_management": "Enable VLAN Management"
         },
         "data_description": {
-          "scan_interval": "Fréquence d'interrogation de l'API Meraki pour les mises à jour, en secondes.",
-          "enable_device_tracker": "Suivre les appareils connectés à vos réseaux Meraki.",
-          "enable_vlan_management": "Autoriser la gestion des VLAN.",
-          "enable_device_status": "Créer des capteurs binaires pour l'état en ligne/hors ligne des appareils.",
-          "enable_org_sensors": "Créer des capteurs pour les métriques à l'échelle de l'organisation.",
-          "enable_camera_entities": "Créer des entités pour les caméras Meraki.",
-          "enable_device_sensors": "Créer des capteurs pour les métriques spécifiques aux appareils.",
-          "enable_network_sensors": "Créer des capteurs pour les métriques spécifiques au réseau.",
-          "enable_vlan_sensors": "Créer des capteurs pour les métriques VLAN.",
-          "enable_port_sensors": "Créer des capteurs pour les métriques des ports de switch.",
-          "enable_ssid_sensors": "Créer des capteurs pour les métriques SSID.",
-          "enabled_networks": "Sélectionnez les réseaux Meraki à inclure dans Home Assistant."
+          "enabled_networks": "Select which networks to monitor. Leave empty for all networks.",
+          "enable_device_tracker": "Allow per-client Wi-Fi presence and bandwidth entities. By default only clients linked under Device Association are created.",
+          "track_all_clients": "Create entities for every network client. Leave off and use Device Association to attach selected phones to an existing device such as iCloud.",
+          "enable_vlan_management": "Enable VLAN management features."
         }
       },
-      "reauth": {
+      "reauth_confirm": {
         "title": "Réauthentifier Meraki",
-        "description": "Vos identifiants API Meraki doivent être mis à jour. Veuillez entrer votre nouvelle clé API.",
-        "data": {
-          "meraki_api_key": "Clé API Meraki",
-          "meraki_org_id": "ID d'Organisation Meraki"
-        },
-        "data_description": {
-          "meraki_api_key": "Votre clé API personnelle pour le tableau de bord Meraki.",
-          "meraki_org_id": "L'ID de l'Organisation Meraki."
-        }
+        "description": "Meraki utilise désormais OAuth2. Reconnectez-vous pour l'organisation {organization}."
       },
       "reconfigure": {
-        "title": "Reconfigurer l'Intégration Meraki",
+        "title": "Reconfigurer l'intégration Meraki",
         "description": "Mettez à jour les paramètres de votre intégration Meraki.",
         "data": {
-          "enabled_networks": "Réseaux Activés",
-          "enable_device_tracker": "Activer le Suivi des Clients",
-          "enable_vlan_management": "Activer la Gestion VLAN"
+          "enabled_networks": "Enabled Networks",
+          "enable_device_tracker": "Enable Client Tracker",
+          "track_all_clients": "Track all clients",
+          "enable_vlan_management": "Enable VLAN Management"
         },
         "data_description": {
-          "enabled_networks": "Sélectionnez les réseaux à surveiller. Laissez vide pour tous les réseaux.",
-          "enable_device_tracker": "Activer le suivi des clients connectés au réseau.",
-          "enable_vlan_management": "Activer les fonctionnalités de gestion VLAN."
+          "enabled_networks": "Select which networks to monitor. Leave empty for all networks.",
+          "enable_device_tracker": "Allow per-client Wi-Fi presence and bandwidth entities. By default only clients linked under Device Association are created.",
+          "track_all_clients": "Create entities for every network client. Leave off and use Device Association to attach selected phones to an existing device such as iCloud.",
+          "enable_vlan_management": "Enable VLAN management features."
         }
       }
     },
     "error": {
-      "invalid_auth": "Clé API invalide.",
+      "invalid_auth": "Échec de l'authentification Meraki.",
       "invalid_org_id": "ID d'organisation invalide.",
       "cannot_connect": "Impossible de se connecter à l'API Meraki.",
       "unknown": "Une erreur inconnue s'est produite."
     },
     "abort": {
+      "already_configured": "Cette organisation Meraki est déjà configurée.",
+      "authorize_url_timeout": "Délai d'attente lors de la génération de l'URL d'autorisation Meraki.",
+      "cannot_connect": "Impossible de se connecter à l'API Meraki.",
+      "missing_credentials": "Les identifiants d'application Meraki ne sont pas configurés. Ajoutez le Client ID et le Secret Cisco dans Paramètres → Appareils et services → Identifiants d'application.",
+      "missing_configuration": "OAuth Meraki n'est pas configuré. Ajoutez d'abord les identifiants d'application.",
+      "no_organizations": "Ce jeton OAuth n'a accès à aucune organisation Meraki.",
+      "no_url_available": "Aucune URL Home Assistant n'est disponible pour la redirection OAuth.",
+      "oauth_error": "Meraki a renvoyé un jeton OAuth invalide.",
+      "oauth_failed": "Échec de OAuth Meraki.",
+      "oauth_timeout": "Délai d'attente lors de la contact d'OAuth Meraki.",
+      "oauth_unauthorized": "Meraki a rejeté les identifiants client OAuth.",
+      "org_mismatch": "Le compte Meraki connecté n'inclut pas cette organisation.",
       "reauth_successful": "Réauthentification réussie.",
       "reconfigure_successful": "Reconfiguration réussie.",
-      "already_configured": "Cette organisation Meraki est déjà configurée.",
-      "unknown_entry": "Entrée de configuration inconnue."
+      "unknown_entry": "Entrée de configuration inconnue.",
+      "user_rejected_authorize": "L'autorisation Meraki a été annulée."
+    },
+    "create_entry": {
+      "default": "Authentification Cisco Meraki réussie."
     }
   },
   "options": {
@@ -93,6 +98,7 @@
         "menu_options": {
           "network_selection": "Sélection des Réseaux",
           "polling": "Sondage et Actualisation",
+          "push_api": "API Push",
           "camera": "Paramètres de Caméra",
           "mqtt": "Configuration MQTT",
           "scanning_api": "API de Numérisation",
@@ -106,11 +112,13 @@
         "data": {
           "enabled_networks": "Réseaux Activés",
           "enable_device_tracker": "Activer le Suivi des Clients",
+          "track_all_clients": "Suivre tous les clients",
           "enable_vlan_management": "Activer la Gestion VLAN"
         },
         "data_description": {
           "enabled_networks": "Sélectionnez les réseaux à surveiller. Laissez vide pour tous les réseaux.",
-          "enable_device_tracker": "Activer le suivi des clients connectés au réseau.",
+          "enable_device_tracker": "Autoriser les entités de présence Wi-Fi et de bande passante par client. Par défaut, seuls les clients liés dans Association d'appareils sont créés.",
+          "track_all_clients": "Créer des entités pour chaque client du réseau. Laissez désactivé et utilisez Association d'appareils pour lier les téléphones à un appareil existant tel qu'iCloud.",
           "enable_vlan_management": "Activer les fonctionnalités de gestion VLAN."
         }
       },
@@ -130,6 +138,20 @@
           "device_scan_interval": "Intervalle de sondage pour les données changeant peu fréquemment comme l'inventaire des appareils.",
           "client_scan_interval": "Intervalle de sondage pour les données changeant très fréquemment comme les informations client.",
           "ssid_scan_interval": "Intervalle de sondage pour les données changeant peu fréquemment comme la configuration SSID."
+        }
+      },
+      "push_api": {
+        "title": "API Push",
+        "description": "Utilisez l'API Push Meraki pour les mises à jour événementielles (disponibilité des appareils et changements de configuration). MQTT reste utilisé pour les lectures des capteurs MT.\n\n**URL du webhook :** `{webhook_url}`\n\n**Statut :** {status}\n\n**Sujets abonnés :** {subscribed_topics}\n\n**Disponibles pour cette org :** {available_topics}",
+        "data": {
+          "enable_push_api": "Activer l'API Push",
+          "push_api_auto_register": "Créer automatiquement le récepteur et les profils de sujets",
+          "push_api_topics": "Sujets à créer"
+        },
+        "data_description": {
+          "enable_push_api": "Recevez les changements de disponibilité et de configuration via HTTPS au lieu du sondage.",
+          "push_api_auto_register": "Crée automatiquement le récepteur webhook et s'abonne aux sujets API Push sélectionnés.",
+          "push_api_topics": "Sujets auxquels s'abonner. L'intégration crée un profil push pour chaque sujet sélectionné disponible pour votre organisation."
         }
       },
       "display_preferences": {
@@ -286,5 +308,8 @@
         "name": "Nom du SSID"
       }
     }
+  },
+  "application_credentials": {
+    "description": "Créez une application OAuth dans le [registre d'applications Cisco]({oauth_console_url}). Définissez l'URI de redirection exactement sur `{redirect_url}`. Activez les portées de configuration et de télémétrie dashboard, wireless, switch, SD-WAN, caméra et capteurs."
   }
 }
