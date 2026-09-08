@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
+from urllib.parse import quote
 
 import pytest
-from aiohttp import BasicAuth
+from aiohttp import encode_basic_auth
 from homeassistant.components.application_credentials import (
     AuthorizationServer,
     ClientCredential,
@@ -15,6 +16,7 @@ from custom_components.meraki_ha.application_credentials import (
     MerakiOAuth2Implementation,
     async_get_auth_implementation,
     async_get_description_placeholders,
+    oauth_basic_auth_header,
 )
 from custom_components.meraki_ha.const import (
     OAUTH2_AUTHORIZE,
@@ -40,6 +42,18 @@ async def test_async_get_auth_implementation() -> None:
     impl = await async_get_auth_implementation(MagicMock(), "meraki_ha", credential)
     assert isinstance(impl, MerakiOAuth2Implementation)
     assert impl.extra_authorize_data["scope"] == " ".join(OAUTH_SCOPES)
+    assert impl.extra_token_resolve_data["scope"] == " ".join(OAUTH_SCOPES)
+
+
+def test_oauth_basic_auth_header_rfc6749_encodes_reserved_characters() -> None:
+    """Test client credentials are form-urlencoded before HTTP Basic."""
+    client_id = "id+plus"
+    client_secret = "secret/slash="
+    header = oauth_basic_auth_header(client_id, client_secret)
+    assert header == encode_basic_auth(
+        quote(client_id, safe=""), quote(client_secret, safe="")
+    )
+    assert header != encode_basic_auth(client_id, client_secret)
 
 
 @pytest.mark.asyncio
@@ -86,10 +100,10 @@ async def test_token_request_uses_http_basic() -> None:
     assert "client_secret" not in posted
     assert "client_id" not in posted
     assert posted["grant_type"] == "authorization_code"
-    auth = posted_call.kwargs["auth"]
-    assert isinstance(auth, BasicAuth)
-    assert auth.login == "client-id"
-    assert auth.password == "client-secret"
+    assert "auth" not in posted_call.kwargs
+    assert posted_call.kwargs["headers"]["Authorization"] == oauth_basic_auth_header(
+        "client-id", "client-secret"
+    )
 
 
 @pytest.mark.asyncio
