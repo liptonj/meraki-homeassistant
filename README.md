@@ -1,8 +1,10 @@
 # Meraki Home Assistant Integration
 
-[![Beta CI](https://github.com/liptonj/meraki-homeassistant/actions/workflows/beta-ci.yaml/badge.svg)](https://github.com/liptonj/meraki-homeassistant/actions/workflows/beta-ci.yaml)
-[![Main CI](https://github.com/liptonj/meraki-homeassistant/actions/workflows/main-ci.yaml/badge.svg)](https://github.com/liptonj/meraki-homeassistant/actions/workflows/main-ci.yaml)
-![Python Version](https://img.shields.io/badge/python-3.13-blue.svg)
+[![Release](https://img.shields.io/github/v/release/liptonj/meraki-homeassistant?include_prereleases)](https://github.com/liptonj/meraki-homeassistant/releases)
+[![Main CI](https://github.com/liptonj/meraki-homeassistant/actions/workflows/main-ci.yaml/badge.svg?branch=main)](https://github.com/liptonj/meraki-homeassistant/actions/workflows/main-ci.yaml)
+[![Beta CI](https://github.com/liptonj/meraki-homeassistant/actions/workflows/beta-ci.yaml/badge.svg?branch=beta)](https://github.com/liptonj/meraki-homeassistant/actions/workflows/beta-ci.yaml)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.9.1-blue.svg)
+![Python Version](https://img.shields.io/badge/python-3.14.2-blue.svg)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 This Home Assistant integration allows you to monitor and manage your Cisco Meraki network, including devices, networks, and SSIDs. It leverages the Meraki API to bring data from your Meraki dashboard into Home Assistant, enabling you to gain insights into your network and automate actions based on its status.

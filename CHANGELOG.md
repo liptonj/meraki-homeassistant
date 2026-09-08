@@ -2,6 +2,9 @@
 
 ### Bug Fixes
 
+- **auth:** Send RFC 6749 HTTP Basic on the Meraki token request so `invalid_client` / 401 Unauthorized no longer fails Add hub
+- **hacs:** Advertise Home Assistant 2026.9.1 and Python 3.14.2 on the HACS repository page
+
 - **translations:** Move example webhook URLs into description placeholders so hassfest passes
 - **ci:** Generate screenshots without importing the Home Assistant package
 - **ci:** Fail pip-audit only for integration-owned packages, not Home Assistant pins

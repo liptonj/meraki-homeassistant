@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from json import JSONDecodeError
 from typing import Any, cast
+from urllib.parse import quote
 
-from aiohttp import BasicAuth, ClientError
+from aiohttp import ClientError, encode_basic_auth
 from homeassistant.components.application_credentials import (
     AuthImplementation,
     AuthorizationServer,
@@ -27,12 +28,28 @@ from .helpers.logging_helper import MerakiLoggers
 _LOGGER = MerakiLoggers.MAIN
 
 
+def oauth_basic_auth_header(client_id: str, client_secret: str) -> str:
+    """Build the Authorization header value for the Meraki token endpoint.
+
+    RFC 6749 section 2.3.1 requires application/x-www-form-urlencoded encoding
+    of the client id and secret before HTTP Basic. Meraki's authorization
+    server (Ory Hydra) query-unescapes those values; sending them raw turns
+    ``+`` in a Cisco client secret into a space and yields ``invalid_client``.
+    """
+    return encode_basic_auth(quote(client_id, safe=""), quote(client_secret, safe=""))
+
+
 class MerakiOAuth2Implementation(AuthImplementation):
     """OAuth2 implementation that authenticates the token endpoint with HTTP Basic."""
 
     @property
     def extra_authorize_data(self) -> dict[str, str]:
         """Request the scopes this integration needs."""
+        return {"scope": " ".join(OAUTH_SCOPES)}
+
+    @property
+    def extra_token_resolve_data(self) -> dict[str, str]:
+        """Include scopes on the authorization-code token request."""
         return {"scope": " ".join(OAUTH_SCOPES)}
 
     async def _token_request(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -45,7 +62,11 @@ class MerakiOAuth2Implementation(AuthImplementation):
         resp = await session.post(
             self.token_url,
             data=request_data,
-            auth=BasicAuth(self.client_id, self.client_secret),
+            headers={
+                "Authorization": oauth_basic_auth_header(
+                    self.client_id, self.client_secret
+                )
+            },
         )
         if resp.status >= 400:
             try:
