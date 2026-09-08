@@ -1,0 +1,1106 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Meraki Cards - Debug Guide 🐛 - Meraki Home Assistant Integration</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#meraki-cards-debug-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Meraki Home Assistant Integration" class="md-header__button md-logo" aria-label="Meraki Home Assistant Integration" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Meraki Home Assistant Integration
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Meraki Cards - Debug Guide 🐛
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Meraki Home Assistant Integration" class="md-nav__button md-logo" aria-label="Meraki Home Assistant Integration" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Meraki Home Assistant Integration
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-enable-debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to Enable Debug Mode
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to Enable Debug Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#method-1-localstorage-recommended-persists-across-reloads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method 1: localStorage (Recommended - Persists Across Reloads)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-2-card-configuration-per-card-debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method 2: Card Configuration (Per-Card Debugging)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-3-browser-console-temporary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method 3: Browser Console (Temporary)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-debug-mode-shows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Debug Mode Shows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What Debug Mode Shows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-console-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Console Output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Console Output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lifecycle-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle Events
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Calls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-debug-panel-in-each-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Debug Panel (In Each Card)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Debug Panel (In Each Card)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#debug-panel-buttons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Panel Buttons
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-debug-scenarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Debug Scenarios
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Debug Scenarios">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scenario-1-card-shows-loading-forever" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 1: Card Shows "Loading..." Forever
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-2-card-shows-no-ssids-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 2: Card Shows "No SSIDs Found"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-3-card-shows-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 3: Card Shows Error
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-4-data-not-updating" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 4: Data Not Updating
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interpreting-debug-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpreting Debug Output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Interpreting Debug Output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#healthy-card-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Healthy Card Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#problem-card-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem Card Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Debugging
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Debugging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inspect-full-card-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspect Full Card State
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monitor-all-api-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitor All API Calls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-ssid-entity-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check SSID Entity Attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disabling-debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disabling Debug Mode
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Disabling Debug Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#method-1-localstorage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method 1: localStorage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-2-card-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method 2: Card Config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-3-browser-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method 3: Browser Console
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debug-performance-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Performance Impact
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reporting-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reporting Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-bug-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Bug Report:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="meraki-cards-debug-guide">Meraki Cards - Debug Guide 🐛</h1>
+<h2 id="how-to-enable-debug-mode">How to Enable Debug Mode</h2>
+<p>Debug mode adds comprehensive logging to the browser console and shows a debug panel on each card.</p>
+<h3 id="method-1-localstorage-recommended-persists-across-reloads">Method 1: localStorage (Recommended - Persists Across Reloads)</h3>
+<p>Open browser console (F12) and run:</p>
+<pre><code class="language-javascript">localStorage.setItem('meraki_debug', 'true');
+</code></pre>
+<p>Then reload the page. Debug mode will stay enabled until you disable it.</p>
+<p><strong>To disable:</strong></p>
+<pre><code class="language-javascript">localStorage.removeItem('meraki_debug');
+</code></pre>
+<h3 id="method-2-card-configuration-per-card-debugging">Method 2: Card Configuration (Per-Card Debugging)</h3>
+<p>Add <code>debug: true</code> to any card's YAML configuration:</p>
+<pre><code class="language-yaml">- type: custom:meraki-overview-card
+  config_entry_id: YOUR_ID
+  debug: true # Only this card will show debug output
+</code></pre>
+<h3 id="method-3-browser-console-temporary">Method 3: Browser Console (Temporary)</h3>
+<pre><code class="language-javascript">window.merakiDebug = true;
+</code></pre>
+<p>This enables debug mode until you reload the page.</p>
+<hr />
+<h2 id="what-debug-mode-shows">What Debug Mode Shows</h2>
+<h3 id="1-console-output">1. Console Output</h3>
+<p>Debug mode logs everything with color-coded messages:</p>
+<ul>
+<li><strong>🔵 Blue</strong> = Info messages</li>
+<li><strong>🟢 Green</strong> = Success messages</li>
+<li><strong>🟡 Yellow</strong> = Warnings</li>
+<li><strong>🔴 Red</strong> = Errors</li>
+</ul>
+<h4 id="lifecycle-events">Lifecycle Events</h4>
+<pre><code>⚙️  MerakiOverviewCard.setConfig { config_entry_id: &quot;abc123&quot;, ... }
+🏠 MerakiOverviewCard.hassSet { connected: true, states: 245 }
+📻 MerakiOverviewCard.subscribed
+📡 MerakiOverviewCard.fetchData { command: &quot;meraki/get_overview&quot; }
+📥 MerakiOverviewCard.dataReceived { devices: 32, clients: 159 }
+🎨 MerakiOverviewCard.render { loading: false, error: false, hasData: true }
+</code></pre>
+<h4 id="api-calls">API Calls</h4>
+<pre><code>🌐 MerakiOverviewCard → meraki_ha/get_overview
+  📤 Request: { command: &quot;meraki_ha/get_overview&quot;, config_entry_id: &quot;abc123&quot; }
+  ⏱️  Duration: 245ms
+  ✅ Response: { devices: [...], clients: [...] }
+  📊 Data summary: { devices: 32, clients: 159, ssids: 3, networks: 1 }
+</code></pre>
+<h4 id="errors">Errors</h4>
+<pre><code>❌ Error: { message: &quot;Connection failed&quot;, code: &quot;ERR_CONNECTION&quot; }
+Stack trace: ...
+</code></pre>
+<h3 id="2-debug-panel-in-each-card">2. Debug Panel (In Each Card)</h3>
+<p>When debug mode is enabled, each card shows a collapsible debug panel at the bottom:</p>
+<pre><code>┌──────────────────────────────────────┐
+│ 🐛 Debug Info ▼                      │
+├──────────────────────────────────────┤
+│ Card: MerakiOverviewCard             │
+│ Config Entry ID: 01KEWXQN207...      │
+│ Has hass: true                       │
+│ Has data: true                       │
+│ Loading: false                       │
+│ Error: None                          │
+│ Subscribed: true                     │
+│ Last update: 3:45:23 PM              │
+│ [🔄 Force Refresh] [📊 Log State]    │
+└──────────────────────────────────────┘
+</code></pre>
+<h4 id="debug-panel-buttons">Debug Panel Buttons</h4>
+<ul>
+<li><strong>🔄 Force Refresh</strong> - Manually trigger a data fetch</li>
+<li><strong>📊 Log State</strong> - Dumps the entire card state to console for inspection</li>
+</ul>
+<hr />
+<h2 id="common-debug-scenarios">Common Debug Scenarios</h2>
+<h3 id="scenario-1-card-shows-loading-forever">Scenario 1: Card Shows "Loading..." Forever</h3>
+<p><strong>Enable debug mode and check console for:</strong></p>
+<pre><code>⚠️  MerakiOverviewCard hass not available yet, waiting...
+</code></pre>
+<p><strong>If after 10 seconds you see:</strong></p>
+<pre><code>❌ TIMEOUT: hass object never received after 10 seconds!
+</code></pre>
+<p><strong>Solution:</strong></p>
+<ul>
+<li>Check that the card is properly registered</li>
+<li>Verify dashboard YAML syntax is correct</li>
+<li>Try removing and re-adding the card</li>
+</ul>
+<hr />
+<h3 id="scenario-2-card-shows-no-ssids-found">Scenario 2: Card Shows "No SSIDs Found"</h3>
+<p><strong>Check console for:</strong></p>
+<pre><code>🌐 MerakiSSIDsListCard → meraki_ha/get_ssids
+  ✅ Response: { ssids: [] }  ← Empty array!
+</code></pre>
+<p><strong>Or:</strong></p>
+<pre><code>📊 Data summary: { ssids: 0 }
+</code></pre>
+<p><strong>Solution:</strong></p>
+<ul>
+<li>Check if SSID switches exist in HA (Settings → Devices &amp; Services → Meraki)</li>
+<li>Verify the coordinator is fetching SSIDs from the API</li>
+<li>Check if <code>ssid_number</code> and <code>network_id</code> attributes are set on SSID entities</li>
+</ul>
+<hr />
+<h3 id="scenario-3-card-shows-error">Scenario 3: Card Shows Error</h3>
+<p><strong>Check console for detailed error:</strong></p>
+<pre><code>❌ MerakiOverviewCard.fetchData failed
+{
+  message: &quot;Unknown command: meraki_ha/get_overview&quot;,
+  code: &quot;unknown_command&quot;,
+  command: &quot;meraki_ha/get_overview&quot;,
+  config_entry_id: &quot;01KEWXQN207...&quot;,
+  timestamp: &quot;2026-01-14T20:15:30.123Z&quot;
+}
+</code></pre>
+<p><strong>Solution:</strong></p>
+<ul>
+<li>Verify the WebSocket API endpoint exists</li>
+<li>Check if the integration is loaded properly</li>
+<li>Reload the Meraki integration</li>
+</ul>
+<hr />
+<h3 id="scenario-4-data-not-updating">Scenario 4: Data Not Updating</h3>
+<p><strong>Check console for subscription messages:</strong></p>
+<pre><code>📻 MerakiOverviewCard.subscribed  ← Should see this once
+📥 MerakiOverviewCard.dataReceived { devices: 32 }  ← Should see this when data changes
+</code></pre>
+<p><strong>If you see subscribed but no dataReceived:</strong></p>
+<ul>
+<li>The subscription is working but no updates are being published</li>
+<li>Check if the coordinator is updating</li>
+<li>Try Force Refresh button in debug panel</li>
+</ul>
+<hr />
+<h2 id="interpreting-debug-output">Interpreting Debug Output</h2>
+<h3 id="healthy-card-lifecycle">Healthy Card Lifecycle</h3>
+<pre><code>1. ⚙️  setConfig          ← Card receives configuration
+2. 🏠 hassSet             ← Home Assistant object received
+3. 📻 subscribed          ← Subscribed to real-time updates
+4. 📡 fetchData           ← Initial data fetch
+5. 🌐 API call (230ms)    ← API responds quickly
+6. 📥 dataReceived        ← Data successfully received
+7. 🎨 render              ← Card renders with data
+</code></pre>
+<h3 id="problem-card-lifecycle">Problem Card Lifecycle</h3>
+<pre><code>1. ⚙️  setConfig
+2. ⚠️  hass not available yet, waiting...
+3. [NOTHING HAPPENS]
+4. ❌ TIMEOUT after 10 seconds
+</code></pre>
+<p><strong>Or:</strong></p>
+<pre><code>1. ⚙️  setConfig
+2. 🏠 hassSet
+3. 📻 subscribed
+4. 📡 fetchData
+5. ❌ Error: config_entry_id is required but not set
+</code></pre>
+<hr />
+<h2 id="advanced-debugging">Advanced Debugging</h2>
+<h3 id="inspect-full-card-state">Inspect Full Card State</h3>
+<pre><code class="language-javascript">// Enable debug mode
+localStorage.setItem('meraki_debug', 'true');
+
+// Find the card element
+const card = document.querySelector('meraki-overview-card');
+
+// Log everything
+console.log('Card element:', card);
+console.log('Config:', card.config);
+console.log('Has hass:', !!card.hass);
+console.log('Data:', card._data);
+console.log('Loading:', card._loading);
+console.log('Error:', card._error);
+</code></pre>
+<h3 id="monitor-all-api-calls">Monitor All API Calls</h3>
+<pre><code class="language-javascript">// Intercept WebSocket messages
+const originalSend = WebSocket.prototype.send;
+WebSocket.prototype.send = function (data) {
+  console.log('📤 WS Send:', JSON.parse(data));
+  return originalSend.call(this, data);
+};
+</code></pre>
+<h3 id="check-ssid-entity-attributes">Check SSID Entity Attributes</h3>
+<pre><code class="language-javascript">// Find all SSID switches
+const ssidSwitches = Object.keys(hass.states)
+  .filter(
+    (e) =&gt; e.includes('enabled_control') || e.includes('broadcast_control')
+  )
+  .map((id) =&gt; ({
+    id,
+    ...hass.states[id].attributes,
+  }));
+
+console.table(ssidSwitches);
+</code></pre>
+<hr />
+<h2 id="disabling-debug-mode">Disabling Debug Mode</h2>
+<h3 id="method-1-localstorage">Method 1: localStorage</h3>
+<pre><code class="language-javascript">localStorage.removeItem('meraki_debug');
+</code></pre>
+<h3 id="method-2-card-config">Method 2: Card Config</h3>
+<p>Remove <code>debug: true</code> from YAML</p>
+<h3 id="method-3-browser-console">Method 3: Browser Console</h3>
+<p>Reload the page (Method 3 is temporary)</p>
+<hr />
+<h2 id="debug-performance-impact">Debug Performance Impact</h2>
+<p>Debug mode has minimal performance impact:</p>
+<ul>
+<li>Console logging: ~0.1ms per log</li>
+<li>Debug panel rendering: ~1ms</li>
+<li>No impact when debug mode is off</li>
+</ul>
+<p><strong>It's safe to leave debug mode on during development!</strong></p>
+<hr />
+<h2 id="reporting-issues">Reporting Issues</h2>
+<p>When reporting bugs, <strong>always enable debug mode first</strong> and include:</p>
+<ol>
+<li><strong>Console output</strong> (copy/paste the relevant logs)</li>
+<li><strong>Debug panel screenshot</strong> (shows card state)</li>
+<li><strong>Card configuration</strong> (your YAML)</li>
+<li><strong>Browser</strong> (Chrome/Firefox/Safari + version)</li>
+<li><strong>Home Assistant version</strong></li>
+</ol>
+<h3 id="example-bug-report">Example Bug Report:</h3>
+<pre><code>**Problem:** SSID card shows &quot;No SSIDs found&quot;
+
+**Debug Output:**
+</code></pre>
+<p>📊 Data summary: { ssids: 0 }
+⚠️ SSIDs array is empty</p>
+<pre><code>
+**Debug Panel:**
+- Has hass: true
+- Has data: true
+- Loading: false
+- Error: None
+
+**Card Config:**
+```yaml
+type: custom:meraki-ssids-list-card
+config_entry_id: 01KEWXQN207AMKWPF72B4R62CN
+</code></pre>
+<p><strong>HA Version:</strong> 2024.1.0
+<strong>Browser:</strong> Chrome 120</p>
+<pre><code>
+This gives us everything we need to diagnose the issue!
+
+---
+
+## Card Diagnostics WebSocket Command
+
+You can call the card diagnostics WebSocket command to get detailed information about the integration state:
+
+```javascript
+// In browser console
+await hass.connection.sendMessagePromise({
+  type: 'meraki/card_diagnostics',
+  config_entry_id: 'YOUR_CONFIG_ENTRY_ID'
+});
+</code></pre>
+<p>This returns:</p>
+<ul>
+<li>Coordinator status (ready, last update time, update interval)</li>
+<li>Data summary (device/client/SSID/network counts)</li>
+<li>Device status breakdown (online/alerting/offline)</li>
+<li>Active services (MQTT, camera, device control)</li>
+</ul>
+<p>If you don't know your config_entry_id, call without it to get a list of available entries:</p>
+<pre><code class="language-javascript">await hass.connection.sendMessagePromise({
+  type: 'meraki/card_diagnostics',
+});
+</code></pre>
+<hr />
+<h2 id="quick-reference">Quick Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>localStorage.setItem('meraki_debug', 'true')</code></td>
+<td>Enable debug mode</td>
+</tr>
+<tr>
+<td><code>localStorage.removeItem('meraki_debug')</code></td>
+<td>Disable debug mode</td>
+</tr>
+<tr>
+<td><code>window.merakiDebug = true</code></td>
+<td>Enable temporarily</td>
+</tr>
+<tr>
+<td><code>meraki/card_diagnostics</code> WebSocket</td>
+<td>Get integration diagnostics</td>
+</tr>
+<tr>
+<td>Debug panel → 🔄 Force Refresh</td>
+<td>Manually fetch data</td>
+</tr>
+<tr>
+<td>Debug panel → 📊 Log State</td>
+<td>Dump card state to console</td>
+</tr>
+<tr>
+<td>F12</td>
+<td>Open browser console</td>
+</tr>
+<tr>
+<td>Ctrl+Shift+R</td>
+<td>Hard refresh (clear cache)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><strong>Happy debugging!</strong> 🐛✨</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

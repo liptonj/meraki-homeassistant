@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" width="1600" height="1100">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+    <marker id="arrowhead-bgp" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#0066cc" />
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1600" height="1100" fill="#f8f9fa"/>
+  
+  <!-- Title -->
+  <text x="800" y="35" font-family="Arial, sans-serif" font-size="26" font-weight="bold" text-anchor="middle" fill="#1a1a1a">
+    Official Meraki Campus Gateway Architecture (Per Cisco Documentation)
+  </text>
+  
+  <!-- Documentation Reference -->
+  <text x="800" y="65" font-family="Arial, sans-serif" font-size="13" text-anchor="middle" fill="#495057">
+    Reference: https://documentation.meraki.com/Wireless/Design_and_Configure/Deployment_Guides/Campus_Gateway_Deployment_Guide
+  </text>
+  
+  <!-- Architecture Requirement Box -->
+  <rect x="50" y="85" width="1500" height="90" fill="#d1ecf1" stroke="#17a2b8" stroke-width="3" rx="8"/>
+  <text x="800" y="115" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#0c5460">
+    ⚠️ REQUIRED ARCHITECTURE PER CISCO MERAKI
+  </text>
+  <text x="800" y="140" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#0c5460">
+    Campus Gateway is a LAYER 2 ONLY device - It REQUIRES an upstream Layer 3 switch for all routing functions.
+  </text>
+  <text x="800" y="160" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#0c5460">
+    Campus Gateway connects via Port-Channel (LACP) to upstream core/distribution switch. All BGP routing MUST happen at Layer 3 switch.
+  </text>
+  
+  <!-- ISP Router (WAN) -->
+  <rect x="650" y="220" width="200" height="80" fill="#ff6b6b" stroke="#c92a2a" stroke-width="3" rx="5"/>
+  <text x="750" y="255" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#fff">
+    ISP Router
+  </text>
+  <text x="750" y="275" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#fff">
+    (WAN)
+  </text>
+  <text x="750" y="290" font-family="Arial, sans-serif" font-size="11" font-style="italic" text-anchor="middle" fill="#ffe3e3">
+    BGP Peer
+  </text>
+  
+  <!-- BGP Label -->
+  <text x="750" y="330" font-family="Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#0066cc">
+    BGP Peering
+  </text>
+  
+  <!-- Connection ISP to Core -->
+  <line x1="750" y1="300" x2="750" y2="370" stroke="#0066cc" stroke-width="4" marker-end="url(#arrowhead-bgp)"/>
+  <line x1="750" y1="370" x2="750" y2="300" stroke="#0066cc" stroke-width="4" marker-start="url(#arrowhead-bgp)"/>
+  
+  <!-- REQUIRED Layer 3 Core/Distribution Switch -->
+  <g id="core-switch">
+    <rect x="475" y="370" width="550" height="160" fill="#20c997" stroke="#087f5b" stroke-width="5" rx="8">
+      <animate attributeName="opacity" values="1;0.9;1" dur="2s" repeatCount="indefinite"/>
+    </rect>
+    <text x="750" y="405" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#fff">
+      ✅ REQUIRED COMPONENT ✅
+    </text>
+    <text x="750" y="440" font-family="Arial, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#fff">
+      Layer 3 Core/Distribution Switch
+    </text>
+    <text x="750" y="470" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" fill="#fff">
+      (Upstream Switch - Handles ALL Layer 3 Routing)
+    </text>
+    <text x="750" y="495" font-family="Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#c3fae8">
+      ⚡ BGP to: ISP (WAN) and SRV Devices (LAN)
+    </text>
+    <text x="750" y="515" font-family="Arial, sans-serif" font-size="12" font-style="italic" text-anchor="middle" fill="#c3fae8">
+      Per Cisco: "Connection between CG and upstream switch - typically core/distribution switch"
+    </text>
+  </g>
+  
+  <!-- SRV Devices (Left) -->
+  <rect x="80" y="400" width="200" height="80" fill="#339af0" stroke="#1864ab" stroke-width="3" rx="5"/>
+  <text x="180" y="435" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#fff">
+    SRV Devices
+  </text>
+  <text x="180" y="455" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#fff">
+    (LAN)
+  </text>
+  <text x="180" y="470" font-family="Arial, sans-serif" font-size="11" font-style="italic" text-anchor="middle" fill="#d0ebff">
+    BGP Peer
+  </text>
+  
+  <!-- BGP Connections -->
+  <line x1="280" y1="440" x2="475" y2="440" stroke="#0066cc" stroke-width="4" marker-end="url(#arrowhead-bgp)"/>
+  <line x1="475" y1="440" x2="280" y2="440" stroke="#0066cc" stroke-width="4" marker-start="url(#arrowhead-bgp)"/>
+  <text x="360" y="430" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#0066cc">BGP</text>
+  
+  <!-- Connection Label -->
+  <rect x="550" y="560" width="400" height="80" fill="#fff3cd" stroke="#ffc107" stroke-width="3" rx="5"/>
+  <text x="750" y="590" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#856404">
+    📋 Per Cisco Documentation:
+  </text>
+  <text x="750" y="610" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#856404">
+    "Campus Gateway requires upstream switch connection
+  </text>
+  <text x="750" y="627" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#856404">
+    via Port-Channel (LACP) - No Layer 3 routing capability"
+  </text>
+  
+  <!-- Port-Channel Connection -->
+  <line x1="750" y1="530" x2="750" y2="560" stroke="#ff6b00" stroke-width="5" marker-end="url(#arrowhead)"/>
+  <line x1="750" y1="680" x2="750" y2="710" stroke="#ff6b00" stroke-width="5" marker-end="url(#arrowhead)"/>
+  
+  <!-- Meraki Campus Gateway -->
+  <rect x="550" y="710" width="400" height="140" fill="#ffa94d" stroke="#e67700" stroke-width="4" rx="5"/>
+  <text x="750" y="750" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#fff">
+    Meraki Campus Gateway
+  </text>
+  <text x="750" y="780" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" fill="#fff">
+    (CW9800H1 - Layer 2 ONLY Device)
+  </text>
+  <text x="750" y="805" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
+    ⚠️ NO BGP / NO LAYER 3 ROUTING
+  </text>
+  <text x="750" y="825" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#fff3e0">
+    Function: VXLAN tunnel termination + Layer 2 switching
+  </text>
+  <text x="750" y="840" font-family="Arial, sans-serif" font-size="11" font-style="italic" text-anchor="middle" fill="#fff3e0">
+    Client VLANs only exist between CG ↔ Upstream Switch
+  </text>
+  
+  <!-- VXLAN Label -->
+  <text x="750" y="890" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#9775fa">
+    VXLAN Tunnels (Layer 2 over IP underlay)
+  </text>
+  
+  <!-- Access Points -->
+  <rect x="180" y="930" width="200" height="85" fill="#9775fa" stroke="#6741d9" stroke-width="3" rx="5"/>
+  <text x="280" y="965" font-family="Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#fff">AP1</text>
+  <text x="280" y="985" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#f3f0ff">Meraki Access Point</text>
+  <text x="280" y="1000" font-family="Arial, sans-serif" font-size="11" font-style="italic" text-anchor="middle" fill="#f3f0ff">MR31.2.X firmware</text>
+  
+  <rect x="650" y="930" width="200" height="85" fill="#9775fa" stroke="#6741d9" stroke-width="3" rx="5"/>
+  <text x="750" y="965" font-family="Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#fff">AP2</text>
+  <text x="750" y="985" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#f3f0ff">Meraki Access Point</text>
+  <text x="750" y="1000" font-family="Arial, sans-serif" font-size="11" font-style="italic" text-anchor="middle" fill="#f3f0ff">MR31.2.X firmware</text>
+  
+  <rect x="1120" y="930" width="200" height="85" fill="#9775fa" stroke="#6741d9" stroke-width="3" rx="5"/>
+  <text x="1220" y="965" font-family="Arial, sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#fff">AP3</text>
+  <text x="1220" y="985" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#f3f0ff">Meraki Access Point</text>
+  <text x="1220" y="1000" font-family="Arial, sans-serif" font-size="11" font-style="italic" text-anchor="middle" fill="#f3f0ff">MR31.2.X firmware</text>
+  
+  <!-- VXLAN Connections -->
+  <line x1="660" y1="850" x2="280" y2="930" stroke="#9775fa" stroke-width="3" stroke-dasharray="8,4" marker-end="url(#arrowhead)"/>
+  <line x1="750" y1="850" x2="750" y2="930" stroke="#9775fa" stroke-width="3" stroke-dasharray="8,4" marker-end="url(#arrowhead)"/>
+  <line x1="840" y1="850" x2="1220" y2="930" stroke="#9775fa" stroke-width="3" stroke-dasharray="8,4" marker-end="url(#arrowhead)"/>
+  
+  <!-- Architecture Benefits Box -->
+  <rect x="50" y="710" width="450" height="210" fill="#d4edda" stroke="#28a745" stroke-width="3" rx="8"/>
+  <text x="275" y="740" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#155724">
+    ✅ WHY THIS ARCHITECTURE?
+  </text>
+  <text x="70" y="770" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#155724">
+    Benefits (Per Cisco):
+  </text>
+  <text x="70" y="795" font-family="Arial, sans-serif" font-size="12" fill="#155724">
+    ✓ Client VLANs only exist at core switch
+  </text>
+  <text x="70" y="815" font-family="Arial, sans-serif" font-size="12" fill="#155724">
+    ✓ Seamless L3 roaming across campus
+  </text>
+  <text x="70" y="835" font-family="Arial, sans-serif" font-size="12" fill="#155724">
+    ✓ Minimal changes to wired underlay
+  </text>
+  <text x="70" y="855" font-family="Arial, sans-serif" font-size="12" fill="#155724">
+    ✓ Scales to 1000s of clients and APs
+  </text>
+  <text x="70" y="875" font-family="Arial, sans-serif" font-size="12" fill="#155724">
+    ✓ Reduces broadcast domain to core
+  </text>
+  <text x="70" y="895" font-family="Arial, sans-serif" font-size="12" fill="#155724">
+    ✓ No spanning tree at access layer
+  </text>
+  <text x="70" y="915" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#155724">
+    This is the CORRECT design per Meraki's
+  </text>
+  <text x="70" y="935" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#155724">
+    official Campus Gateway deployment guide
+  </text>
+  
+  <!-- Legend -->
+  <rect x="50" y="940" width="100" height="150" fill="#fff" stroke="#dee2e6" stroke-width="2" rx="5"/>
+  <text x="100" y="965" font-family="Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#333">
+    Legend
+  </text>
+  
+  <line x1="60" y1="980" x2="90" y2="980" stroke="#0066cc" stroke-width="4"/>
+  <text x="95" y="985" font-family="Arial, sans-serif" font-size="10" fill="#333">BGP</text>
+  
+  <line x1="60" y1="1000" x2="90" y2="1000" stroke="#ff6b00" stroke-width="5"/>
+  <text x="95" y="1005" font-family="Arial, sans-serif" font-size="10" fill="#333">LACP</text>
+  
+  <line x1="60" y1="1020" x2="90" y2="1020" stroke="#9775fa" stroke-width="3" stroke-dasharray="8,4"/>
+  <text x="95" y="1025" font-family="Arial, sans-serif" font-size="10" fill="#333">VXLAN</text>
+  
+  <rect x="60" y="1035" width="20" height="15" fill="#20c997" stroke="#087f5b" stroke-width="2"/>
+  <text x="85" y="1047" font-family="Arial, sans-serif" font-size="9" fill="#333">L3 Core</text>
+  
+  <rect x="60" y="1055" width="20" height="15" fill="#ffa94d" stroke="#e67700" stroke-width="2"/>
+  <text x="85" y="1067" font-family="Arial, sans-serif" font-size="9" fill="#333">CG (L2)</text>
+  
+  <!-- Bottom Citation -->
+  <text x="800" y="1085" font-family="Arial, sans-serif" font-size="11" font-style="italic" text-anchor="middle" fill="#6c757d">
+    Source: Cisco Meraki Campus Gateway Deployment Guide - https://documentation.meraki.com/Wireless/Design_and_Configure/Deployment_Guides/Campus_Gateway_Deployment_Guide
+  </text>
+</svg>

@@ -1,0 +1,1029 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Feature: IPSK Manager with Device Association - Meraki Home Assistant Integration</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#feature-ipsk-manager-with-device-association" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Meraki Home Assistant Integration" class="md-header__button md-logo" aria-label="Meraki Home Assistant Integration" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Meraki Home Assistant Integration
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Feature: IPSK Manager with Device Association
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Meraki Home Assistant Integration" class="md-nav__button md-logo" aria-label="Meraki Home Assistant Integration" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Meraki Home Assistant Integration
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requirements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-ipsk-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. IPSK Data Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-ipsk-registrycoordinator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. IPSK Registry/Coordinator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-home-assistant-entities-per-ipsk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Home Assistant Entities per IPSK
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Home Assistant Entities per IPSK">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sensor-ipsk-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sensor: IPSK Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#switch-ipsk-enablerevoke" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Switch: IPSK Enable/Revoke
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#binary-sensor-ipsk-connected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Binary Sensor: IPSK Connected
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#button-reveal-passphrase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Button: Reveal Passphrase
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-ha-services" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. HA Services
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-persistent-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Persistent Storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-websocket-api-for-add-on-communication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. WebSocket API for Add-on Communication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-configuration-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Configuration Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Events
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance Criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Labels
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="feature-ipsk-manager-with-device-association">Feature: IPSK Manager with Device Association</h1>
+<h2 id="summary">Summary</h2>
+<p>Enhance the meraki_ha integration with a comprehensive Identity PSK (IPSK) management system that creates Home Assistant entities for each IPSK and allows association with HA devices, areas, and users.</p>
+<h2 id="background">Background</h2>
+<p>Identity PSKs allow unique Wi-Fi passwords per device/user on Meraki networks. This feature will:</p>
+<ul>
+<li>Provide full IPSK lifecycle management (create, read, update, delete)</li>
+<li>Create HA entities for each IPSK (sensors, switches, binary sensors)</li>
+<li>Associate IPSKs with Home Assistant devices, areas, or users</li>
+<li>Enable automations based on IPSK status and connectivity</li>
+<li>Serve as the backend for the separate WPN Registration Portal add-on</li>
+</ul>
+<h2 id="requirements">Requirements</h2>
+<h3 id="1-ipsk-data-model">1. IPSK Data Model</h3>
+<pre><code class="language-python">@dataclass
+class ManagedIPSK:
+    &quot;&quot;&quot;Represents a managed IPSK.&quot;&quot;&quot;
+    id: str                          # Meraki IPSK ID
+    name: str                        # Human-readable name
+    network_id: str                  # Meraki network ID
+    ssid_number: int                 # SSID number (0-14)
+    ssid_name: str                   # SSID name for display
+    group_policy_id: str | None      # Optional group policy
+    passphrase: str                  # The PSK (stored encrypted)
+    expires_at: datetime | None      # Optional expiration
+    created_at: datetime             # Creation timestamp
+    created_by: str                  # Who created it (user/system)
+
+    # Association fields
+    associated_ha_device_id: str | None   # HA device registry ID
+    associated_ha_area_id: str | None     # HA area ID
+    associated_user_name: str | None      # User name (for residents)
+    associated_unit: str | None           # Unit/room number
+
+    # Status tracking
+    status: Literal[&quot;active&quot;, &quot;expired&quot;, &quot;revoked&quot;, &quot;pending&quot;]
+    last_seen: datetime | None       # Last time a client connected
+    connected_client_count: int      # Current connected clients
+</code></pre>
+<h3 id="2-ipsk-registrycoordinator">2. IPSK Registry/Coordinator</h3>
+<p>Create a new coordinator to manage IPSKs:</p>
+<pre><code class="language-python">class IPSKCoordinator(DataUpdateCoordinator):
+    &quot;&quot;&quot;Coordinator for IPSK management.&quot;&quot;&quot;
+
+    async def async_create_ipsk(
+        self,
+        name: str,
+        network_id: str,
+        ssid_number: int,
+        passphrase: str | None = None,  # Auto-generate if None
+        expires_at: datetime | None = None,
+        group_policy_id: str | None = None,
+        associated_device_id: str | None = None,
+        associated_area_id: str | None = None,
+        associated_user: str | None = None,
+        associated_unit: str | None = None,
+    ) -&gt; ManagedIPSK: ...
+
+    async def async_revoke_ipsk(self, ipsk_id: str) -&gt; None: ...
+
+    async def async_update_ipsk(self, ipsk_id: str, **kwargs) -&gt; ManagedIPSK: ...
+
+    async def async_delete_ipsk(self, ipsk_id: str) -&gt; None: ...
+
+    async def async_get_ipsk(self, ipsk_id: str) -&gt; ManagedIPSK | None: ...
+
+    async def async_list_ipsks(
+        self,
+        network_id: str | None = None,
+        ssid_number: int | None = None,
+        status: str | None = None,
+    ) -&gt; list[ManagedIPSK]: ...
+</code></pre>
+<h3 id="3-home-assistant-entities-per-ipsk">3. Home Assistant Entities per IPSK</h3>
+<p>For each managed IPSK, create these entities:</p>
+<h4 id="sensor-ipsk-status">Sensor: IPSK Status</h4>
+<pre><code class="language-yaml">sensor.meraki_ipsk_{name}:
+  state: 'active' # active | expired | revoked | pending
+  attributes:
+    ipsk_id: 'abc123'
+    name: 'SmartTV-LivingRoom'
+    network_name: 'Home Network'
+    ssid_name: 'IoT-Devices'
+    ssid_number: 2
+    group_policy: 'IoT Policy'
+    passphrase_masked: 'Smar****'
+    expires_at: '2026-02-01T00:00:00Z'
+    created_at: '2026-01-12T10:00:00Z'
+    associated_device: 'media_player.living_room_tv'
+    associated_area: 'Living Room'
+    associated_user: null
+    associated_unit: null
+    last_seen: '2026-01-12T15:30:00Z'
+    connected_clients: 1
+  device_class: null
+  icon: mdi:key-wireless
+</code></pre>
+<h4 id="switch-ipsk-enablerevoke">Switch: IPSK Enable/Revoke</h4>
+<pre><code class="language-yaml">switch.meraki_ipsk_{name}_enabled:
+  state: 'on' # on = active, off = revoked
+  # Turn off to revoke, turn on to re-enable
+</code></pre>
+<h4 id="binary-sensor-ipsk-connected">Binary Sensor: IPSK Connected</h4>
+<pre><code class="language-yaml">binary_sensor.meraki_ipsk_{name}_connected:
+  state: 'on' # on = device(s) currently connected
+  attributes:
+    connected_clients: 1
+  device_class: connectivity
+</code></pre>
+<h4 id="button-reveal-passphrase">Button: Reveal Passphrase</h4>
+<pre><code class="language-yaml">button.meraki_ipsk_{name}_reveal:
+  # When pressed, fires event with passphrase
+  # Or shows in persistent notification (configurable)
+</code></pre>
+<h3 id="4-ha-services">4. HA Services</h3>
+<pre><code class="language-yaml"># Create a new IPSK
+meraki_ha.create_ipsk:
+  fields:
+    name:
+      required: true
+      selector:
+        text:
+    network_id:
+      required: true
+      selector:
+        select:
+          options: '{{ networks }}'
+    ssid_number:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 14
+    passphrase:
+      required: false
+      selector:
+        text:
+    duration_hours:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 8760 # 1 year
+    group_policy_id:
+      required: false
+      selector:
+        select:
+          options: '{{ group_policies }}'
+    associated_device:
+      required: false
+      selector:
+        device:
+    associated_area:
+      required: false
+      selector:
+        area:
+    associated_user:
+      required: false
+      selector:
+        text:
+    associated_unit:
+      required: false
+      selector:
+        select:
+          options: '{{ areas }}' # HA areas as room options
+
+# Revoke an IPSK
+meraki_ha.revoke_ipsk:
+  target:
+    entity:
+      integration: meraki_ha
+      domain: sensor
+  fields: {}
+
+# Delete an IPSK permanently
+meraki_ha.delete_ipsk:
+  target:
+    entity:
+      integration: meraki_ha
+      domain: sensor
+  fields: {}
+
+# Update IPSK association
+meraki_ha.update_ipsk_association:
+  target:
+    entity:
+      integration: meraki_ha
+      domain: sensor
+  fields:
+    associated_device:
+      selector:
+        device:
+    associated_area:
+      selector:
+        area:
+    associated_user:
+      selector:
+        text:
+    associated_unit:
+      selector:
+        select:
+          options: '{{ areas }}'
+
+# Bulk import IPSKs (for migration)
+meraki_ha.import_ipsks:
+  fields:
+    network_id:
+      required: true
+    ssid_number:
+      required: true
+    # Imports existing IPSKs from Meraki and creates entities
+</code></pre>
+<h3 id="5-persistent-storage">5. Persistent Storage</h3>
+<p>Store IPSK metadata in Home Assistant's storage:</p>
+<pre><code class="language-python"># .storage/meraki_ha.ipsks
+{
+    &quot;version&quot;: 1,
+    &quot;data&quot;: {
+        &quot;ipsks&quot;: {
+            &quot;abc123&quot;: {
+                &quot;id&quot;: &quot;abc123&quot;,
+                &quot;name&quot;: &quot;SmartTV-LivingRoom&quot;,
+                &quot;network_id&quot;: &quot;L_123456&quot;,
+                &quot;ssid_number&quot;: 2,
+                &quot;passphrase_encrypted&quot;: &quot;...&quot;,
+                &quot;associated_ha_device_id&quot;: &quot;device_id_123&quot;,
+                &quot;associated_ha_area_id&quot;: &quot;living_room&quot;,
+                &quot;associated_user_name&quot;: null,
+                &quot;associated_unit&quot;: null,
+                &quot;created_at&quot;: &quot;2026-01-12T10:00:00Z&quot;,
+                &quot;created_by&quot;: &quot;admin&quot;
+            }
+        }
+    }
+}
+</code></pre>
+<h3 id="6-websocket-api-for-add-on-communication">6. WebSocket API for Add-on Communication</h3>
+<p>Expose WebSocket commands for the WPN Portal add-on:</p>
+<pre><code class="language-python"># Register WebSocket commands
+@websocket_api.websocket_command({
+    vol.Required(&quot;type&quot;): &quot;meraki_ha/ipsk/list&quot;,
+    vol.Optional(&quot;network_id&quot;): str,
+    vol.Optional(&quot;ssid_number&quot;): int,
+    vol.Optional(&quot;status&quot;): str,
+})
+async def ws_ipsk_list(hass, connection, msg): ...
+
+@websocket_api.websocket_command({
+    vol.Required(&quot;type&quot;): &quot;meraki_ha/ipsk/create&quot;,
+    vol.Required(&quot;name&quot;): str,
+    vol.Required(&quot;network_id&quot;): str,
+    vol.Required(&quot;ssid_number&quot;): int,
+    vol.Optional(&quot;passphrase&quot;): str,
+    vol.Optional(&quot;duration_hours&quot;): int,
+    vol.Optional(&quot;group_policy_id&quot;): str,
+    vol.Optional(&quot;associated_device_id&quot;): str,
+    vol.Optional(&quot;associated_area_id&quot;): str,
+    vol.Optional(&quot;associated_user&quot;): str,
+    vol.Optional(&quot;associated_unit&quot;): str,
+})
+async def ws_ipsk_create(hass, connection, msg): ...
+
+@websocket_api.websocket_command({
+    vol.Required(&quot;type&quot;): &quot;meraki_ha/ipsk/revoke&quot;,
+    vol.Required(&quot;ipsk_id&quot;): str,
+})
+async def ws_ipsk_revoke(hass, connection, msg): ...
+
+@websocket_api.websocket_command({
+    vol.Required(&quot;type&quot;): &quot;meraki_ha/ipsk/delete&quot;,
+    vol.Required(&quot;ipsk_id&quot;): str,
+})
+async def ws_ipsk_delete(hass, connection, msg): ...
+
+@websocket_api.websocket_command({
+    vol.Required(&quot;type&quot;): &quot;meraki_ha/ipsk/get&quot;,
+    vol.Required(&quot;ipsk_id&quot;): str,
+    vol.Optional(&quot;include_passphrase&quot;): bool,  # Requires admin
+})
+async def ws_ipsk_get(hass, connection, msg): ...
+
+@websocket_api.websocket_command({
+    vol.Required(&quot;type&quot;): &quot;meraki_ha/ipsk/update&quot;,
+    vol.Required(&quot;ipsk_id&quot;): str,
+    vol.Optional(&quot;associated_device_id&quot;): str,
+    vol.Optional(&quot;associated_area_id&quot;): str,
+    vol.Optional(&quot;associated_user&quot;): str,
+    vol.Optional(&quot;associated_unit&quot;): str,
+})
+async def ws_ipsk_update(hass, connection, msg): ...
+
+# Get available options for dropdowns
+@websocket_api.websocket_command({
+    vol.Required(&quot;type&quot;): &quot;meraki_ha/ipsk/options&quot;,
+})
+async def ws_ipsk_options(hass, connection, msg):
+    &quot;&quot;&quot;Return available networks, SSIDs, group policies, areas.&quot;&quot;&quot;
+    ...
+</code></pre>
+<h3 id="7-configuration-options">7. Configuration Options</h3>
+<p>Add to integration options flow:</p>
+<pre><code class="language-python"># In options_flow.py
+IPSK_OPTIONS = {
+    vol.Optional(CONF_IPSK_DEFAULT_DURATION, default=24): int,  # hours
+    vol.Optional(CONF_IPSK_AUTO_EXPIRE_CLEANUP, default=True): bool,
+    vol.Optional(CONF_IPSK_PASSPHRASE_LENGTH, default=12): int,
+    vol.Optional(CONF_IPSK_NOTIFY_ON_EXPIRE, default=True): bool,
+    vol.Optional(CONF_IPSK_NOTIFY_ON_CONNECT, default=False): bool,
+}
+</code></pre>
+<h3 id="8-events">8. Events</h3>
+<p>Fire events for automations:</p>
+<pre><code class="language-python"># When IPSK is created
+hass.bus.async_fire(&quot;meraki_ipsk_created&quot;, {
+    &quot;ipsk_id&quot;: &quot;abc123&quot;,
+    &quot;name&quot;: &quot;Guest-John&quot;,
+    &quot;ssid_name&quot;: &quot;Guest-WiFi&quot;,
+    &quot;expires_at&quot;: &quot;2026-01-13T10:00:00Z&quot;,
+})
+
+# When IPSK expires
+hass.bus.async_fire(&quot;meraki_ipsk_expired&quot;, {
+    &quot;ipsk_id&quot;: &quot;abc123&quot;,
+    &quot;name&quot;: &quot;Guest-John&quot;,
+})
+
+# When device connects using IPSK
+hass.bus.async_fire(&quot;meraki_ipsk_device_connected&quot;, {
+    &quot;ipsk_id&quot;: &quot;abc123&quot;,
+    &quot;name&quot;: &quot;Guest-John&quot;,
+    &quot;client_mac&quot;: &quot;aa:bb:cc:dd:ee:ff&quot;,
+})
+
+# When device disconnects
+hass.bus.async_fire(&quot;meraki_ipsk_device_disconnected&quot;, {
+    &quot;ipsk_id&quot;: &quot;abc123&quot;,
+    &quot;name&quot;: &quot;Guest-John&quot;,
+    &quot;client_mac&quot;: &quot;aa:bb:cc:dd:ee:ff&quot;,
+})
+</code></pre>
+<h2 id="implementation-tasks">Implementation Tasks</h2>
+<ul>
+<li>[ ] Create <code>ManagedIPSK</code> dataclass in <code>custom_components/meraki_ha/core/models/ipsk.py</code></li>
+<li>[ ] Create <code>IPSKStore</code> for persistent storage in <code>custom_components/meraki_ha/core/ipsk_store.py</code></li>
+<li>[ ] Create <code>IPSKCoordinator</code> in <code>custom_components/meraki_ha/coordinators/ipsk_coordinator.py</code></li>
+<li>[ ] Add IPSK API methods to <code>WirelessEndpoints</code> (get_identity_psks, sync with Meraki)</li>
+<li>[ ] Create <code>IPSKSensor</code> entity in <code>custom_components/meraki_ha/sensor/ipsk_sensor.py</code></li>
+<li>[ ] Create <code>IPSKSwitch</code> entity in <code>custom_components/meraki_ha/switch/ipsk_switch.py</code></li>
+<li>[ ] Create <code>IPSKConnectedBinarySensor</code> in <code>custom_components/meraki_ha/binary_sensor/ipsk_connected.py</code></li>
+<li>[ ] Create <code>IPSKRevealButton</code> in <code>custom_components/meraki_ha/button/ipsk_reveal.py</code></li>
+<li>[ ] Register WebSocket API commands in <code>custom_components/meraki_ha/api/websocket.py</code></li>
+<li>[ ] Add HA services in <code>custom_components/meraki_ha/services/ipsk_services.py</code></li>
+<li>[ ] Update <code>services.yaml</code> with IPSK service definitions</li>
+<li>[ ] Add IPSK options to options flow</li>
+<li>[ ] Add translations for all new entities and services</li>
+<li>[ ] Write unit tests for IPSK coordinator</li>
+<li>[ ] Write unit tests for IPSK entities</li>
+<li>[ ] Write unit tests for WebSocket API</li>
+<li>[ ] Update documentation</li>
+</ul>
+<h2 id="file-structure">File Structure</h2>
+<pre><code class="language-text">custom_components/meraki_ha/
+├── core/
+│   ├── models/
+│   │   └── ipsk.py              # ManagedIPSK dataclass
+│   └── ipsk_store.py            # Persistent storage
+├── coordinators/
+│   └── ipsk_coordinator.py      # IPSK data coordinator
+├── sensor/
+│   └── ipsk_sensor.py           # IPSK status sensor
+├── switch/
+│   └── ipsk_switch.py           # IPSK enable/revoke switch
+├── binary_sensor/
+│   └── ipsk_connected.py        # IPSK connection status
+├── button/
+│   └── ipsk_reveal.py           # Reveal passphrase button
+├── api/
+│   └── websocket.py             # WebSocket API (add IPSK commands)
+├── services/
+│   └── ipsk_services.py         # HA services for IPSK
+└── services.yaml                # Service definitions
+</code></pre>
+<h2 id="related">Related</h2>
+<ul>
+<li>Depends on: Existing Meraki API client, wireless endpoints</li>
+<li>Enables: WPN Registration Portal Add-on (separate repository)</li>
+<li>References: <a href="https://developer.cisco.com/meraki/api-v1/#!create-network-wireless-ssid-identity-psk">Meraki IPSK API Documentation</a></li>
+</ul>
+<h2 id="acceptance-criteria">Acceptance Criteria</h2>
+<ol>
+<li>[ ] Can create IPSKs via HA service call</li>
+<li>[ ] IPSKs appear as sensor entities with full attribute data</li>
+<li>[ ] Can revoke IPSKs via switch entity</li>
+<li>[ ] Can associate IPSKs with HA devices/areas</li>
+<li>[ ] WebSocket API accessible for external add-ons</li>
+<li>[ ] Events fired for IPSK lifecycle changes</li>
+<li>[ ] Passphrase stored encrypted in HA storage</li>
+<li>[ ] Unit test coverage &gt; 90%</li>
+<li>[ ] All entities have proper translations</li>
+</ol>
+<h2 id="labels">Labels</h2>
+<p><code>enhancement</code>, <code>feature</code>, <code>ipsk</code>, <code>wireless</code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

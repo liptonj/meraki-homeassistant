@@ -1,0 +1,880 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Meraki OAuth2 for Home Assistant - Meraki Home Assistant Integration</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#meraki-oauth2-for-home-assistant" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Meraki Home Assistant Integration" class="md-header__button md-logo" aria-label="Meraki Home Assistant Integration" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Meraki Home Assistant Integration
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Meraki OAuth2 for Home Assistant
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Meraki Home Assistant Integration" class="md-nav__button md-logo" aria-label="Meraki Home Assistant Integration" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Meraki Home Assistant Integration
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oauth-endpoints-and-token-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OAuth endpoints and token rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scopes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scopes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-changed-units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New / changed units
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config-entry-data-version-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config entry data (version 2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config-flow-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config flow steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-refresh-and-401" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token refresh and 401
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#meraki-sdk-bearer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Meraki SDK Bearer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forced-migration-api-key-oauth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forced migration (API key → OAuth)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling-user-visible" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error handling (user-visible)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-notes-for-the-follow-on-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation notes for the follow-on plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="meraki-oauth2-for-home-assistant">Meraki OAuth2 for Home Assistant</h1>
+<p><strong>Date:</strong> 2026-09-08
+<strong>Status:</strong> Approved for implementation (Application Credentials; no shipped secret)
+<strong>Branch intent:</strong> New work from <code>beta</code>. Do not mix with unrelated Push API commits if they can be split.</p>
+<h2 id="goal">Goal</h2>
+<p>Replace Dashboard API keys with Cisco Meraki OAuth 2.0. Each Home Assistant user registers their own Cisco app, stores Client ID and Client Secret in Home Assistant Application Credentials, and signs in through Meraki. Existing API-key installs must re-authenticate with OAuth on upgrade. After success, entities keep the same unique IDs (organization ID).</p>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>Do not embed Client ID or Client Secret in this repository or the HACS package.</li>
+<li>Do not keep an API-key fallback or dual auth path.</li>
+<li>Do not use Nabu Casa Cloud account linking (core/partner only).</li>
+<li>Do not use PKCE unless Meraki documents public-client support. Token exchange is a confidential client with HTTP Basic.</li>
+<li>Do not use the Meraki SDK <code>meraki_app_bearer_token</code> / <code>X-MerakiApp-Authorization</code> headers. Those identify a Meraki app, they are not Dashboard OAuth.</li>
+</ul>
+<h2 id="user-setup">User setup</h2>
+<ol>
+<li>Register an application at <a href="https://integrate.cisco.com">integrate.cisco.com</a> (Cisco.com login).</li>
+<li>Set the authorized redirect URI to exactly:
+   <code>https://my.home-assistant.io/redirect/oauth</code></li>
+<li>Enable the scopes listed below on that Cisco app (authorize fails if the app cannot grant a requested scope).</li>
+<li>In Home Assistant: Settings → Devices &amp; services → three-dot menu → Application credentials → add Meraki Client ID and Secret.</li>
+<li>Add the Meraki integration. Home Assistant opens Cisco/Meraki consent. The user picks organization(s) on Meraki’s screen.</li>
+<li>If the token can see more than one org, Home Assistant shows an org picker. Unique ID is that org ID.</li>
+<li>Existing network-selection options step runs as today.</li>
+</ol>
+<p><strong>Why Application credentials is empty today:</strong> the integration has not declared <code>application_credentials</code> yet. Meraki appears in that list only after this change is installed.</p>
+<p><strong>Why the My Home Assistant URL:</strong> Cisco requires a pre-registered redirect URI. Every HA instance has a different address. With <code>my:</code> loaded (default_config), HA always sends the shared callback <code>https://my.home-assistant.io/redirect/oauth</code>. That page does not exchange tokens.</p>
+<p>The browser returns to <code>{instance}/auth/external/callback</code>. Token exchange happens on the user’s Home Assistant using Application Credentials. If <code>my:</code> is disabled, HA uses <code>{frontend origin}/auth/external/callback</code> instead; that exact URL would have to be registered on the Cisco app. Document the My URL as the supported path.</p>
+<h2 id="oauth-endpoints-and-token-rules">OAuth endpoints and token rules</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Authorize</td>
+<td><code>https://as.meraki.com/oauth/authorize</code></td>
+</tr>
+<tr>
+<td>Token</td>
+<td><code>POST https://as.meraki.com/oauth/token</code></td>
+</tr>
+<tr>
+<td>Revoke (optional, unload)</td>
+<td><code>POST https://as.meraki.com/oauth/revoke</code></td>
+</tr>
+<tr>
+<td>Grant</td>
+<td><code>authorization_code</code>, then <code>refresh_token</code></td>
+</tr>
+<tr>
+<td>Token auth</td>
+<td>HTTP Basic <code>(client_id, client_secret)</code></td>
+</tr>
+<tr>
+<td>Body</td>
+<td><code>application/x-www-form-urlencoded</code></td>
+</tr>
+<tr>
+<td>API auth</td>
+<td><code>Authorization: Bearer &lt;access_token&gt;</code></td>
+</tr>
+<tr>
+<td>Access token lifetime</td>
+<td>60 minutes</td>
+</tr>
+<tr>
+<td>Refresh token</td>
+<td>Rotated on each refresh; previous refresh token is revoked</td>
+</tr>
+<tr>
+<td>Idle refresh</td>
+<td>Revoked after 90 days of inactivity</td>
+</tr>
+</tbody>
+</table>
+<p>Never log access tokens, refresh tokens, or client secrets. Diagnostics must redact <code>token</code>, <code>access_token</code>, <code>refresh_token</code>, leftover <code>meraki_api_key</code>, and Application Credential fields.</p>
+<h2 id="scopes">Scopes</h2>
+<p>Request space-separated scopes covering current integration capabilities (config writes plus telemetry). Do not request IAM, licensing, or Systems Manager.</p>
+<pre><code class="language-text">dashboard:general:config:read
+dashboard:general:config:write
+dashboard:general:telemetry:read
+dashboard:general:telemetry:write
+wireless:config:read
+wireless:config:write
+wireless:telemetry:read
+wireless:telemetry:write
+switch:config:read
+switch:config:write
+switch:telemetry:read
+switch:telemetry:write
+sdwan:config:read
+sdwan:config:write
+sdwan:telemetry:read
+sdwan:telemetry:write
+camera:config:read
+camera:config:write
+camera:telemetry:read
+camera:telemetry:write
+sensor:config:read
+sensor:config:write
+sensor:telemetry:read
+sensor:telemetry:write
+</code></pre>
+<p>Cisco does not publish a cellular/MG scope. MG uplink continues to use existing client calls and already degrades on failure.</p>
+<h2 id="architecture">Architecture</h2>
+<pre><code class="language-text">User  →  Config flow (AbstractOAuth2FlowHandler)
+      →  Cisco authorize (as.meraki.com)
+      →  my.home-assistant.io/redirect/oauth
+      →  HA /auth/external/callback
+      →  MerakiOAuth2Implementation token POST (HTTP Basic)
+      →  Config entry data: {auth_implementation, token, meraki_org_id, org_name}
+
+Setup →  OAuth2Session.async_ensure_token_valid()
+      →  MerakiAPIClient(access_token=..., org_id=...)
+      →  Dashboard API with Authorization: Bearer
+</code></pre>
+<h3 id="new-changed-units">New / changed units</h3>
+<table>
+<thead>
+<tr>
+<th>Unit</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>application_credentials.py</code></td>
+<td>Authorization server URLs, custom <code>AuthImplementation</code> with Basic token auth, extra authorize <code>scope</code>, description placeholders (Cisco registry URL + redirect URI).</td>
+</tr>
+<tr>
+<td><code>config_flow.py</code></td>
+<td>Subclass <code>AbstractOAuth2FlowHandler</code>. After tokens: list orgs, pick org, then existing network-selection step. Reauth is OAuth, not an API-key form.</td>
+</tr>
+<tr>
+<td><code>core/api/client.py</code></td>
+<td>Accept a current access token (not a Dashboard API key). Send Bearer on SDK calls. Refresh happens before calls via <code>OAuth2Session</code>, not inside the SDK.</td>
+</tr>
+<tr>
+<td><code>__init__.py</code></td>
+<td>Require <code>token</code> in entry data. Raise <code>ConfigEntryAuthFailed</code> if missing or refresh fails. Wire session + client. Config entry VERSION 2.</td>
+</tr>
+<tr>
+<td><code>authentication.py</code></td>
+<td>Validate by listing organizations with a Bearer token, not an API key.</td>
+</tr>
+<tr>
+<td><code>reauth_flow.py</code></td>
+<td>Remove API-key reauth; OAuth handler owns reauth.</td>
+</tr>
+<tr>
+<td><code>schemas.py</code></td>
+<td>Drop <code>CONFIG_SCHEMA</code> API-key fields used by the user step.</td>
+</tr>
+<tr>
+<td><code>strings.json</code> + <code>translations/{en,es,fr}.json</code></td>
+<td>Application credentials description, OAuth steps, missing credentials, reauth, migrate copy.</td>
+</tr>
+<tr>
+<td><code>manifest.json</code></td>
+<td>Add <code>application_credentials</code> to <code>dependencies</code>.</td>
+</tr>
+<tr>
+<td><code>diagnostics.py</code></td>
+<td>Redact token material.</td>
+</tr>
+<tr>
+<td><code>repairs.py</code></td>
+<td>Replace invalid-API-key repair copy with OAuth reauth if still used.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="config-entry-data-version-2">Config entry data (version 2)</h3>
+<pre><code class="language-json">{
+  &quot;auth_implementation&quot;: &quot;&lt;application_credentials domain id&gt;&quot;,
+  &quot;token&quot;: {
+    &quot;access_token&quot;: &quot;&lt;redacted&gt;&quot;,
+    &quot;refresh_token&quot;: &quot;&lt;redacted&gt;&quot;,
+    &quot;expires_in&quot;: 3600,
+    &quot;expires_at&quot;: 0,
+    &quot;token_type&quot;: &quot;Bearer&quot;,
+    &quot;scope&quot;: &quot;&lt;granted scopes&gt;&quot;
+  },
+  &quot;meraki_org_id&quot;: &quot;&lt;org id&gt;&quot;,
+  &quot;org_name&quot;: &quot;&lt;org name&gt;&quot;
+}
+</code></pre>
+<p>Do not store Client Secret on the config entry. It stays in Application Credentials.</p>
+<p>Unique ID remains <code>meraki_org_id</code>. One config entry per org. The same Application Credential can back multiple org entries.</p>
+<h3 id="config-flow-steps">Config flow steps</h3>
+<ol>
+<li><code>user</code> / <code>pick_implementation</code> — HA built-in. Abort <code>missing_credentials</code> if none exist (HA then points at Application credentials).</li>
+<li>External Cisco authorize (built-in <code>auth</code> step).</li>
+<li><code>pick_org</code> — if exactly one org, skip the form. On reauth, keep the existing org; abort if that org is not in the token’s org list.</li>
+<li><code>init</code> — existing network selection / options (unchanged).</li>
+</ol>
+<h3 id="token-refresh-and-401">Token refresh and 401</h3>
+<ul>
+<li>Before API work (setup and coordinator refresh), call <code>OAuth2Session.async_ensure_token_valid()</code>.</li>
+<li>Persist rotated tokens with <code>config_entry.data</code> updates (HA OAuth helper pattern). Always store the new refresh token; Meraki revokes the old one.</li>
+<li>HTTP 401 or <code>invalid_grant</code> → <code>ConfigEntryAuthFailed</code> → reauth.</li>
+<li>Do not retry forever on 401.</li>
+</ul>
+<h3 id="meraki-sdk-bearer">Meraki SDK Bearer</h3>
+<p>Installed constraint: <code>meraki&gt;=2.1.0</code> (<code>pyproject.toml</code>). Dashboard API v1 accepts <code>Authorization: Bearer &lt;access_token&gt;</code>.</p>
+<p>Implementation rule, in order:</p>
+<ol>
+<li>Inspect how <code>meraki.aio.AsyncDashboardAPI</code> authenticates in the pinned SDK.</li>
+<li>If <code>api_key=</code> is sent as <code>Authorization: Bearer</code>, pass the OAuth access token as <code>api_key</code>.</li>
+<li>If the SDK still sends <code>X-Cisco-Meraki-API-Key</code>, do not rely on that for OAuth. Inject or wrap the session so Dashboard calls use <code>Authorization: Bearer &lt;access_token&gt;</code> only.</li>
+<li>Confirm with a unit test that the outgoing header is Bearer, not the legacy API-key header.</li>
+</ol>
+<p>Refresh is owned by Home Assistant’s <code>OAuth2Session</code>, not by creating a new SDK client on every 60-minute expiry unless the token actually changed.</p>
+<h2 id="forced-migration-api-key-oauth">Forced migration (API key → OAuth)</h2>
+<p>Config flow <code>VERSION</code> becomes <code>2</code>. There is no <code>async_migrate_entry</code> conversion of an API key into a token.</p>
+<p>On setup of a version-1 entry or any entry without <code>token</code>:</p>
+<ol>
+<li>Raise <code>ConfigEntryAuthFailed</code> with a translation that OAuth is now required.</li>
+<li>Home Assistant starts reauth.</li>
+<li>Reauth completes OAuth for the <strong>existing</strong> <code>meraki_org_id</code>.</li>
+<li>Update entry data: write <code>auth_implementation</code> + <code>token</code>; <strong>delete</strong> <code>meraki_api_key</code>. Keep <code>meraki_org_id</code>, <code>org_name</code>, and all options.</li>
+<li>Reload. Unique ID unchanged, so entities are not recreated.</li>
+</ol>
+<p>New installs never accept an API key field.</p>
+<h2 id="error-handling-user-visible">Error handling (user-visible)</h2>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No Application Credentials</td>
+<td>Abort <code>missing_credentials</code></td>
+</tr>
+<tr>
+<td>Cisco redirect mismatch</td>
+<td>Document exact My URL; user must fix the Cisco app</td>
+</tr>
+<tr>
+<td>Invalid client / secret</td>
+<td>Token step fails; show <code>invalid_auth</code> / <code>oauth_error</code></td>
+</tr>
+<tr>
+<td>User denies consent</td>
+<td>Abort <code>user_rejected_authorize</code> (HA default if available)</td>
+</tr>
+<tr>
+<td>Org not in token (reauth)</td>
+<td>Abort <code>org_mismatch</code></td>
+</tr>
+<tr>
+<td>Duplicate org unique ID</td>
+<td>Abort <code>already_configured</code></td>
+</tr>
+<tr>
+<td>Cannot reach as.meraki.com or api.meraki.com</td>
+<td><code>cannot_connect</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="testing">Testing</h2>
+<ul>
+<li>Mock Cisco authorize/token; never call real Meraki or store real secrets.</li>
+<li>Config flow: missing credentials, successful OAuth + single org, multi-org picker, already configured, reauth success, reauth org mismatch.</li>
+<li>Setup: missing <code>token</code> raises <code>ConfigEntryAuthFailed</code>.</li>
+<li>Client: Bearer header; 401 surfaces as auth failed.</li>
+<li>Token refresh: new refresh token persisted.</li>
+<li>Translations sync still passes.</li>
+<li>Diagnostics redacts token keys.</li>
+<li><code>./run_checks.sh</code> must pass.</li>
+</ul>
+<h2 id="logging">Logging</h2>
+<p>Use <code>MerakiLoggers.MAIN</code> for flow/setup and <code>MerakiLoggers.API</code> for the client. Log org ID and HTTP status, never tokens.</p>
+<h2 id="security">Security</h2>
+<ul>
+<li>No hardcoded credentials (Application Credentials + config entry token storage only).</li>
+<li>No MD5/SHA-1; we use Meraki’s TLS endpoints and HA’s OAuth helpers.</li>
+<li>Bandit must stay clean.</li>
+</ul>
+<h2 id="implementation-notes-for-the-follow-on-plan">Implementation notes for the follow-on plan</h2>
+<ul>
+<li>Follow Home Assistant <code>AbstractOAuth2FlowHandler</code> + Fitbit-style custom <code>AuthImplementation</code> for Basic token auth.</li>
+<li>Keep network options flow as-is.</li>
+<li>Update README / user-facing setup docs in the same change set as the flow strings so HACS users can register the Cisco app.</li>
+<li>Logger: never <code>logging.getLogger(__name__)</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

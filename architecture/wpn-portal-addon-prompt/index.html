@@ -1,0 +1,1512 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Wpn portal addon prompt - Meraki Home Assistant Integration</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#prompt-start" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Meraki Home Assistant Integration" class="md-header__button md-logo" aria-label="Meraki Home Assistant Integration" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Meraki Home Assistant Integration
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Wpn portal addon prompt
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Meraki Home Assistant Integration" class="md-nav__button md-logo" aria-label="Meraki Home Assistant Integration" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Meraki Home Assistant Integration
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prompt-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PROMPT START
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Project Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technology Stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repository-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repository Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cisco-meraki-branding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cisco Meraki Branding
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cisco Meraki Branding">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#color-palette" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Color Palette
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#design-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design Guidelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-options-configyaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Options (config.yaml)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Endpoints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#public-endpoints-no-auth-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Public Endpoints (No Auth Required)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#admin-endpoints-requires-ha-auth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Admin Endpoints (Requires HA Auth)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#home-assistant-websocket-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Home Assistant WebSocket Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frontend-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Pages
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Frontend Pages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-public-registration-page-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Public Registration Page (/register)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-success-page-success" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Success Page (/success)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-admin-dashboard-admin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Admin Dashboard (/admin)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-ipsk-manager-adminipsks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. IPSK Manager (/admin/ipsks)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docker Build
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-implementation-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Implementation Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dependencies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backend-requirementstxt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend (requirements.txt)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-packagejson-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend (package.json dependencies)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prompt-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PROMPT END
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Wpn portal addon prompt</h1>
+
+<p>WPN Portal Add-on Development Prompt</p>
+<p>Copy and paste this entire prompt into a new AI agent session for the add-on repository.</p>
+<hr />
+<h2 id="prompt-start">PROMPT START</h2>
+<p>You are building a <strong>Cisco Meraki Wireless Personal Network (WPN) Registration Portal</strong> as a Home Assistant Add-on. This is a Docker-based add-on that provides a beautiful, publicly-accessible portal for residents/guests to register for WiFi access, and an admin dashboard for managing Identity PSKs (IPSKs).</p>
+<h2 id="project-overview">Project Overview</h2>
+<h3 id="purpose">Purpose</h3>
+<p>Create a self-service WiFi registration portal for multi-dwelling units (apartments, dormitories, senior living, hotels) that:</p>
+<ol>
+<li>Allows residents to self-register and receive their personal WiFi credentials</li>
+<li>Provides an admin dashboard for IPSK management</li>
+<li>Integrates deeply with Home Assistant via WebSocket API</li>
+<li>Associates IPSKs with Home Assistant devices, areas, and users</li>
+</ol>
+<h3 id="technology-stack">Technology Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Container</td>
+<td>Docker</td>
+</tr>
+<tr>
+<td>Backend</td>
+<td>Python 3.12+, FastAPI, uvicorn</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>React 18+, TypeScript, Vite</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>SQLite (dev), PostgreSQL (optional prod)</td>
+</tr>
+<tr>
+<td>HA Integration</td>
+<td>Home Assistant WebSocket API</td>
+</tr>
+<tr>
+<td>Styling</td>
+<td>CSS with Cisco Meraki branding (blue theme)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="architecture">Architecture</h3>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Meraki WPN Portal Add-on (Docker)                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                         FastAPI Backend                                │  │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
+│  │  │ Auth API    │  │ IPSK API    │  │ Devices API │  │ Admin API   │   │  │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘   │  │
+│  │                              │                                         │  │
+│  │  ┌───────────────────────────┴───────────────────────────────────┐    │  │
+│  │  │                    HA WebSocket Client                         │    │  │
+│  │  │  • Calls meraki_ha/ipsk/* commands                            │    │  │
+│  │  │  • Fetches devices, areas, entities                           │    │  │
+│  │  │  • Subscribes to state changes                                │    │  │
+│  │  └───────────────────────────────────────────────────────────────┘    │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                      React Frontend                                    │  │
+│  │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐     │  │
+│  │  │ Public Portal    │  │ Admin Dashboard  │  │ IPSK Manager     │     │  │
+│  │  │ (Registration)   │  │ (HA Auth)        │  │ (Device Assoc)   │     │  │
+│  │  └──────────────────┘  └──────────────────┘  └──────────────────┘     │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                         Configuration                                  │  │
+│  │  • HA URL &amp; Long-Lived Access Token                                   │  │
+│  │  • Auth Methods: Self-Reg, Invite Codes, Email Verification           │  │
+│  │  • Branding: Logo URL, Property Name, Colors                          │  │
+│  │  • Default SSID, Network, Group Policy                                │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ WebSocket API
+                                    ▼
+                    ┌───────────────────────────┐
+                    │      Home Assistant       │
+                    │    meraki_ha integration  │
+                    │  (IPSK Manager backend)   │
+                    └───────────────────────────┘
+</code></pre>
+<h2 id="repository-structure">Repository Structure</h2>
+<pre><code class="language-text">meraki-wpn-portal/
+├── .github/
+│   └── workflows/
+│       └── build.yaml              # Build and publish Docker image
+├── Dockerfile                       # Multi-stage build
+├── config.yaml                      # HA Add-on configuration
+├── run.sh                           # Startup script
+├── DOCS.md                          # Add-on documentation
+├── README.md
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py                  # FastAPI app entry
+│   │   ├── config.py                # Settings from environment
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   ├── deps.py              # Dependencies (auth, db)
+│   │   │   ├── auth.py              # Authentication endpoints
+│   │   │   ├── registration.py      # Public registration endpoints
+│   │   │   ├── ipsk.py              # IPSK management endpoints
+│   │   │   ├── devices.py           # HA device endpoints
+│   │   │   └── admin.py             # Admin endpoints
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── ha_client.py         # Home Assistant WebSocket client
+│   │   │   ├── security.py          # Password hashing, JWT
+│   │   │   └── invite_codes.py      # Invite code management
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py              # User/Resident model
+│   │   │   ├── registration.py      # Registration request model
+│   │   │   └── invite_code.py       # Invite code model
+│   │   ├── db/
+│   │   │   ├── __init__.py
+│   │   │   ├── database.py          # SQLAlchemy setup
+│   │   │   └── models.py            # DB models
+│   │   └── schemas/
+│   │       ├── __init__.py
+│   │       ├── auth.py              # Auth request/response schemas
+│   │       ├── registration.py      # Registration schemas
+│   │       ├── ipsk.py              # IPSK schemas
+│   │       └── device.py            # Device schemas
+│   ├── requirements.txt
+│   └── tests/
+│       ├── __init__.py
+│       ├── conftest.py
+│       ├── test_registration.py
+│       ├── test_ipsk.py
+│       └── test_ha_client.py
+├── frontend/
+│   ├── public/
+│   │   └── meraki-logo.svg
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   ├── index.css                # Meraki theme
+│   │   ├── api/
+│   │   │   └── client.ts            # API client
+│   │   ├── components/
+│   │   │   ├── Layout.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── QRCode.tsx
+│   │   │   ├── IPSKCard.tsx
+│   │   │   ├── DeviceSelector.tsx
+│   │   │   └── AreaSelector.tsx     # HA areas dropdown
+│   │   ├── pages/
+│   │   │   ├── public/
+│   │   │   │   ├── Registration.tsx
+│   │   │   │   ├── MyNetwork.tsx
+│   │   │   │   └── Success.tsx
+│   │   │   └── admin/
+│   │   │       ├── Dashboard.tsx
+│   │   │       ├── IPSKManager.tsx
+│   │   │       ├── DeviceAssociation.tsx
+│   │   │       ├── InviteCodes.tsx
+│   │   │       └── Settings.tsx
+│   │   ├── hooks/
+│   │   │   ├── useAuth.ts
+│   │   │   └── useIPSK.ts
+│   │   ├── context/
+│   │   │   └── AuthContext.tsx
+│   │   └── types/
+│   │       ├── ipsk.ts
+│   │       ├── device.ts
+│   │       └── user.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── vite.config.ts
+└── translations/
+    └── en.yaml                      # Add-on translations
+</code></pre>
+<h2 id="cisco-meraki-branding">Cisco Meraki Branding</h2>
+<h3 id="color-palette">Color Palette</h3>
+<pre><code class="language-css">:root {
+  /* Primary Meraki Blue */
+  --meraki-blue: #00a4e4;
+  --meraki-blue-dark: #0078a8;
+  --meraki-blue-light: #e6f7fd;
+
+  /* Secondary Colors */
+  --meraki-navy: #003b5c;
+  --meraki-teal: #00b5ad;
+  --meraki-green: #78be20;
+
+  /* Cisco Brand Colors */
+  --cisco-blue: #049fd9;
+  --cisco-dark: #1e4471;
+
+  /* Neutral Colors */
+  --gray-900: #1a202c;
+  --gray-700: #4a5568;
+  --gray-500: #a0aec0;
+  --gray-300: #e2e8f0;
+  --gray-100: #f7fafc;
+  --white: #ffffff;
+
+  /* Status Colors */
+  --success: #48bb78;
+  --warning: #ecc94b;
+  --error: #f56565;
+
+  /* Typography */
+  --font-family: 'CiscoSans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Spacing */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+</code></pre>
+<h3 id="design-guidelines">Design Guidelines</h3>
+<ol>
+<li><strong>Header</strong>: Meraki blue gradient background with white text</li>
+<li><strong>Cards</strong>: White background with subtle shadow, rounded corners</li>
+<li><strong>Buttons</strong>:</li>
+<li>Primary: Meraki blue with white text</li>
+<li>Secondary: White with blue border</li>
+<li>Danger: Red for destructive actions</li>
+<li><strong>Forms</strong>: Clean, spacious inputs with blue focus states</li>
+<li><strong>Icons</strong>: Use material design icons or similar clean iconography</li>
+<li><strong>Logo</strong>: Cisco Meraki logo in header, customizable property logo below</li>
+</ol>
+<h2 id="configuration-options-configyaml">Configuration Options (config.yaml)</h2>
+<pre><code class="language-yaml">name: 'Meraki WPN Portal'
+description: 'Self-service WiFi registration portal for Meraki networks'
+version: '1.0.0'
+slug: 'meraki-wpn-portal'
+arch:
+  - aarch64
+  - amd64
+  - armv7
+url: 'https://github.com/yourusername/meraki-wpn-portal'
+ingress: true
+ingress_port: 8099
+panel_icon: 'mdi:wifi-plus'
+panel_title: 'WPN Portal'
+ports:
+  8080/tcp: 8080
+ports_description:
+  8080/tcp: 'Public registration portal'
+options:
+  # Home Assistant Connection
+  ha_url: 'http://homeassistant.local:8123'
+  ha_token: ''
+
+  # Branding
+  property_name: 'My Property'
+  logo_url: ''
+  primary_color: '#00A4E4'
+
+  # Default Network Settings
+  default_network_id: ''
+  default_ssid_number: 0
+  default_group_policy_id: ''
+
+  # Authentication Methods (admin can toggle)
+  auth_self_registration: true
+  auth_invite_codes: true
+  auth_email_verification: false
+  auth_sms_verification: false
+
+  # Registration Options
+  require_unit_number: true
+  unit_source: 'ha_areas' # &quot;ha_areas&quot; | &quot;manual_list&quot; | &quot;free_text&quot;
+  manual_units: []
+
+  # IPSK Settings
+  default_ipsk_duration_hours: 0 # 0 = permanent
+  passphrase_length: 12
+
+  # Admin Settings
+  admin_notification_email: ''
+
+schema:
+  ha_url: str
+  ha_token: password
+  property_name: str
+  logo_url: url?
+  primary_color: str?
+  default_network_id: str
+  default_ssid_number: int(0,14)
+  default_group_policy_id: str?
+  auth_self_registration: bool
+  auth_invite_codes: bool
+  auth_email_verification: bool
+  auth_sms_verification: bool
+  require_unit_number: bool
+  unit_source: list(ha_areas|manual_list|free_text)
+  manual_units:
+    - str
+  default_ipsk_duration_hours: int(0,8760)
+  passphrase_length: int(8,32)
+  admin_notification_email: email?
+</code></pre>
+<h2 id="api-endpoints">API Endpoints</h2>
+<h3 id="public-endpoints-no-auth-required">Public Endpoints (No Auth Required)</h3>
+<pre><code class="language-text">POST /api/register
+  Request:
+    {
+      &quot;name&quot;: &quot;John Smith&quot;,
+      &quot;email&quot;: &quot;john@example.com&quot;,
+      &quot;unit&quot;: &quot;201&quot;,  // or area_id if using HA areas
+      &quot;invite_code&quot;: &quot;WELCOME2026&quot;  // optional
+    }
+  Response:
+    {
+      &quot;success&quot;: true,
+      &quot;ipsk_name&quot;: &quot;Unit-201-John&quot;,
+      &quot;ssid_name&quot;: &quot;Resident-WiFi&quot;,
+      &quot;passphrase&quot;: &quot;SecurePass123&quot;,
+      &quot;qr_code&quot;: &quot;data:image/png;base64,...&quot;,
+      &quot;wifi_config_string&quot;: &quot;WIFI:T:WPA;S:Resident-WiFi;P:SecurePass123;;&quot;
+    }
+
+GET /api/my-network?email={email}&amp;code={verification_code}
+  Response:
+    {
+      &quot;ipsk_name&quot;: &quot;Unit-201-John&quot;,
+      &quot;ssid_name&quot;: &quot;Resident-WiFi&quot;,
+      &quot;passphrase&quot;: &quot;SecurePass123&quot;,
+      &quot;status&quot;: &quot;active&quot;,
+      &quot;connected_devices&quot;: 2
+    }
+
+GET /api/options
+  Response:
+    {
+      &quot;property_name&quot;: &quot;Sunset Apartments&quot;,
+      &quot;logo_url&quot;: &quot;https://...&quot;,
+      &quot;units&quot;: [&quot;101&quot;, &quot;102&quot;, &quot;201&quot;, &quot;202&quot;],  // or HA areas
+      &quot;auth_methods&quot;: {
+        &quot;self_registration&quot;: true,
+        &quot;invite_codes&quot;: true,
+        &quot;email_verification&quot;: false
+      }
+    }
+</code></pre>
+<h3 id="admin-endpoints-requires-ha-auth">Admin Endpoints (Requires HA Auth)</h3>
+<pre><code class="language-text"># IPSK Management (proxies to HA meraki_ha/ipsk/* WebSocket)
+GET    /api/admin/ipsks
+POST   /api/admin/ipsks
+GET    /api/admin/ipsks/{ipsk_id}
+PUT    /api/admin/ipsks/{ipsk_id}
+DELETE /api/admin/ipsks/{ipsk_id}
+POST   /api/admin/ipsks/{ipsk_id}/revoke
+POST   /api/admin/ipsks/{ipsk_id}/reveal-passphrase
+
+# Device Association
+GET    /api/admin/ha/devices          # List HA devices
+GET    /api/admin/ha/areas            # List HA areas
+POST   /api/admin/ipsks/{ipsk_id}/associate
+  Request:
+    {
+      &quot;device_id&quot;: &quot;device_123&quot;,  // or
+      &quot;area_id&quot;: &quot;living_room&quot;
+    }
+
+# Invite Codes
+GET    /api/admin/invite-codes
+POST   /api/admin/invite-codes
+DELETE /api/admin/invite-codes/{code}
+
+# Settings
+GET    /api/admin/settings
+PUT    /api/admin/settings
+
+# Dashboard Stats
+GET    /api/admin/stats
+  Response:
+    {
+      &quot;total_ipsks&quot;: 47,
+      &quot;active_ipsks&quot;: 42,
+      &quot;expired_ipsks&quot;: 5,
+      &quot;online_devices&quot;: 12,
+      &quot;registrations_today&quot;: 3
+    }
+</code></pre>
+<h2 id="home-assistant-websocket-integration">Home Assistant WebSocket Integration</h2>
+<p>The add-on communicates with Home Assistant via WebSocket to manage IPSKs:</p>
+<pre><code class="language-python"># backend/app/core/ha_client.py
+
+import aiohttp
+from typing import Any
+
+class HomeAssistantClient:
+    &quot;&quot;&quot;Client for Home Assistant WebSocket API.&quot;&quot;&quot;
+
+    def __init__(self, url: str, token: str):
+        self.url = url.rstrip(&quot;/&quot;)
+        self.ws_url = f&quot;{self.url.replace('http', 'ws')}/api/websocket&quot;
+        self.token = token
+        self._ws = None
+        self._msg_id = 0
+
+    async def connect(self) -&gt; None:
+        &quot;&quot;&quot;Connect to Home Assistant WebSocket.&quot;&quot;&quot;
+        ...
+
+    async def _send_command(self, command: dict[str, Any]) -&gt; dict[str, Any]:
+        &quot;&quot;&quot;Send a command and wait for response.&quot;&quot;&quot;
+        ...
+
+    # IPSK Management (calls meraki_ha integration)
+    async def list_ipsks(
+        self,
+        network_id: str | None = None,
+        ssid_number: int | None = None,
+        status: str | None = None,
+    ) -&gt; list[dict]:
+        &quot;&quot;&quot;List all IPSKs.&quot;&quot;&quot;
+        return await self._send_command({
+            &quot;type&quot;: &quot;meraki_ha/ipsk/list&quot;,
+            &quot;network_id&quot;: network_id,
+            &quot;ssid_number&quot;: ssid_number,
+            &quot;status&quot;: status,
+        })
+
+    async def create_ipsk(
+        self,
+        name: str,
+        network_id: str,
+        ssid_number: int,
+        passphrase: str | None = None,
+        duration_hours: int | None = None,
+        group_policy_id: str | None = None,
+        associated_device_id: str | None = None,
+        associated_area_id: str | None = None,
+        associated_user: str | None = None,
+        associated_unit: str | None = None,
+    ) -&gt; dict:
+        &quot;&quot;&quot;Create a new IPSK.&quot;&quot;&quot;
+        return await self._send_command({
+            &quot;type&quot;: &quot;meraki_ha/ipsk/create&quot;,
+            &quot;name&quot;: name,
+            &quot;network_id&quot;: network_id,
+            &quot;ssid_number&quot;: ssid_number,
+            &quot;passphrase&quot;: passphrase,
+            &quot;duration_hours&quot;: duration_hours,
+            &quot;group_policy_id&quot;: group_policy_id,
+            &quot;associated_device_id&quot;: associated_device_id,
+            &quot;associated_area_id&quot;: associated_area_id,
+            &quot;associated_user&quot;: associated_user,
+            &quot;associated_unit&quot;: associated_unit,
+        })
+
+    async def revoke_ipsk(self, ipsk_id: str) -&gt; None:
+        &quot;&quot;&quot;Revoke an IPSK.&quot;&quot;&quot;
+        await self._send_command({
+            &quot;type&quot;: &quot;meraki_ha/ipsk/revoke&quot;,
+            &quot;ipsk_id&quot;: ipsk_id,
+        })
+
+    async def get_ipsk(
+        self,
+        ipsk_id: str,
+        include_passphrase: bool = False,
+    ) -&gt; dict:
+        &quot;&quot;&quot;Get IPSK details.&quot;&quot;&quot;
+        return await self._send_command({
+            &quot;type&quot;: &quot;meraki_ha/ipsk/get&quot;,
+            &quot;ipsk_id&quot;: ipsk_id,
+            &quot;include_passphrase&quot;: include_passphrase,
+        })
+
+    async def get_ipsk_options(self) -&gt; dict:
+        &quot;&quot;&quot;Get available networks, SSIDs, group policies, areas.&quot;&quot;&quot;
+        return await self._send_command({
+            &quot;type&quot;: &quot;meraki_ha/ipsk/options&quot;,
+        })
+
+    # Home Assistant Data
+    async def get_devices(self) -&gt; list[dict]:
+        &quot;&quot;&quot;Get all HA devices.&quot;&quot;&quot;
+        return await self._send_command({
+            &quot;type&quot;: &quot;config/device_registry/list&quot;,
+        })
+
+    async def get_areas(self) -&gt; list[dict]:
+        &quot;&quot;&quot;Get all HA areas.&quot;&quot;&quot;
+        return await self._send_command({
+            &quot;type&quot;: &quot;config/area_registry/list&quot;,
+        })
+
+    async def get_entities(self) -&gt; list[dict]:
+        &quot;&quot;&quot;Get all HA entities.&quot;&quot;&quot;
+        return await self._send_command({
+            &quot;type&quot;: &quot;config/entity_registry/list&quot;,
+        })
+</code></pre>
+<h2 id="frontend-pages">Frontend Pages</h2>
+<h3 id="1-public-registration-page-register">1. Public Registration Page (<code>/register</code>)</h3>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────┐
+│  ████████  CISCO  MERAKI                                        │
+│  ═══════════════════════════════════════════════════════════════│
+│                                                                  │
+│              ┌────────────────────────────────────┐             │
+│              │      🏢 Sunset Apartments          │             │
+│              │      [Property Logo]               │             │
+│              └────────────────────────────────────┘             │
+│                                                                  │
+│                  Welcome to Your WiFi Portal                     │
+│                                                                  │
+│     ┌─────────────────────────────────────────────────────┐     │
+│     │                                                      │     │
+│     │  👤 Full Name                                        │     │
+│     │  ┌──────────────────────────────────────────────┐   │     │
+│     │  │ John Smith                                   │   │     │
+│     │  └──────────────────────────────────────────────┘   │     │
+│     │                                                      │     │
+│     │  📧 Email Address                                    │     │
+│     │  ┌──────────────────────────────────────────────┐   │     │
+│     │  │ john@example.com                             │   │     │
+│     │  └──────────────────────────────────────────────┘   │     │
+│     │                                                      │     │
+│     │  🏠 Unit / Room                                      │     │
+│     │  ┌──────────────────────────────────────────────┐   │     │
+│     │  │ Select your unit...                       ▼  │   │     │
+│     │  └──────────────────────────────────────────────┘   │     │
+│     │  (Dropdown populated from HA areas or config)       │     │
+│     │                                                      │     │
+│     │  🎟️ Invitation Code (if provided)                   │     │
+│     │  ┌──────────────────────────────────────────────┐   │     │
+│     │  │ WELCOME2026                                  │   │     │
+│     │  └──────────────────────────────────────────────┘   │     │
+│     │                                                      │     │
+│     │  ┌──────────────────────────────────────────────┐   │     │
+│     │  │         🌐  Get My WiFi Access               │   │     │
+│     │  └──────────────────────────────────────────────┘   │     │
+│     │                                                      │     │
+│     └─────────────────────────────────────────────────────┘     │
+│                                                                  │
+│           Already have access? [View My Network]                 │
+│                                                                  │
+│  ─────────────────────────────────────────────────────────────  │
+│  Powered by Cisco Meraki | Privacy Policy | Help                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="2-success-page-success">2. Success Page (<code>/success</code>)</h3>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────┐
+│  ████████  CISCO  MERAKI          Sunset Apartments             │
+│  ═══════════════════════════════════════════════════════════════│
+│                                                                  │
+│                      ✅ You're All Set!                          │
+│                                                                  │
+│     ┌─────────────────────────────────────────────────────┐     │
+│     │                                                      │     │
+│     │   Your Personal WiFi Credentials                     │     │
+│     │                                                      │     │
+│     │   Network Name (SSID)                                │     │
+│     │   ┌──────────────────────────────────────────────┐   │     │
+│     │   │  Resident-WiFi                          📋   │   │     │
+│     │   └──────────────────────────────────────────────┘   │     │
+│     │                                                      │     │
+│     │   Password                                           │     │
+│     │   ┌──────────────────────────────────────────────┐   │     │
+│     │   │  SecurePass123                          📋   │   │     │
+│     │   └──────────────────────────────────────────────┘   │     │
+│     │                                                      │     │
+│     │   ┌──────────────────────────────────────────────┐   │     │
+│     │   │                                              │   │     │
+│     │   │         ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄                     │   │     │
+│     │   │         █ QR CODE FOR  █                     │   │     │
+│     │   │         █ EASY CONNECT █                     │   │     │
+│     │   │         █              █                     │   │     │
+│     │   │         ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀                     │   │     │
+│     │   │                                              │   │     │
+│     │   │   Scan with your phone's camera              │   │     │
+│     │   └──────────────────────────────────────────────┘   │     │
+│     │                                                      │     │
+│     │   ┌────────────────┐  ┌────────────────────────┐    │     │
+│     │   │  📧 Email Me   │  │  📱 Download Config    │    │     │
+│     │   └────────────────┘  └────────────────────────┘    │     │
+│     │                                                      │     │
+│     └─────────────────────────────────────────────────────┘     │
+│                                                                  │
+│             Need help? Contact your property manager             │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="3-admin-dashboard-admin">3. Admin Dashboard (<code>/admin</code>)</h3>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────┐
+│  ████████  MERAKI WPN ADMIN                    👤 Admin ▼       │
+│  ═══════════════════════════════════════════════════════════════│
+│  [Dashboard] [IPSKs] [Devices] [Invite Codes] [Settings]        │
+│  ───────────────────────────────────────────────────────────────│
+│                                                                  │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
+│  │   47    │ │   42    │ │    5    │ │    3    │ │   12    │   │
+│  │ Total   │ │ Active  │ │ Expired │ │ Revoked │ │ Online  │   │
+│  │ IPSKs   │ │         │ │         │ │         │ │ Now     │   │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
+│                                                                  │
+│  Recent Activity                          Registrations (7 days)│
+│  ┌────────────────────────────────┐      ┌─────────────────────┐│
+│  │ ✅ Unit 201 - John registered  │      │     ▄               ││
+│  │ ⚠️  Guest-Jane expired         │      │   ▄ █ ▄             ││
+│  │ 🔗 SmartTV linked to LG TV     │      │ ▄ █ █ █   ▄ ▄       ││
+│  │ ✅ Unit 305 - Mary registered  │      │ █ █ █ █ ▄ █ █       ││
+│  └────────────────────────────────┘      └─────────────────────┘│
+│                                                                  │
+│  Quick Actions                                                   │
+│  ┌─────────────────────┐ ┌─────────────────────┐                │
+│  │  ➕ Create IPSK     │ │  🎟️ Generate Codes  │                │
+│  └─────────────────────┘ └─────────────────────┘                │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="4-ipsk-manager-adminipsks">4. IPSK Manager (<code>/admin/ipsks</code>)</h3>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────┐
+│  ████████  MERAKI WPN ADMIN                    👤 Admin ▼       │
+│  ═══════════════════════════════════════════════════════════════│
+│  [Dashboard] [IPSKs] [Devices] [Invite Codes] [Settings]        │
+│  ───────────────────────────────────────────────────────────────│
+│                                                                  │
+│  IPSK Management                                                 │
+│                                                                  │
+│  ┌─────────────────┐ ┌───────────────┐ ┌───────────────┐        │
+│  │ ➕ Create IPSK  │ │ 🔍 Search...  │ │ Filter: All ▼ │        │
+│  └─────────────────┘ └───────────────┘ └───────────────┘        │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ Name            │ Unit/Device    │ Status   │ Actions     │  │
+│  ├───────────────────────────────────────────────────────────┤  │
+│  │ Unit-201-John   │ 🏠 Unit 201    │ 🟢 Active │ ✏️ 👁️ 🗑️   │  │
+│  │ SmartTV-Living  │ 📺 LG TV       │ 🟢 Active │ ✏️ 👁️ 🗑️   │  │
+│  │ Guest-Jane      │ 👤 Jane Doe    │ 🟡 24h    │ ✏️ 👁️ 🗑️   │  │
+│  │ IoT-Thermostat  │ 🌡️ Ecobee      │ 🟢 Active │ ✏️ 👁️ 🗑️   │  │
+│  │ Apt-305-Mary    │ 🏠 Unit 305    │ 🟢 Active │ ✏️ 👁️ 🗑️   │  │
+│  │ Old-Guest       │ 👤 Visitor     │ 🔴 Expired│ 🗑️          │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ◀ Previous  Page 1 of 3  Next ▶                                │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 id="docker-build">Docker Build</h2>
+<pre><code class="language-dockerfile"># Dockerfile
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+FROM python:3.12-slim AS backend
+WORKDIR /app
+
+# Install dependencies
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend code
+COPY backend/app ./app
+
+# Copy frontend build
+COPY --from=frontend-builder /app/frontend/dist ./static
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+# Run
+CMD [&quot;uvicorn&quot;, &quot;app.main:app&quot;, &quot;--host&quot;, &quot;0.0.0.0&quot;, &quot;--port&quot;, &quot;8080&quot;]
+</code></pre>
+<h2 id="key-implementation-notes">Key Implementation Notes</h2>
+<ol>
+<li>
+<p><strong>Authentication</strong>:</p>
+</li>
+<li>
+<p>Public endpoints: No auth required</p>
+</li>
+<li>Admin endpoints: Validate HA Long-Lived Access Token</li>
+<li>
+<p>Consider adding rate limiting for public registration</p>
+</li>
+<li>
+<p><strong>Unit/Room Selection</strong>:</p>
+</li>
+<li>
+<p>Option A: Pull from Home Assistant areas via WebSocket</p>
+</li>
+<li>Option B: Manual list in add-on config</li>
+<li>
+<p>Option C: Free text input</p>
+</li>
+<li>
+<p><strong>QR Code Generation</strong>:</p>
+</li>
+<li>
+<p>Use <code>qrcode</code> Python library</p>
+</li>
+<li>
+<p>Format: <code>WIFI:T:WPA;S:{ssid};P:{password};;</code></p>
+</li>
+<li>
+<p><strong>Error Handling</strong>:</p>
+</li>
+<li>
+<p>Graceful fallback if HA WebSocket disconnects</p>
+</li>
+<li>Retry logic for transient failures</li>
+<li>
+<p>User-friendly error messages</p>
+</li>
+<li>
+<p><strong>Security</strong>:</p>
+</li>
+<li>
+<p>Never log passphrases</p>
+</li>
+<li>Encrypt stored data</li>
+<li>HTTPS required for production</li>
+<li>
+<p>CSRF protection on forms</p>
+</li>
+<li>
+<p><strong>Testing</strong>:</p>
+</li>
+<li>Unit tests for API endpoints</li>
+<li>Integration tests with mock HA WebSocket</li>
+<li>E2E tests for registration flow</li>
+</ol>
+<h2 id="getting-started">Getting Started</h2>
+<ol>
+<li>Create a new repository: <code>meraki-wpn-portal</code></li>
+<li>Initialize with the structure above</li>
+<li>Start with the backend FastAPI skeleton</li>
+<li>Implement HA WebSocket client</li>
+<li>Build frontend registration page</li>
+<li>Add admin dashboard</li>
+<li>Create Dockerfile and config.yaml</li>
+<li>Test as HA add-on</li>
+</ol>
+<h2 id="dependencies">Dependencies</h2>
+<h3 id="backend-requirementstxt">Backend (requirements.txt)</h3>
+<pre><code class="language-text">fastapi&gt;=0.109.0
+uvicorn[standard]&gt;=0.27.0
+aiohttp&gt;=3.9.0
+websockets&gt;=12.0
+sqlalchemy&gt;=2.0.0
+alembic&gt;=1.13.0
+pydantic&gt;=2.5.0
+python-jose[cryptography]&gt;=3.3.0
+passlib[bcrypt]&gt;=1.7.4
+qrcode[pil]&gt;=7.4.0
+python-multipart&gt;=0.0.6
+httpx&gt;=0.26.0
+</code></pre>
+<h3 id="frontend-packagejson-dependencies">Frontend (package.json dependencies)</h3>
+<pre><code class="language-json">{
+  &quot;dependencies&quot;: {
+    &quot;react&quot;: &quot;^18.2.0&quot;,
+    &quot;react-dom&quot;: &quot;^18.2.0&quot;,
+    &quot;react-router-dom&quot;: &quot;^6.21.0&quot;,
+    &quot;@tanstack/react-query&quot;: &quot;^5.17.0&quot;,
+    &quot;axios&quot;: &quot;^1.6.0&quot;,
+    &quot;qrcode.react&quot;: &quot;^3.1.0&quot;
+  },
+  &quot;devDependencies&quot;: {
+    &quot;@types/react&quot;: &quot;^18.2.0&quot;,
+    &quot;@types/react-dom&quot;: &quot;^18.2.0&quot;,
+    &quot;@vitejs/plugin-react&quot;: &quot;^4.2.0&quot;,
+    &quot;typescript&quot;: &quot;^5.3.0&quot;,
+    &quot;vite&quot;: &quot;^5.0.0&quot;
+  }
+}
+</code></pre>
+<hr />
+<h2 id="prompt-end">PROMPT END</h2>
+<hr />
+<p><strong>Notes for the agent:</strong></p>
+<ul>
+<li>This add-on depends on the meraki_ha integration having the IPSK Manager feature (Option A issue) implemented</li>
+<li>The add-on acts as a frontend/API layer that proxies to Home Assistant</li>
+<li>Focus on the Cisco Meraki blue branding throughout</li>
+<li>The unit/room dropdown should support HA areas as a data source</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

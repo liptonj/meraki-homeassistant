@@ -1,0 +1,1687 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Webhook Implementation & Monitoring - Meraki Home Assistant Integration</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#webhook-implementation-monitoring" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Meraki Home Assistant Integration" class="md-header__button md-logo" aria-label="Meraki Home Assistant Integration" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Meraki Home Assistant Integration
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Webhook Implementation &amp; Monitoring
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Meraki Home Assistant Integration" class="md-nav__button md-logo" aria-label="Meraki Home Assistant Integration" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Meraki Home Assistant Integration
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../REQUIREMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-benefits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Benefits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-webhook-alert-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Webhook Alert Support
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-auto-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Auto-Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-targeted-api-refresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Targeted API Refresh
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-adaptive-polling-reduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Adaptive Polling Reduction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-bidirectional-sync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Bidirectional Sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Components
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enable-webhooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enable Webhooks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bidirectional-sync-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bidirectional Sync Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-only-api-key-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-Only API Key Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoring-observability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitoring &amp; Observability
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Monitoring &amp; Observability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#diagnostic-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagnostic Entities
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Diagnostic Entities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#webhook-health-sensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhook Health Sensor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#webhook-received-total" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhook Received Total
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#webhook-processing-duration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhook Processing Duration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-targeted-refresh-total" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Targeted Refresh Total
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#automation-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automation Examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alert-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alert Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Alert Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#device-alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device Alerts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#client-alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Client Alerts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-configuration-alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Network Configuration Alerts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security-alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security Alerts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environmental-sensor-alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environmental Sensor Alerts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#e2e-integration-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E2E Integration Tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Coverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#webhook-health-shows-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhook Health Shows "Off"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#high-processing-duration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High Processing Duration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#low-api-call-savings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Low API Call Savings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bidirectional-sync-not-working" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bidirectional Sync Not Working
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Metrics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Metrics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-call-reduction-60-minute-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Call Reduction (60-minute window)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-overhead" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Overhead
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cpu-overhead" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CPU Overhead
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additional-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional Resources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="webhook-implementation-monitoring">Webhook Implementation &amp; Monitoring</h1>
+<p><strong>Version:</strong> 3.2.0
+<strong>Status:</strong> Production Ready</p>
+<p>This document describes the comprehensive webhook implementation for the Meraki Home Assistant integration, including real-time alerts, targeted API refresh, adaptive polling, and monitoring capabilities.</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#features">Features</a></li>
+<li><a href="#architecture">Architecture</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#monitoring--observability">Monitoring &amp; Observability</a></li>
+<li><a href="#alert-types">Alert Types</a></li>
+<li><a href="#testing">Testing</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ol>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>The webhook implementation enables real-time event notifications from the Meraki Cloud Dashboard, eliminating the need for constant polling and providing instant visibility into network changes.</p>
+<h3 id="key-benefits">Key Benefits</h3>
+<ul>
+<li><strong>Real-time Updates:</strong> Instant notification of device status changes, network events, and client activity</li>
+<li><strong>API Efficiency:</strong> 85% reduction in API calls (54 → 8 calls/hour) when webhooks are active</li>
+<li><strong>Targeted Refresh:</strong> Single-entity API calls instead of full dataset polling</li>
+<li><strong>Adaptive Polling:</strong> Automatic reduction of polling intervals when webhooks are healthy</li>
+<li><strong>Bidirectional Sync:</strong> Push Home Assistant device names to Meraki Dashboard for easy identification</li>
+</ul>
+<hr />
+<h2 id="features">Features</h2>
+<h3 id="1-webhook-alert-support">1. Webhook Alert Support</h3>
+<p>Handles all Meraki alert types:</p>
+<ul>
+<li><strong>Device Alerts:</strong> APs/Switches/Gateways/Cameras/Sensors up/down/rebooted</li>
+<li><strong>Client Alerts:</strong> Connectivity changes, new clients, blocked clients</li>
+<li><strong>Network Alerts:</strong> SSID/VLAN/Firewall configuration changes</li>
+<li><strong>Security Alerts:</strong> Rogue AP, intrusion, malware detection</li>
+<li><strong>Environmental Alerts:</strong> MT sensor threshold alerts (temperature, humidity, water, door, power)</li>
+</ul>
+<h3 id="2-auto-configuration">2. Auto-Configuration</h3>
+<p>Automatically registers webhooks in Meraki Dashboard:</p>
+<ol>
+<li>Creates HTTP server endpoints per network</li>
+<li>Subscribes to selected alert types</li>
+<li>Handles read-only API keys with manual setup instructions</li>
+</ol>
+<h3 id="3-targeted-api-refresh">3. Targeted API Refresh</h3>
+<p>Instead of polling all data, webhook alerts trigger targeted refresh for only the affected entity:</p>
+<ul>
+<li><strong>Device Refresh:</strong> Single device status update (5-second delay for cloud propagation)</li>
+<li><strong>Client Refresh:</strong> Single client details update</li>
+<li><strong>Network Refresh:</strong> Network configuration update</li>
+<li><strong>SSID Refresh:</strong> Wireless SSID list update</li>
+</ul>
+<p><strong>Debouncing:</strong> Multiple alerts for the same entity within 5 seconds are consolidated into a single API call.</p>
+<h3 id="4-adaptive-polling-reduction">4. Adaptive Polling Reduction</h3>
+<p>When webhooks are active (received within last 15 minutes), polling intervals automatically reduce:</p>
+<table>
+<thead>
+<tr>
+<th>Data Type</th>
+<th>Default</th>
+<th>With Webhooks</th>
+<th>Reduction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Networks</td>
+<td>30 min</td>
+<td>6 hours</td>
+<td>12x</td>
+</tr>
+<tr>
+<td>Devices</td>
+<td>10 min</td>
+<td>1 hour</td>
+<td>6x</td>
+</tr>
+<tr>
+<td>Clients</td>
+<td>90 sec</td>
+<td>10 min</td>
+<td>6.7x</td>
+</tr>
+<tr>
+<td>SSIDs</td>
+<td>10 min</td>
+<td>1 hour</td>
+<td>6x</td>
+</tr>
+</tbody>
+</table>
+<p><strong>API Call Reduction:</strong> 85% fewer calls (46 calls/hour saved)</p>
+<h3 id="5-bidirectional-sync">5. Bidirectional Sync</h3>
+<p>Push Home Assistant device names to Meraki Dashboard:</p>
+<ul>
+<li><strong>Manual Sync:</strong> <code>meraki_ha.sync_client_names</code> service</li>
+<li><strong>Auto-Sync:</strong> Automatic sync when new clients connect (configurable)</li>
+<li><strong>Hierarchy Traversal:</strong> Finds root device names (e.g., "SunPower Gateway" instead of "Panel A1")</li>
+<li><strong>Flexible Formatting:</strong> Include model and/or software version in synced names</li>
+</ul>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<h3 id="data-flow">Data Flow</h3>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────┐
+│                     MERAKI CLOUD                                │
+└───────────────────────┬─────────────────────────────────────────┘
+                        │
+          ┌─────────────┼─────────────────┐
+          ▼             ▼                 ▼
+   ┌──────────┐  ┌──────────┐      ┌───────────┐
+   │ Webhooks │  │ Scanning │      │ Polling   │
+   │(instant) │  │   API    │      │ (reduced) │
+   └────┬─────┘  └────┬─────┘      └─────┬─────┘
+        │             │                  │
+        │  Targeted   │ Real-time        │ Reconciliation
+        │  API call   │ RSSI/Location    │ only
+        │             │                  │
+        └─────────────┼──────────────────┘
+                      ▼
+          ┌───────────────────────┐
+          │  MerakiDataCoordinator │
+          │  • Immediate state    │
+          │  • Targeted refresh   │
+          │  • Deduplication      │
+          └───────────┬───────────┘
+                      │
+      ┌───────────────┼───────────────┐
+      ▼               ▼               ▼
+┌──────────┐   ┌──────────┐   ┌───────────┐
+│ Entities │   │ Frontend │   │  Sync →   │
+│          │   │  Panel   │   │  Meraki   │
+└──────────┘   └──────────┘   └───────────┘
+</code></pre>
+<h3 id="components">Components</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Location</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>webhook.py</strong></td>
+<td>Main handler</td>
+<td>Routes incoming webhooks to alert handlers</td>
+</tr>
+<tr>
+<td><strong>webhook_manager.py</strong></td>
+<td>Registration</td>
+<td>Auto-registers webhooks in Meraki Dashboard</td>
+</tr>
+<tr>
+<td><strong>handlers/*</strong></td>
+<td>Alert processors</td>
+<td>Device, client, network, security, sensor alerts</td>
+</tr>
+<tr>
+<td><strong>meraki_data_coordinator.py</strong></td>
+<td>State management</td>
+<td>Targeted refresh, polling reduction, metrics</td>
+</tr>
+<tr>
+<td><strong>helpers/sync_helper.py</strong></td>
+<td>Bidirectional sync</td>
+<td>Device name traversal and provisioning</td>
+</tr>
+</tbody>
+</table>
+<h3 id="security">Security</h3>
+<ul>
+<li><strong>HTTPS Required:</strong> Webhook URL must use HTTPS</li>
+<li><strong>Shared Secret:</strong> All incoming webhooks validated against configured secret</li>
+<li><strong>Local Address Detection:</strong> Rejects local/private IP addresses</li>
+<li><strong>Auto-Generated Secrets:</strong> 32-character hex string if not provided</li>
+</ul>
+<hr />
+<h2 id="configuration">Configuration</h2>
+<h3 id="enable-webhooks">Enable Webhooks</h3>
+<p><strong>UI Path:</strong> Settings &gt; Devices &amp; Services &gt; Meraki &gt; Configure &gt; Webhooks</p>
+<pre><code class="language-yaml">enable_webhooks: true
+webhook_auto_register: true
+webhook_polling_reduction: true
+webhook_alert_types:
+  - 'APs went down'
+  - 'APs came up'
+  - 'Switches went down'
+  - 'Switches came up'
+  - 'Client connectivity changed'
+  - 'SSID settings changed'
+  # ... select desired alert types
+</code></pre>
+<h3 id="configuration-options">Configuration Options</h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enable_webhooks</code></td>
+<td><code>false</code></td>
+<td>Master toggle for webhook functionality</td>
+</tr>
+<tr>
+<td><code>webhook_auto_register</code></td>
+<td><code>true</code></td>
+<td>Auto-create HTTP servers in Dashboard</td>
+</tr>
+<tr>
+<td><code>webhook_polling_reduction</code></td>
+<td><code>true</code></td>
+<td>Reduce polling when webhooks active</td>
+</tr>
+<tr>
+<td><code>webhook_external_url</code></td>
+<td>(empty)</td>
+<td>Custom webhook URL (uses HA external URL if empty)</td>
+</tr>
+<tr>
+<td><code>webhook_shared_secret</code></td>
+<td>(auto)</td>
+<td>Secret for validation (auto-generated if empty)</td>
+</tr>
+<tr>
+<td><code>webhook_alert_types</code></td>
+<td><code>[]</code></td>
+<td>List of alert types to subscribe</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bidirectional-sync-options">Bidirectional Sync Options</h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sync_names_to_meraki</code></td>
+<td><code>false</code></td>
+<td>Enable name sync to Meraki</td>
+</tr>
+<tr>
+<td><code>sync_include_model</code></td>
+<td><code>true</code></td>
+<td>Include device model in name</td>
+</tr>
+<tr>
+<td><code>sync_include_version</code></td>
+<td><code>false</code></td>
+<td>Include software version in name</td>
+</tr>
+<tr>
+<td><code>sync_on_new_client</code></td>
+<td><code>true</code></td>
+<td>Auto-sync when new client discovered</td>
+</tr>
+</tbody>
+</table>
+<h3 id="read-only-api-key-handling">Read-Only API Key Handling</h3>
+<p>If auto-registration fails due to read-only API key, manual setup instructions are displayed in the UI:</p>
+<ol>
+<li>Go to Network-wide &gt; Alerts &gt; HTTP Servers</li>
+<li>Add new server with provided URL and shared secret</li>
+<li>Go to Network-wide &gt; Alerts &gt; Alert settings</li>
+<li>Enable desired alerts and assign to your HTTP server</li>
+</ol>
+<hr />
+<h2 id="monitoring-observability">Monitoring &amp; Observability</h2>
+<h3 id="diagnostic-entities">Diagnostic Entities</h3>
+<h4 id="webhook-health-sensor">Webhook Health Sensor</h4>
+<p><strong>Entity:</strong> <code>binary_sensor.webhook_health</code>
+<strong>State:</strong> ON = Healthy (webhooks received in last 15 minutes)</p>
+<p><strong>Attributes:</strong></p>
+<ul>
+<li><code>total_received</code> - Total webhook count</li>
+<li><code>last_received</code> - ISO timestamp of last webhook</li>
+<li><code>webhook_freshness_seconds</code> - Age in seconds</li>
+<li><code>last_received_ago</code> - Human-readable (e.g., "5 minutes ago")</li>
+<li><code>registered_networks</code> - Number of networks with webhooks</li>
+<li><code>polling_reduction_active</code> - Whether reduced polling is active</li>
+<li><code>has_registration_errors</code> - Boolean error indicator</li>
+<li><code>status_message</code> - Detailed status from webhook manager</li>
+</ul>
+<h4 id="webhook-received-total">Webhook Received Total</h4>
+<p><strong>Entity:</strong> <code>sensor.webhook_received_total</code>
+<strong>State:</strong> Total number of webhooks received (counter)</p>
+<p><strong>Attributes:</strong></p>
+<ul>
+<li><code>by_alert_type</code> - Breakdown of counts by alert type</li>
+</ul>
+<h4 id="webhook-processing-duration">Webhook Processing Duration</h4>
+<p><strong>Entity:</strong> <code>sensor.webhook_processing_duration</code>
+<strong>State:</strong> Average processing time in milliseconds</p>
+<p><strong>Attributes:</strong></p>
+<ul>
+<li><code>min_ms</code> / <code>max_ms</code> / <code>avg_ms</code> - Basic statistics</li>
+<li><code>p50_ms</code> / <code>p95_ms</code> / <code>p99_ms</code> - Percentiles</li>
+<li><code>slow_webhooks_count</code> - Count of webhooks &gt;1000ms</li>
+<li><code>slow_webhooks_percent</code> - Percentage of slow webhooks</li>
+</ul>
+<h4 id="api-targeted-refresh-total">API Targeted Refresh Total</h4>
+<p><strong>Entity:</strong> <code>sensor.api_targeted_refresh_total</code>
+<strong>State:</strong> Total targeted API refresh calls (counter)</p>
+<p><strong>Attributes:</strong></p>
+<ul>
+<li><code>by_type</code> - Breakdown (device/client/network/ssid)</li>
+<li><code>success_count</code> / <code>failure_count</code> - Success/failure tracking</li>
+<li><code>success_rate</code> - Success percentage</li>
+<li><code>estimated_api_calls_saved_per_hour</code> - Efficiency metric (46)</li>
+</ul>
+<h3 id="automation-examples">Automation Examples</h3>
+<p><strong>Health Monitoring:</strong></p>
+<pre><code class="language-yaml">automation:
+  - alias: 'Webhook Health Alert'
+    trigger:
+      platform: state
+      entity_id: binary_sensor.webhook_health
+      to: 'off'
+      for: { minutes: 15 }
+    action:
+      service: notify.admin
+      data:
+        message: 'Meraki webhooks unhealthy for 15 minutes'
+</code></pre>
+<p><strong>Performance Monitoring:</strong></p>
+<pre><code class="language-yaml">automation:
+  - alias: 'Slow Webhook Processing'
+    trigger:
+      platform: numeric_state
+      entity_id: sensor.webhook_processing_duration
+      attribute: p95_ms
+      above: 1000
+      for: { minutes: 5 }
+    action:
+      service: persistent_notification.create
+      data:
+        title: 'Slow Webhook Processing'
+        message: 'P95 processing time &gt; 1 second'
+</code></pre>
+<hr />
+<h2 id="alert-types">Alert Types</h2>
+<h3 id="device-alerts">Device Alerts</h3>
+<table>
+<thead>
+<tr>
+<th>Alert Type</th>
+<th>Trigger</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>APs went down</td>
+<td>AP offline</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+<tr>
+<td>APs came up</td>
+<td>AP online</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+<tr>
+<td>Switches went down</td>
+<td>Switch offline</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+<tr>
+<td>Switches came up</td>
+<td>Switch online</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+<tr>
+<td>Gateways went down</td>
+<td>Appliance offline</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+<tr>
+<td>Gateways came up</td>
+<td>Appliance online</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+<tr>
+<td>Cameras went down</td>
+<td>Camera offline</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+<tr>
+<td>Cameras came up</td>
+<td>Camera online</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+<tr>
+<td>Sensors went offline</td>
+<td>MT sensor offline</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+<tr>
+<td>Sensors came online</td>
+<td>MT sensor online</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+<tr>
+<td>Device rebooted</td>
+<td>Device restart</td>
+<td>Immediate status update, targeted refresh</td>
+</tr>
+</tbody>
+</table>
+<h3 id="client-alerts">Client Alerts</h3>
+<table>
+<thead>
+<tr>
+<th>Alert Type</th>
+<th>Trigger</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Client connectivity changed</td>
+<td>Client connects/disconnects</td>
+<td>State update, debounced refresh, optional auto-sync</td>
+</tr>
+<tr>
+<td>New client connected</td>
+<td>New device on network</td>
+<td>State update, debounced refresh, optional auto-sync</td>
+</tr>
+<tr>
+<td>Client blocked</td>
+<td>Client denied access</td>
+<td>State update, debounced refresh</td>
+</tr>
+</tbody>
+</table>
+<h3 id="network-configuration-alerts">Network Configuration Alerts</h3>
+<table>
+<thead>
+<tr>
+<th>Alert Type</th>
+<th>Trigger</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SSID settings changed</td>
+<td>SSID modified</td>
+<td>Debounced SSID list refresh</td>
+</tr>
+<tr>
+<td>VLAN settings changed</td>
+<td>VLAN modified</td>
+<td>Debounced network refresh</td>
+</tr>
+<tr>
+<td>Firewall rule changed</td>
+<td>Firewall modified</td>
+<td>Debounced network refresh</td>
+</tr>
+<tr>
+<td>Settings changed</td>
+<td>Generic config change</td>
+<td>Debounced network refresh</td>
+</tr>
+</tbody>
+</table>
+<h3 id="security-alerts">Security Alerts</h3>
+<table>
+<thead>
+<tr>
+<th>Alert Type</th>
+<th>Trigger</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rogue AP detected</td>
+<td>Unauthorized AP</td>
+<td>Fire HA event, optional targeted refresh</td>
+</tr>
+<tr>
+<td>Intrusion detected</td>
+<td>IDS/IPS trigger</td>
+<td>Fire HA event, optional targeted refresh</td>
+</tr>
+<tr>
+<td>Malware detected</td>
+<td>Threat detection</td>
+<td>Fire HA event, optional targeted refresh</td>
+</tr>
+</tbody>
+</table>
+<h3 id="environmental-sensor-alerts">Environmental Sensor Alerts</h3>
+<table>
+<thead>
+<tr>
+<th>Alert Type</th>
+<th>Trigger</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temperature threshold exceeded</td>
+<td>MT sensor temp alert</td>
+<td>Fire HA event, debounced sensor refresh</td>
+</tr>
+<tr>
+<td>Humidity threshold exceeded</td>
+<td>MT sensor humidity alert</td>
+<td>Fire HA event, debounced sensor refresh</td>
+</tr>
+<tr>
+<td>Water detected</td>
+<td>MT12 water sensor</td>
+<td>Fire HA event, debounced sensor refresh</td>
+</tr>
+<tr>
+<td>Door opened/closed</td>
+<td>MT20 door sensor</td>
+<td>Fire HA event, debounced sensor refresh</td>
+</tr>
+<tr>
+<td>Power outage detected</td>
+<td>MT40 power monitor</td>
+<td>Fire HA event, debounced sensor refresh</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="testing">Testing</h2>
+<h3 id="e2e-integration-tests">E2E Integration Tests</h3>
+<p><strong>File:</strong> <code>tests/test_webhook_e2e.py</code></p>
+<p>Comprehensive end-to-end tests covering:</p>
+<ul>
+<li>Device down webhook flow → targeted device refresh</li>
+<li>Client connectivity webhook → debounced client refresh</li>
+<li>Duplicate webhook deduplication via alertId</li>
+<li>SSID settings changed → network refresh</li>
+<li>Security alerts → HA event firing</li>
+<li>Invalid payload graceful handling</li>
+<li>Polling reduction activation</li>
+</ul>
+<p><strong>Test Results:</strong></p>
+<pre><code class="language-bash">$ uv run pytest tests/test_webhook_e2e.py -v
+======================== 7 passed in 0.11s ========================
+</code></pre>
+<h3 id="test-coverage">Test Coverage</h3>
+<ul>
+<li><strong>Unit Tests:</strong> <code>tests/test_webhook.py</code> - URL validation, registration, secret validation</li>
+<li><strong>Handler Tests:</strong> <code>tests/handlers/test_*.py</code> - Individual alert type handling</li>
+<li><strong>Coordinator Tests:</strong> <code>tests/test_coordinator_debounce.py</code> - Deduplication logic</li>
+<li><strong>Integration Tests:</strong> <code>tests/test_webhook_e2e.py</code> - Complete flows</li>
+</ul>
+<hr />
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="webhook-health-shows-off">Webhook Health Shows "Off"</h3>
+<p><strong>Possible Causes:</strong></p>
+<ol>
+<li>Webhooks not registered in Meraki Dashboard</li>
+<li>Firewall blocking incoming webhooks</li>
+<li>Invalid shared secret mismatch</li>
+<li>HTTPS certificate issues</li>
+<li>External URL not configured or unreachable</li>
+</ol>
+<p><strong>Debug Steps:</strong></p>
+<ol>
+<li><strong>Enable debug logging:</strong></li>
+</ol>
+<p><code>yaml
+   logger:
+     logs:
+       custom_components.meraki_ha.alerts: debug</code></p>
+<ol>
+<li><strong>Check webhook status attributes:</strong></li>
+</ol>
+<p><code>yaml
+   {{ state_attr('binary_sensor.webhook_health', 'status_message') }}
+   {{ state_attr('binary_sensor.webhook_health', 'registration_errors') }}
+   {{ state_attr('binary_sensor.webhook_health', 'registered_networks') }}</code></p>
+<ol>
+<li>
+<p><strong>Verify webhook URL is reachable from internet:</strong></p>
+</li>
+<li>
+<p>Must be HTTPS</p>
+</li>
+<li>Must be public (not local/private IP)</li>
+<li>
+<p>Valid SSL certificate</p>
+</li>
+<li>
+<p><strong>Check Meraki Dashboard:</strong></p>
+</li>
+<li>Network-wide &gt; Alerts &gt; HTTP Servers</li>
+<li>Verify server is listed and URL matches</li>
+<li>Check alert subscriptions point to your server</li>
+</ol>
+<h3 id="high-processing-duration">High Processing Duration</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>Network latency between Meraki Cloud and HA instance</li>
+<li>Slow API responses during targeted refresh</li>
+<li>Large number of concurrent webhooks</li>
+<li>Resource constraints on HA host</li>
+</ul>
+<p><strong>Resolution:</strong></p>
+<ol>
+<li><strong>Check percentiles:</strong></li>
+</ol>
+<p><code>yaml
+   {{ state_attr('sensor.webhook_processing_duration', 'p95_ms') }}
+   {{ state_attr('sensor.webhook_processing_duration', 'p99_ms') }}</code></p>
+<ol>
+<li><strong>Review failure rate:</strong></li>
+</ol>
+<p><code>yaml
+   {{ state_attr('sensor.api_targeted_refresh_total', 'success_rate') }}</code></p>
+<ol>
+<li><strong>Increase debounce window if needed</strong> (edit coordinator settings)</li>
+</ol>
+<h3 id="low-api-call-savings">Low API Call Savings</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>Webhooks not enabled for all networks</li>
+<li>Polling reduction disabled in settings</li>
+<li>Webhook freshness expired (&gt;15 minutes since last webhook)</li>
+<li>Limited alert type subscriptions</li>
+</ul>
+<p><strong>Resolution:</strong></p>
+<ol>
+<li><strong>Verify polling reduction active:</strong></li>
+</ol>
+<p><code>yaml
+   {{ state_attr('binary_sensor.webhook_health', 'polling_reduction_active') }}</code></p>
+<ol>
+<li><strong>Check registered networks:</strong></li>
+</ol>
+<p><code>yaml
+   {{ state_attr('binary_sensor.webhook_health', 'registered_networks') }}</code></p>
+<ol>
+<li><strong>Review subscribed alert types:</strong></li>
+</ol>
+<p><code>yaml
+   {{ state_attr('binary_sensor.webhook_health', 'subscribed_alert_types') }}</code></p>
+<h3 id="bidirectional-sync-not-working">Bidirectional Sync Not Working</h3>
+<p><strong>Causes:</strong></p>
+<ul>
+<li>Sync disabled in configuration</li>
+<li>No matching HA devices found (by MAC address)</li>
+<li>Network ID missing in client data</li>
+</ul>
+<p><strong>Resolution:</strong></p>
+<ol>
+<li>
+<p><strong>Verify sync enabled:</strong>
+   Check Options &gt; Data Sync &gt; "Sync names to Meraki"</p>
+</li>
+<li>
+<p><strong>Test manual sync:</strong></p>
+</li>
+</ol>
+<p><code>yaml
+   service: meraki_ha.sync_client_names</code></p>
+<ol>
+<li><strong>Check logs for sync candidates:</strong>
+   Enable debug logging for coordinator</li>
+</ol>
+<hr />
+<h2 id="performance-metrics">Performance Metrics</h2>
+<h3 id="api-call-reduction-60-minute-window">API Call Reduction (60-minute window)</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Without Webhooks</th>
+<th>With Webhooks</th>
+<th>Reduction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Networks</td>
+<td>2 calls</td>
+<td>0.17 calls</td>
+<td>91%</td>
+</tr>
+<tr>
+<td>Devices</td>
+<td>6 calls</td>
+<td>1 call</td>
+<td>83%</td>
+</tr>
+<tr>
+<td>Clients</td>
+<td>40 calls</td>
+<td>6 calls</td>
+<td>85%</td>
+</tr>
+<tr>
+<td>SSIDs</td>
+<td>6 calls</td>
+<td>1 call</td>
+<td>83%</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>54 calls</strong></td>
+<td><strong>~8 calls</strong></td>
+<td><strong>85%</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="memory-overhead">Memory Overhead</h3>
+<ul>
+<li><strong>Metrics Storage:</strong> ~40KB (last 1000 webhook duration samples)</li>
+<li><strong>Deduplication Cache:</strong> ~10KB (300-second TTL, auto-cleanup)</li>
+<li><strong>Debounce Tracking:</strong> ~5KB (pending refresh keys)</li>
+</ul>
+<h3 id="cpu-overhead">CPU Overhead</h3>
+<ul>
+<li><strong>Per Webhook:</strong> &lt;1ms for metrics collection</li>
+<li><strong>Targeted Refresh:</strong> 5-second delay + API call time</li>
+<li><strong>Deduplication Check:</strong> &lt;0.1ms (dict lookup)</li>
+</ul>
+<hr />
+<h2 id="additional-resources">Additional Resources</h2>
+<ul>
+<li><strong>API Documentation:</strong> <a href="https://developer.cisco.com/meraki/api-v1/">Meraki Dashboard API</a></li>
+<li><strong>Webhook Guide:</strong> <a href="https://developer.cisco.com/meraki/webhooks/">Meraki Webhooks Overview</a></li>
+<li><strong>Alert Types:</strong> <a href="https://developer.cisco.com/meraki/webhooks/#alert-types">Meraki Alert Types Reference</a></li>
+</ul>
+<hr />
+<p><strong>Document Version:</strong> 3.2.0
+<strong>Last Updated:</strong> 2026-01-12
+<strong>Status:</strong> Production Ready</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
