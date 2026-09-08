@@ -46,6 +46,7 @@ class MerakiAppliancePortSensor(CoordinatorEntity, SensorEntity):  # type: ignor
         return resolve_device_info(
             entity_data=self._device,
             config_entry=self.coordinator.config_entry,
+            hass=self.hass,
         )
 
     def _get_current_device_data(self) -> dict[str, Any] | None:

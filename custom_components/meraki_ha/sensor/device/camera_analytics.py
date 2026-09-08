@@ -49,7 +49,9 @@ class MerakiAnalyticsSensor(CoordinatorEntity, SensorEntity):  # type: ignore[ty
         """Return device information."""
         if self.coordinator.config_entry is None:
             return None
-        return resolve_device_info(self._device, self.coordinator.config_entry)
+        return resolve_device_info(
+            self._device, self.coordinator.config_entry, hass=self.hass
+        )
 
     def _get_current_device_data(self) -> dict[str, Any] | None:
         """Retrieve the latest data for this device from the coordinator."""

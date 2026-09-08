@@ -71,6 +71,7 @@ class MerakiSSIDBaseSwitch(CoordinatorEntity, SwitchEntity):  # type: ignore[typ
             entity_data={"networkId": self._network_id},
             config_entry=self._config_entry,
             ssid_data=self._ssid_data_at_init,
+            hass=self.hass,
         )
 
     @property

@@ -138,6 +138,7 @@ class MerakiCamera(CoordinatorEntity, Camera):  # type: ignore[type-arg]
         return resolve_device_info(
             entity_data=self.device_data,
             config_entry=self.coordinator.config_entry,
+            hass=self.hass,
         )
 
     async def async_camera_image(

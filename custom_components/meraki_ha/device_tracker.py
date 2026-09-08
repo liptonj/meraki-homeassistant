@@ -25,6 +25,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_ENABLE_DEVICE_TRACKER, CONF_MANUAL_CLIENT_ASSOCIATIONS, DOMAIN
 from .helpers.client_tracking import is_client_tracked, normalize_client_mac
+from .helpers.device_info_helpers import apply_via_identifier
 from .helpers.logging_helper import MerakiLoggers
 from .meraki_data_coordinator import MerakiDataCoordinator
 
@@ -110,7 +111,7 @@ def _find_existing_device_by_mac(
 
     try:
         device_registry = dr.async_get(hass)
-    except (AttributeError, TypeError):
+    except (AttributeError, TypeError, RuntimeError):
         return None
 
     # Search for device with matching MAC connection
@@ -168,7 +169,7 @@ def _find_existing_device_by_ip(
     try:
         entity_registry = er.async_get(hass)
         device_registry = dr.async_get(hass)
-    except (AttributeError, TypeError):
+    except (AttributeError, TypeError, RuntimeError):
         return None
 
     # Search through entities that might have IP-based config
@@ -264,7 +265,7 @@ def _find_existing_device_by_manual_association(
                 mac_address,
             )
             return device
-    except (AttributeError, TypeError):
+    except (AttributeError, TypeError, RuntimeError):
         pass
 
     return None
@@ -507,7 +508,12 @@ class MerakiClientDeviceTracker(
 
             # Link client to its network if available
             if network_id:
-                self._attr_device_info["via_device"] = (DOMAIN, f"network_{network_id}")
+                apply_via_identifier(
+                    self._attr_device_info,
+                    hass=hass,
+                    config_entry_id=config_entry.entry_id,
+                    identifier=(DOMAIN, f"network_{network_id}"),
+                )
 
         # Cache client data for properties
         self._cached_client_data: dict[str, Any] = client_data

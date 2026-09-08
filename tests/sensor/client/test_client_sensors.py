@@ -153,7 +153,7 @@ class TestMerakiClientVLANSensor:
         assert (DOMAIN, f"client_{MOCK_CLIENT_DATA['mac']}") in sensor.device_info[
             "identifiers"
         ]
-        assert sensor.device_info["via_device"] == (DOMAIN, "network_N_12345")
+        assert "via_device" not in sensor.device_info
 
 
 class TestMerakiClientSSIDSensor:

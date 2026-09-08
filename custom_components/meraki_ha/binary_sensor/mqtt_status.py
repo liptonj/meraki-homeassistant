@@ -14,6 +14,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from ..const import DOMAIN
+from ..helpers.device_info_helpers import apply_via_identifier
 from ..helpers.logging_helper import MerakiLoggers
 
 if TYPE_CHECKING:
@@ -51,12 +52,17 @@ class MerakiMqttStatusSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info for this sensor."""
-        return DeviceInfo(
+        device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{self._config_entry.entry_id}_mqtt")},
             name="Meraki MQTT Service",
             manufacturer="Cisco Meraki",
             model="MQTT Integration",
-            via_device=(DOMAIN, self._config_entry.entry_id),
+        )
+        return apply_via_identifier(
+            device_info,
+            hass=self.hass,
+            config_entry_id=self._config_entry.entry_id,
+            identifier=(DOMAIN, self._config_entry.entry_id),
         )
 
     @property
@@ -111,12 +117,17 @@ class MerakiMqttRelayStatusSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info for this sensor."""
-        return DeviceInfo(
+        device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{self._config_entry.entry_id}_mqtt")},
             name="Meraki MQTT Service",
             manufacturer="Cisco Meraki",
             model="MQTT Integration",
-            via_device=(DOMAIN, self._config_entry.entry_id),
+        )
+        return apply_via_identifier(
+            device_info,
+            hass=self.hass,
+            config_entry_id=self._config_entry.entry_id,
+            identifier=(DOMAIN, self._config_entry.entry_id),
         )
 
     @property

@@ -4,7 +4,9 @@
 
 - **translations:** Move example webhook URLs into description placeholders so hassfest passes
 - **ci:** Generate screenshots without importing the Home Assistant package
-- **ci:** Fail pip-audit only for integration-owned packages (HA pins zeroconf 0.148.0)
+- **ci:** Fail pip-audit only for integration-owned packages, not Home Assistant pins
+- **build:** Test against Home Assistant 2026.9.1 (Python 3.14.2, zeroconf 0.151.1)
+- **compat:** Use `via_device_id` for device hierarchy (Home Assistant 2026.8+)
 
 ---
 

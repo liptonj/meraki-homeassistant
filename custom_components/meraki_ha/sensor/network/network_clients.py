@@ -29,7 +29,7 @@ class MerakiNetworkClientsSensor(MerakiNetworkEntity, SensorEntity):
         coordinator: MerakiDataCoordinator,
         config_entry: ConfigEntry,
         network_data: dict[str, Any],
-        network_control_service: "NetworkControlService",
+        network_control_service: NetworkControlService,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator, config_entry, cast(MerakiNetwork, network_data))

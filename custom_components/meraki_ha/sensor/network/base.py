@@ -49,6 +49,7 @@ class MerakiSSIDBaseSensor(
         self._attr_device_info = resolve_device_info(
             entity_data=self._ssid_data_at_init,
             config_entry=self._config_entry,
+            hass=coordinator.hass,
         )
         self._restored_value: Any = None
 

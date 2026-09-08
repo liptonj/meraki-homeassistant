@@ -4,13 +4,42 @@ from collections.abc import Mapping
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import (
+    DeviceInfo,
+    async_get_device_id_by_identifier,
+)
 
 from ..const import DOMAIN
 from ..core.utils.naming_utils import format_device_name
 from .logging_helper import MerakiLoggers
 
 _LOGGER = MerakiLoggers.MAIN
+
+
+def apply_via_identifier(
+    device_info: DeviceInfo,
+    *,
+    hass: HomeAssistant | None,
+    config_entry_id: str | None,
+    identifier: tuple[str, str],
+) -> DeviceInfo:
+    """Set via_device_id from a domain identifier (HA 2026.9+).
+
+    Home Assistant 2026.8 removed ``via_device`` from DeviceInfo. Parent links
+    must use the registry device id, looked up for this config entry.
+    """
+    if hass is None or not config_entry_id:
+        return device_info
+    try:
+        via_id = async_get_device_id_by_identifier(
+            hass, identifier, config_entry_id=config_entry_id
+        )
+    except (ValueError, RuntimeError, AttributeError, TypeError):
+        return device_info
+    if isinstance(via_id, str) and via_id:
+        device_info["via_device_id"] = via_id
+    return device_info
 
 
 def create_organization_device_info(
@@ -34,6 +63,7 @@ def create_organization_device_info(
 def create_network_device_info(
     network_data: Mapping[str, Any],
     config_entry: ConfigEntry,
+    hass: HomeAssistant | None = None,
 ) -> DeviceInfo:
     """
     Create DeviceInfo for a Meraki Network (linked to Organization).
@@ -57,7 +87,12 @@ def create_network_device_info(
 
     # Link network to its parent organization
     if org_id:
-        device_info["via_device"] = (DOMAIN, f"org_{org_id}")
+        apply_via_identifier(
+            device_info,
+            hass=hass,
+            config_entry_id=config_entry.entry_id,
+            identifier=(DOMAIN, f"org_{org_id}"),
+        )
 
     return device_info
 
@@ -66,6 +101,7 @@ def resolve_device_info(
     entity_data: Mapping[str, Any],
     config_entry: ConfigEntry,
     ssid_data: Mapping[str, Any] | None = None,
+    hass: HomeAssistant | None = None,
 ) -> DeviceInfo | None:
     """
     Resolve the DeviceInfo for a Meraki entity.
@@ -104,12 +140,17 @@ def resolve_device_info(
                 config=config_entry.options,
             )
             # Link SSID directly to network (no intermediate grouping devices)
-            return DeviceInfo(
+            device_info = DeviceInfo(
                 identifiers={identifier},
                 name=formatted_name,
                 model="Wireless SSID",
                 manufacturer="Cisco Meraki",
-                via_device=(DOMAIN, f"network_{network_id}"),
+            )
+            return apply_via_identifier(
+                device_info,
+                hass=hass,
+                config_entry_id=config_entry.entry_id,
+                identifier=(DOMAIN, f"network_{network_id}"),
             )
 
     # Note: Client devices are intentionally NOT created via resolve_device_info.
@@ -125,7 +166,7 @@ def resolve_device_info(
     network_id = entity_data.get("id")
     is_network = "productTypes" in entity_data and not entity_data.get("serial")
     if is_network and network_id:
-        return create_network_device_info(entity_data, config_entry)
+        return create_network_device_info(entity_data, config_entry, hass=hass)
 
     # Handle physical devices (linked directly to network)
     # Hierarchy: Organization → Network → Device
@@ -147,7 +188,12 @@ def resolve_device_info(
         )
         # Link device directly to its network
         if device_network_id:
-            device_info["via_device"] = (DOMAIN, f"network_{device_network_id}")
+            apply_via_identifier(
+                device_info,
+                hass=hass,
+                config_entry_id=config_entry.entry_id,
+                identifier=(DOMAIN, f"network_{device_network_id}"),
+            )
         return device_info
 
     # This may happen temporarily during startup or if a device type is unknown

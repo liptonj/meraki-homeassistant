@@ -28,14 +28,14 @@ This is a **Cisco Meraki integration for Home Assistant**. It monitors and manag
 
 ### Key Technologies
 
-| Layer       | Technologies                                                      |
-| ----------- | ----------------------------------------------------------------- |
-| Backend     | Python 3.13.2, Home Assistant Core, `meraki` SDK, `aiohttp`       |
-| Frontend    | React, TypeScript, Vite, Home Assistant custom panel architecture |
-| Testing     | pytest, pytest-asyncio, pytest-homeassistant-custom-component     |
-| Linting     | Ruff, mypy, bandit, pylint                                        |
-| CI/CD       | GitHub Actions, semantic-release, HACS                            |
-| **Package** | **`uv` with `pyproject.toml`** (NOT pip/requirements.txt)         |
+| Layer       | Technologies                                                         |
+| ----------- | -------------------------------------------------------------------- |
+| Backend     | Python 3.14.2, Home Assistant Core 2026.9.1, `meraki` SDK, `aiohttp` |
+| Frontend    | React, TypeScript, Vite, Home Assistant custom panel architecture    |
+| Testing     | pytest, pytest-asyncio, pytest-homeassistant-custom-component        |
+| Linting     | Ruff, mypy, bandit, pylint                                           |
+| CI/CD       | GitHub Actions, semantic-release, HACS                               |
+| **Package** | **`uv` with `pyproject.toml`** (NOT pip/requirements.txt)            |
 
 ### Repository Structure
 

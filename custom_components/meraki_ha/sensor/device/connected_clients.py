@@ -43,6 +43,7 @@ class MerakiDeviceConnectedClientsSensor(
         self._attr_device_info = resolve_device_info(
             entity_data=device_data,
             config_entry=self._config_entry,
+            hass=coordinator.hass,
         )
         self._update_state()
 

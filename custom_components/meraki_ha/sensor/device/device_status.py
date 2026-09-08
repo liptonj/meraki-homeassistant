@@ -22,6 +22,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from ...const import DOMAIN
 from ...core.utils.naming_utils import format_device_name
+from ...helpers.device_info_helpers import apply_via_identifier
 from ...helpers.logging_helper import MerakiLoggers
 from ...meraki_data_coordinator import MerakiDataCoordinator
 
@@ -93,7 +94,12 @@ class MerakiDeviceStatusSensor(
         )
         # Link device directly to its network (device type groups removed)
         if network_id:
-            device_info["via_device"] = (DOMAIN, f"network_{network_id}")
+            apply_via_identifier(
+                device_info,
+                hass=coordinator.hass,
+                config_entry_id=config_entry.entry_id,
+                identifier=(DOMAIN, f"network_{network_id}"),
+            )
         self._attr_device_info = device_info
 
         # _attr_name is not explicitly set

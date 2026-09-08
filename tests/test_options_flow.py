@@ -63,10 +63,6 @@ def create_options_flow_handler(
     # Set the handler property (this is what the framework sets - it's the entry ID)
     handler.handler = entry_id
 
-    # Mock the config_entry property to return our mock
-    # We need to patch it on the instance
-    handler._config_entry = mock_entry
-
     return handler
 
 
@@ -509,7 +505,6 @@ async def test_network_selection_with_empty_coordinator_data() -> None:
     handler = MerakiOptionsFlowHandler()
     handler.hass = hass
     handler.handler = "test_entry_id"
-    handler._config_entry = mock_entry
 
     result: ConfigFlowResult = await handler.async_step_network_selection()
 
@@ -619,9 +614,6 @@ async def test_options_flow_simulates_real_ha_behavior() -> None:
 
     handler.hass = mock_hass
     handler.handler = "test_entry_id"
-    # In real HA, the config_entry property uses handler to look up the entry
-    # For testing, we set _config_entry directly
-    handler._config_entry = mock_entry
 
     # Step 4: Now the flow should work
     result = await handler.async_step_init()

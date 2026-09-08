@@ -3,9 +3,10 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -41,9 +42,6 @@ from .core.errors import ApiClientCommunicationError, MerakiAuthenticationError
 from .helpers.logging_helper import MerakiLoggers
 from .types import MerakiDevice, MerakiNetwork
 
-if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
-
 # Use feature-specific logger - can be configured independently via:
 # logger:
 #   logs:
@@ -56,7 +54,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def __init__(
         self,
-        hass: "HomeAssistant",
+        hass: HomeAssistant,
         api_client: ApiClient,
         entry: ConfigEntry,
     ) -> None:

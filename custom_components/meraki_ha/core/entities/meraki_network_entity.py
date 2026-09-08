@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import ChildDeviceInfo, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from ...const import DOMAIN
+from ...helpers.device_info_helpers import apply_via_identifier
 from ...meraki_data_coordinator import MerakiDataCoordinator
 from ...types import MerakiNetwork
 from ..utils.naming_utils import format_device_name
@@ -44,10 +45,15 @@ class MerakiNetworkEntity(CoordinatorEntity):  # type: ignore[type-arg]
             model="Network",
         )
         if org_id:
-            device_info["via_device"] = (DOMAIN, f"org_{org_id}")
+            apply_via_identifier(
+                device_info,
+                hass=coordinator.hass,
+                config_entry_id=config_entry.entry_id,
+                identifier=(DOMAIN, f"org_{org_id}"),
+            )
         self._attr_device_info = device_info
 
     @property
-    def device_info(self) -> DeviceInfo | None:
-        """Return the device info."""
+    def device_info(self) -> DeviceInfo | ChildDeviceInfo | None:
+        """Return the network device info."""
         return self._attr_device_info

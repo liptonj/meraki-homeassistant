@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true # Cancel duplicate runs
 
 env:
-  PYTHON_VERSION: '3.13.2'
+  PYTHON_VERSION: '3.14.2'
 
 jobs:
   # Check if this is a Cursor task

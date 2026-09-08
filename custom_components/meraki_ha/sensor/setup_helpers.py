@@ -43,7 +43,7 @@ def _setup_device_sensors(
     config_entry: ConfigEntry,
     coordinator: MerakiDataCoordinator,
     added_entities: set[str],
-    camera_service: "CameraService",
+    camera_service: CameraService,
 ) -> list[Entity]:
     """Set up device-specific sensors."""
     entities: list[Entity] = []
@@ -231,7 +231,7 @@ def async_setup_sensors(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     coordinator: MerakiDataCoordinator,
-    camera_service: "CameraService",
+    camera_service: CameraService,
 ) -> list[Entity]:
     """Set up all sensor entities from the central coordinator."""
     _LOGGER.debug("Setting up all sensors")

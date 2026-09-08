@@ -19,7 +19,7 @@ _LOGGER = MerakiLoggers.API
 class WirelessEndpoints:
     """Wireless-related endpoints."""
 
-    def __init__(self, api_client: "MerakiAPIClient") -> None:
+    def __init__(self, api_client: MerakiAPIClient) -> None:
         """Initialize the endpoint."""
         self._api_client = api_client
 

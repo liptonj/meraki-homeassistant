@@ -287,9 +287,6 @@ class TestDeviceAssociationOptionsFlow:
         # Set the handler property (this is what the framework sets - it's the entry ID)
         handler.handler = "test_entry_id"
 
-        # Mock the config_entry property to return our mock
-        handler._config_entry = mock_entry  # type: ignore[attr-defined]
-
         return handler
 
     @pytest.mark.asyncio
