@@ -4,6 +4,7 @@
 
 - **translations:** Move example webhook URLs into description placeholders so hassfest passes
 - **ci:** Generate screenshots without importing the Home Assistant package
+- **ci:** Fail pip-audit only for integration-owned packages (HA pins zeroconf 0.148.0)
 
 ---
 
