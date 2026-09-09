@@ -310,6 +310,6 @@
     }
   },
   "application_credentials": {
-    "description": "Créez une application OAuth dans le [registre d'applications Cisco]({oauth_console_url}). Définissez l'URI de redirection exactement sur `{redirect_url}`. Activez les portées de configuration et de télémétrie dashboard, wireless, switch, SD-WAN, caméra et capteurs."
+    "description": "Créez une application OAuth dans le [registre d'applications Cisco]({oauth_console_url}). Définissez l'URI de redirection exactement sur `{redirect_url}`. Collez le Client ID et le Client Secret de cette application (le secret n'est affiché qu'une seule fois). Activez les portées de configuration et de télémétrie dashboard, wireless, switch, SD-WAN, caméra et capteurs."
   }
 }

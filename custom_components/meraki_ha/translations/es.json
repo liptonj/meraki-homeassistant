@@ -310,6 +310,6 @@
     }
   },
   "application_credentials": {
-    "description": "Cree una aplicación OAuth en el [registro de aplicaciones de Cisco]({oauth_console_url}). Establezca la URI de redirección exactamente en `{redirect_url}`. Active los ámbitos de configuración y telemetría de dashboard, wireless, switch, SD-WAN, cámara y sensores."
+    "description": "Cree una aplicación OAuth en el [registro de aplicaciones de Cisco]({oauth_console_url}). Establezca la URI de redirección exactamente en `{redirect_url}`. Pegue el Client ID y el Client Secret de esa aplicación (el secreto se muestra una sola vez). Active los ámbitos de configuración y telemetría de dashboard, wireless, switch, SD-WAN, cámara y sensores."
   }
 }

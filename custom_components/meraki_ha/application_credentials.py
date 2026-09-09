@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from json import JSONDecodeError
 from typing import Any, cast
-from urllib.parse import quote
 
 from aiohttp import ClientError, encode_basic_auth
 from homeassistant.components.application_credentials import (
@@ -27,20 +26,16 @@ from .helpers.logging_helper import MerakiLoggers
 
 _LOGGER = MerakiLoggers.MAIN
 
-
-def oauth_basic_auth_header(client_id: str, client_secret: str) -> str:
-    """Build the Authorization header value for the Meraki token endpoint.
-
-    RFC 6749 section 2.3.1 requires application/x-www-form-urlencoded encoding
-    of the client id and secret before HTTP Basic. Meraki's authorization
-    server (Ory Hydra) query-unescapes those values; sending them raw turns
-    ``+`` in a Cisco client secret into a space and yields ``invalid_client``.
-    """
-    return encode_basic_auth(quote(client_id, safe=""), quote(client_secret, safe=""))
+_TOKEN_CONTENT_TYPE = "application/x-www-form-urlencoded"
 
 
 class MerakiOAuth2Implementation(AuthImplementation):
-    """OAuth2 implementation that authenticates the token endpoint with HTTP Basic."""
+    """OAuth2 implementation matching Cisco Meraki token-endpoint requirements."""
+
+    @property
+    def redirect_uri(self) -> str:
+        """Return the redirect URI registered on the Cisco OAuth app."""
+        return OAUTH_REDIRECT_URI
 
     @property
     def extra_authorize_data(self) -> dict[str, str]:
@@ -53,19 +48,33 @@ class MerakiOAuth2Implementation(AuthImplementation):
         return {"scope": " ".join(OAUTH_SCOPES)}
 
     async def _token_request(self, data: dict[str, Any]) -> dict[str, Any]:
-        """Exchange or refresh tokens using HTTP Basic client authentication."""
+        """Exchange or refresh tokens using HTTP Basic client authentication.
+
+        Cisco requires POST https://as.meraki.com/oauth/token with:
+        - Content-Type: application/x-www-form-urlencoded
+        - HTTP Basic using client_id and client_secret
+        - Body: grant_type, code, redirect_uri, scope (no client credentials)
+        """
         session = async_get_clientsession(self.hass)
         request_data = dict(data)
         request_data.pop("client_id", None)
         request_data.pop("client_secret", None)
 
+        _LOGGER.debug(
+            "Meraki token request grant_type=%s fields=%s "
+            "client_id_len=%s client_secret_len=%s",
+            request_data.get("grant_type"),
+            sorted(request_data),
+            len(self.client_id or ""),
+            len(self.client_secret or ""),
+        )
+
         resp = await session.post(
             self.token_url,
             data=request_data,
             headers={
-                "Authorization": oauth_basic_auth_header(
-                    self.client_id, self.client_secret
-                )
+                "Authorization": encode_basic_auth(self.client_id, self.client_secret),
+                "Content-Type": _TOKEN_CONTENT_TYPE,
             },
         )
         if resp.status >= 400:
@@ -75,10 +84,13 @@ class MerakiOAuth2Implementation(AuthImplementation):
                 error_response = {}
             error_code = error_response.get("error", "unknown")
             error_description = error_response.get("error_description", "unknown error")
+            error_hint = error_response.get("error_hint")
             _LOGGER.error(
-                "Meraki token request failed (%s): %s",
+                "Meraki token request failed (%s): %s hint=%s www_authenticate=%s",
                 error_code,
                 error_description,
+                error_hint,
+                resp.headers.get("WWW-Authenticate"),
             )
         resp.raise_for_status()
         return cast(dict[str, Any], await resp.json())
