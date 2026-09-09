@@ -2,6 +2,8 @@
 
 ### Bug Fixes
 
+- **auth:** Match Cisco's token POST exactly (HTTP Basic, form body, registered redirect URI) and log Hydra `error_hint` on `invalid_client`
+
 - **auth:** Send RFC 6749 HTTP Basic on the Meraki token request so `invalid_client` / 401 Unauthorized no longer fails Add hub
 - **hacs:** Advertise Home Assistant 2026.9.1 and Python 3.14.2 on the HACS repository page
 

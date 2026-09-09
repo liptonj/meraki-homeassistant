@@ -434,6 +434,6 @@
     }
   },
   "application_credentials": {
-    "description": "Create an OAuth app at the [Cisco application registry]({oauth_console_url}). Set the redirect URI to exactly `{redirect_url}`. Enable dashboard, wireless, switch, SD-WAN, camera, and sensor config and telemetry scopes."
+    "description": "Create an OAuth app at the [Cisco application registry]({oauth_console_url}). Set the redirect URI to exactly `{redirect_url}`. Paste the Client ID and Client Secret from that app (the secret is shown only once). Enable dashboard, wireless, switch, SD-WAN, camera, and sensor config and telemetry scopes."
   }
 }
