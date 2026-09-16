@@ -307,6 +307,11 @@
       "meraki_ssid_name": {
         "name": "Nom du SSID"
       }
+    },
+    "select": {
+      "linked_camera": {
+        "name": "Caméra liée"
+      }
     }
   },
   "application_credentials": {

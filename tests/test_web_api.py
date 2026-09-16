@@ -716,11 +716,11 @@ class TestHandleSetCameraMapping:
 
         with (
             patch(
-                "custom_components.meraki_ha.web_api._load_camera_mappings",
+                "custom_components.meraki_ha.helpers.camera_mappings.load_camera_mappings",
                 return_value=existing_mappings.copy(),
             ),
             patch(
-                "custom_components.meraki_ha.web_api._save_camera_mappings",
+                "custom_components.meraki_ha.helpers.camera_mappings.save_camera_mappings",
                 new_callable=AsyncMock,
             ),
         ):
@@ -755,11 +755,11 @@ class TestHandleSetCameraMapping:
 
         with (
             patch(
-                "custom_components.meraki_ha.web_api._load_camera_mappings",
+                "custom_components.meraki_ha.helpers.camera_mappings.load_camera_mappings",
                 return_value=existing_mappings.copy(),
             ),
             patch(
-                "custom_components.meraki_ha.web_api._save_camera_mappings",
+                "custom_components.meraki_ha.helpers.camera_mappings.save_camera_mappings",
                 new_callable=AsyncMock,
             ),
         ):
@@ -786,11 +786,11 @@ class TestHandleSetCameraMapping:
 
         with (
             patch(
-                "custom_components.meraki_ha.web_api._load_camera_mappings",
+                "custom_components.meraki_ha.helpers.camera_mappings.load_camera_mappings",
                 return_value={},
             ),
             patch(
-                "custom_components.meraki_ha.web_api._save_camera_mappings",
+                "custom_components.meraki_ha.helpers.camera_mappings.save_camera_mappings",
                 new_callable=AsyncMock,
             ),
         ):
@@ -823,16 +823,12 @@ class TestHandleSetCameraMapping:
 
         with (
             patch(
-                "custom_components.meraki_ha.web_api._load_camera_mappings",
+                "custom_components.meraki_ha.helpers.camera_mappings.load_camera_mappings",
                 return_value={},
             ),
             patch(
-                "custom_components.meraki_ha.web_api._save_camera_mappings",
+                "custom_components.meraki_ha.helpers.camera_mappings.save_camera_mappings",
                 new_callable=AsyncMock,
-            ),
-            patch(
-                "custom_components.meraki_ha.web_api.er.async_get",
-                return_value=mock_registry,
             ),
             patch(
                 "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
@@ -903,7 +899,7 @@ class TestHandleGetAvailableCameras:
         mock_registry.async_get.return_value = None
 
         with patch(
-            "custom_components.meraki_ha.web_api.er.async_get",
+            "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
             return_value=mock_registry,
         ):
             await get_wrapped(handle_get_available_cameras)(hass, mock_connection, msg)
@@ -944,7 +940,7 @@ class TestHandleGetAvailableCameras:
         mock_registry.async_get.return_value = None
 
         with patch(
-            "custom_components.meraki_ha.web_api.er.async_get",
+            "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
             return_value=mock_registry,
         ):
             await get_wrapped(handle_get_available_cameras)(hass, mock_connection, msg)
@@ -971,7 +967,7 @@ class TestHandleGetAvailableCameras:
         mock_registry.async_get.return_value = None
 
         with patch(
-            "custom_components.meraki_ha.web_api.er.async_get",
+            "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
             return_value=mock_registry,
         ):
             await get_wrapped(handle_get_available_cameras)(hass, mock_connection, msg)
@@ -999,7 +995,7 @@ class TestHandleGetAvailableCameras:
         mock_registry.async_get.return_value = None
 
         with patch(
-            "custom_components.meraki_ha.web_api.er.async_get",
+            "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
             return_value=mock_registry,
         ):
             await get_wrapped(handle_get_available_cameras)(hass, mock_connection, msg)

@@ -431,6 +431,11 @@
       "meraki_ssid_name": {
         "name": "SSID Name"
       }
+    },
+    "select": {
+      "linked_camera": {
+        "name": "Linked camera"
+      }
     }
   },
   "application_credentials": {

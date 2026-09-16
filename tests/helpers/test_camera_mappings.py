@@ -8,8 +8,10 @@ from homeassistant.helpers.entity_registry import RegistryEntryHider
 from custom_components.meraki_ha.helpers.camera_mappings import (
     apply_camera_pairing,
     apply_stored_camera_pairings,
+    async_set_camera_pairing,
     camera_serial_from_unique_id,
     clear_camera_pairing,
+    list_linkable_cameras,
     mapping_entity_id,
     mappings_as_entity_ids,
     resolve_camera_identity,
@@ -206,3 +208,79 @@ async def test_apply_stored_camera_pairings_uses_saved_links(
 
     apply_pairing.assert_any_call(hass, "Q2GV-1", "camera.legacy")
     apply_pairing.assert_any_call(hass, "Q2GV-2", "camera.blue_iris")
+
+
+def test_list_linkable_cameras_includes_blue_iris_and_skips_meraki(
+    hass: HomeAssistant,
+) -> None:
+    """Test pairing choices include Blue Iris cameras and exclude Meraki feeds."""
+    hass.states.async_set(
+        "camera.blue_iris_front",
+        "idle",
+        {"friendly_name": "Blue Iris Front"},
+    )
+    hass.states.async_set(
+        "camera.meraki_front_door",
+        "idle",
+        {"friendly_name": "Meraki Front Door"},
+    )
+    hass.states.async_set(
+        "camera.garage",
+        "recording",
+        {"friendly_name": "Garage Camera"},
+    )
+
+    entity_ids = [camera["entity_id"] for camera in list_linkable_cameras(hass)]
+
+    assert "camera.blue_iris_front" in entity_ids
+    assert "camera.garage" in entity_ids
+    assert "camera.meraki_front_door" not in entity_ids
+
+
+def test_list_linkable_cameras_falls_back_when_filter_matches_nothing(
+    hass: HomeAssistant,
+) -> None:
+    """Test Blue Iris filter still returns cameras created as generic entities."""
+    hass.states.async_set(
+        "camera.front_porch",
+        "idle",
+        {"friendly_name": "Front Porch"},
+    )
+    mock_registry = MagicMock()
+    generic_entry = MagicMock()
+    generic_entry.platform = "generic"
+    mock_registry.async_get.return_value = generic_entry
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        cameras = list_linkable_cameras(hass, integration_filter="blue_iris")
+
+    assert [camera["entity_id"] for camera in cameras] == ["camera.front_porch"]
+
+
+async def test_async_set_camera_pairing_saves_blue_iris_link(
+    hass: HomeAssistant,
+) -> None:
+    """Test pairing persistence applies and stores a Blue Iris camera."""
+    with (
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.load_camera_mappings",
+            return_value={},
+        ),
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.save_camera_mappings",
+        ) as save_mappings,
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.apply_camera_pairing",
+            return_value="old-device",
+        ) as apply_pairing,
+    ):
+        mappings = await async_set_camera_pairing(
+            hass, "entry-1", "Q2GV-XXXX", "camera.blue_iris_front"
+        )
+
+    apply_pairing.assert_called_once_with(hass, "Q2GV-XXXX", "camera.blue_iris_front")
+    save_mappings.assert_awaited_once()
+    assert mappings == {"Q2GV-XXXX": "camera.blue_iris_front"}

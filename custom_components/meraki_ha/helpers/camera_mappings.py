@@ -258,3 +258,156 @@ async def apply_stored_camera_pairings(
         linked_entity_id = mapping_entity_id(value)
         if linked_entity_id:
             apply_camera_pairing(hass, serial, linked_entity_id)
+
+
+def _normalize_camera_filter(value: str) -> str:
+    """Normalize integration or entity text for camera-link matching."""
+    return value.lower().replace("_", "").replace("-", "")
+
+
+def _is_meraki_camera(entity_id: str, platform: str | None) -> bool:
+    """Return True when the entity is a Meraki camera feed."""
+    if platform == DOMAIN:
+        return True
+    return "meraki" in entity_id.lower()
+
+
+def _camera_matches_filter(
+    entity_id: str,
+    friendly_name: str,
+    platform: str | None,
+    integration_filter: str,
+) -> bool:
+    """Return True when a camera matches an optional integration filter."""
+    if not integration_filter:
+        return True
+    normalized_filter = _normalize_camera_filter(integration_filter)
+    candidates = [entity_id, friendly_name]
+    if platform:
+        candidates.append(platform)
+    for candidate in candidates:
+        normalized = _normalize_camera_filter(candidate)
+        if normalized_filter in normalized or normalized in normalized_filter:
+            return True
+    return False
+
+
+def list_linkable_cameras(
+    hass: HomeAssistant,
+    integration_filter: str = "",
+) -> list[dict[str, str]]:
+    """Return Home Assistant cameras that can be paired to a Meraki MV.
+
+    Meraki camera entities are excluded so an MV cannot pair to itself.
+    If ``integration_filter`` matches nothing (for example Blue Iris cameras
+    created as generic entities), all non-Meraki cameras are returned.
+    """
+    normalized_filter = (integration_filter or "").strip()
+    cameras = _collect_linkable_cameras(hass, normalized_filter)
+    if normalized_filter and not cameras:
+        cameras = _collect_linkable_cameras(hass, "")
+    cameras.sort(key=lambda camera: camera["friendly_name"].lower())
+    return cameras
+
+
+def _collect_linkable_cameras(
+    hass: HomeAssistant,
+    integration_filter: str,
+) -> list[dict[str, str]]:
+    """Collect pairing candidates, optionally filtered by integration."""
+    entity_registry = er.async_get(hass)
+    cameras: list[dict[str, str]] = []
+    for state in hass.states.async_all("camera"):
+        entity_id = state.entity_id
+        registry_entry = entity_registry.async_get(entity_id)
+        platform = registry_entry.platform if registry_entry is not None else None
+        if _is_meraki_camera(entity_id, platform):
+            continue
+        friendly_name = str(state.attributes.get("friendly_name", entity_id))
+        if not _camera_matches_filter(
+            entity_id, friendly_name, platform, integration_filter
+        ):
+            continue
+        cameras.append(
+            {
+                "entity_id": entity_id,
+                "friendly_name": friendly_name,
+                "name": friendly_name,
+                "state": state.state,
+            }
+        )
+    return cameras
+
+
+async def async_set_camera_pairing(
+    hass: HomeAssistant,
+    config_entry_id: str,
+    serial: str,
+    linked_entity_id: str,
+) -> dict[str, str]:
+    """Create, replace, or clear a stored MV camera pairing.
+
+    Parameters
+    ----------
+    hass : HomeAssistant
+        Home Assistant instance.
+    config_entry_id : str
+        Config entry that owns the Meraki camera.
+    serial : str
+        Meraki MV serial number.
+    linked_entity_id : str
+        Target HA camera entity ID, or empty string to unpair.
+
+    Returns
+    -------
+    dict
+        Remaining pairings for the config entry as ``{serial: entity_id}``.
+    """
+    all_mappings = await load_camera_mappings(hass)
+    mappings = dict(all_mappings.get(config_entry_id, {}))
+    previous = mappings.get(serial)
+    if previous is not None:
+        clear_camera_pairing(
+            hass,
+            serial,
+            mapping_entity_id(previous),
+            mapping_original_device_id(previous),
+        )
+
+    if linked_entity_id:
+        original_device_id = apply_camera_pairing(hass, serial, linked_entity_id)
+        mappings[serial] = pairing_record(linked_entity_id, original_device_id)
+    elif serial in mappings:
+        del mappings[serial]
+
+    all_mappings[config_entry_id] = mappings
+    await save_camera_mappings(hass, all_mappings)
+    refresh_paired_camera(hass, config_entry_id, serial, linked_entity_id)
+    return mappings_as_entity_ids(mappings)
+
+
+def refresh_paired_camera(
+    hass: HomeAssistant,
+    config_entry_id: str,
+    serial: str,
+    linked_entity_id: str,
+) -> None:
+    """Update the Meraki camera entity after a pairing change."""
+    meraki_entity_id = _meraki_camera_entity_id(hass, serial)
+    if not meraki_entity_id:
+        return
+    camera_component = hass.data.get("camera")
+    if camera_component is None:
+        return
+    camera_entity = camera_component.get_entity(meraki_entity_id)
+    if camera_entity is None:
+        return
+    camera_entity._cached_linked_entity = linked_entity_id or None
+    if hasattr(camera_entity, "async_write_ha_state"):
+        camera_entity.async_write_ha_state()
+    _LOGGER.debug(
+        "Refreshed camera pairing for %s -> %s (entry %s)",
+        serial,
+        linked_entity_id or "(removed)",
+        config_entry_id,
+    )

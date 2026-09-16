@@ -3,16 +3,26 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from ..const import DOMAIN, ENTITY_CHUNK_DELAY, ENTITY_CHUNK_SIZE
 from ..helpers.logging_helper import MerakiLoggers
+from .camera_link import MerakiCameraLinkSelect
 from .meraki_content_filtering import MerakiContentFilteringSelect
 
 _LOGGER = MerakiLoggers.SWITCH
+
+
+def _is_camera_device(device: dict[str, Any]) -> bool:
+    """Return True when coordinator device data represents an MV camera."""
+    product_type = str(device.get("productType", "")).lower()
+    model = str(device.get("model", "")).upper()
+    return product_type.startswith("camera") or model.startswith("MV")
 
 
 async def async_setup_entry(
@@ -26,7 +36,12 @@ async def async_setup_entry(
     meraki_client = coordinator.api
 
     if coordinator.data:
-        select_entities = []
+        select_entities: list[Entity] = []
+        for device in coordinator.data.get("devices", []):
+            if _is_camera_device(device):
+                select_entities.append(
+                    MerakiCameraLinkSelect(coordinator, config_entry, device)
+                )
         for network in coordinator.data.get("networks", []):
             select_entities.append(
                 MerakiContentFilteringSelect(
