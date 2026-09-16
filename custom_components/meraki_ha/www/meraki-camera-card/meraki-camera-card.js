@@ -336,10 +336,12 @@ export class MerakiCameraCard extends MerakiCardBase {
 
   async _fetchAvailableCameras() {
     try {
-      const cameras = await this.hass.connection.sendMessagePromise({
+      const result = await this.hass.connection.sendMessagePromise({
         type: 'meraki_ha/get_available_cameras',
       });
-      this._availableCameras = cameras || [];
+      this._availableCameras = Array.isArray(result)
+        ? result
+        : result?.cameras || [];
     } catch (err) {
       console.error('Failed to fetch available cameras.', err);
       this._availableCameras = [];
@@ -389,10 +391,13 @@ export class MerakiCameraCard extends MerakiCardBase {
     if (!this._selectedCamera) return;
 
     try {
+      const entity = this.hass?.states?.[this.config.entity_id] || {};
       await this.hass.connection.sendMessagePromise({
         type: 'meraki_ha/set_camera_mapping',
         config_entry_id: this.config.config_entry_id,
         meraki_camera_entity_id: this.config.entity_id,
+        serial: this.config.device_serial || entity.attributes?.serial,
+        linked_entity_id: this._selectedCamera,
         linked_camera_entity_id: this._selectedCamera,
       });
       this._showLinkPanel = false;
@@ -587,7 +592,7 @@ export class MerakiCameraCard extends MerakiCardBase {
                     ${this._availableCameras.map(
                       (camera) => html`
                         <option value=${camera.entity_id}>
-                          ${camera.name || camera.entity_id}
+                          ${camera.name || camera.friendly_name || camera.entity_id}
                         </option>
                       `
                     )}
