@@ -49,6 +49,12 @@ from .types import MerakiDevice, MerakiNetwork
 _LOGGER = MerakiLoggers.COORDINATOR
 
 
+def _registry_entity_is_hidden(entity: Any) -> bool:
+    """Return True when the entity registry marks the entity as hidden."""
+    hidden_by = getattr(entity, "hidden_by", None)
+    return isinstance(hidden_by, str) and bool(hidden_by)
+
+
 class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """A centralized coordinator for Meraki API data."""
 
@@ -915,6 +921,8 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     primary_entity = None
                     device_entities = []
                     for entity in entities_for_device:
+                        if _registry_entity_is_hidden(entity):
+                            continue
                         # Collect entity details for the frontend
                         state = self.hass.states.get(entity.entity_id)
                         device_entities.append(
@@ -953,6 +961,8 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         # which is confusing for a "status" display.
                         fallback_entity = entities_for_device[0]
                         for entity in entities_for_device:
+                            if _registry_entity_is_hidden(entity):
+                                continue
                             if entity.domain != "button":
                                 fallback_entity = entity
                                 break
@@ -961,6 +971,8 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     # Add list of entities to device data for frontend
                     device["entities"] = []
                     for entity in entities_for_device:
+                        if _registry_entity_is_hidden(entity):
+                            continue
                         state_obj = self.hass.states.get(entity.entity_id)
                         device["entities"].append(
                             {

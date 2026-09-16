@@ -53,6 +53,7 @@ from .frontend import (
     async_register_static_path,
     async_unregister_frontend,
 )
+from .helpers.camera_mappings import apply_stored_camera_pairings
 from .helpers.logging_helper import MerakiLoggers
 from .oauth import async_create_oauth_session
 
@@ -688,6 +689,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    await apply_stored_camera_pairings(hass, entry.entry_id)
 
     # Register webhooks (alerts + optional Scanning API)
     scanning_api_enabled = entry.options.get(
@@ -844,10 +846,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         push_manager = PushApiManager(hass, api_client, entry)
         entry_data["push_api_manager"] = push_manager
         if await push_manager.async_register():
-            _LOGGER.info(
-                "Registered Push API and created topic profiles for %s",
-                push_webhook_id,
-            )
+            if push_manager.status.get("status") == "unavailable":
+                _LOGGER.info(
+                    "Push API skipped for %s: %s",
+                    push_webhook_id,
+                    push_manager.status.get("message"),
+                )
+            else:
+                _LOGGER.info(
+                    "Registered Push API and created topic profiles for %s",
+                    push_webhook_id,
+                )
         else:
             _LOGGER.warning(
                 "Push API topic registration failed for %s. "

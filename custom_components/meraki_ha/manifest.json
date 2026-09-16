@@ -17,7 +17,7 @@
   "loggers": ["meraki_ha"],
   "quality_scale": "gold",
   "requirements": [
-    "meraki>=1.36.0",
+    "meraki==4.5.0b2",
     "aiohttp",
     "diskcache==5.6.3",
     "aiofiles",

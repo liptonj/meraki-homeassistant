@@ -477,6 +477,24 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
     );
   });
 
+  const visibleEntities = filteredEntities.filter((entity) => {
+    if (!linkedCameraId) {
+      return true;
+    }
+    const isCameraEntity = entity.entity_id.startsWith('camera.');
+    return !isCameraEntity || entity.entity_id === linkedCameraId;
+  });
+  if (
+    linkedCameraId &&
+    !visibleEntities.some((entity) => entity.entity_id === linkedCameraId)
+  ) {
+    visibleEntities.unshift({
+      entity_id: linkedCameraId,
+      name: 'Camera',
+      state: 'linked',
+    });
+  }
+
   const formatUptime = (seconds?: number): string | null => {
     if (!seconds) return null;
     const days = Math.floor(seconds / 86400);
@@ -628,11 +646,10 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
       });
       setLinkedCameraId(entityId);
       setShowCameraConfig(false);
-      // Reset video state and reload stream with new camera
       setLinkedCameraUrl(null);
       setActiveVideoSource('none');
-      // Delay slightly to ensure state is updated, then load the stream
       if (entityId) {
+        handleEntityClick(entityId);
         setTimeout(() => loadVideoStream(), 100);
       }
     } catch (err) {
@@ -1035,9 +1052,10 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
                   marginBottom: '12px',
                 }}
               >
-                Select a camera entity to display live video. This can be the
-                Meraki camera&apos;s RTSP stream via an NVR (like Blue Iris) or
-                any other camera in Home Assistant.
+                Choose the Home Assistant camera that should represent this
+                Meraki device. That entity becomes the only camera feed in HA
+                (the Meraki camera is hidden) and opening live view goes to
+                that camera.
               </p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <select
@@ -1123,7 +1141,20 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
               maxWidth: '100%',
               aspectRatio: '16/9',
               marginBottom: '16px',
+              cursor: linkedCameraId ? 'pointer' : 'default',
             }}
+            onClick={() => {
+              if (linkedCameraId) {
+                handleEntityClick(linkedCameraId);
+              }
+            }}
+            onKeyDown={(event) => {
+              if (linkedCameraId && (event.key === 'Enter' || event.key === ' ')) {
+                handleEntityClick(linkedCameraId);
+              }
+            }}
+            role={linkedCameraId ? 'button' : undefined}
+            tabIndex={linkedCameraId ? 0 : undefined}
           >
             {/* Loading state */}
             {(linkedCameraLoading || rtspLoading) && (
@@ -1242,7 +1273,10 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
                     style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}
                   >
                     <button
-                      onClick={() => loadVideoStream()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        loadVideoStream();
+                      }}
                       style={{
                         padding: '8px 16px',
                         borderRadius: 'var(--radius-sm)',
@@ -1256,7 +1290,10 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
                       🔄 Retry
                     </button>
                     <button
-                      onClick={() => setShowCameraConfig(true)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setShowCameraConfig(true);
+                      }}
                       style={{
                         padding: '8px 16px',
                         borderRadius: 'var(--radius-sm)',
@@ -1330,7 +1367,10 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
             {/* Full screen for linked camera */}
             {activeVideoSource === 'linked' && linkedCameraId && (
               <button
-                onClick={() => handleEntityClick(linkedCameraId)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleEntityClick(linkedCameraId);
+                }}
                 style={{
                   padding: '10px 20px',
                   borderRadius: 'var(--radius-md)',
@@ -1341,7 +1381,7 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
                   fontWeight: 500,
                 }}
               >
-                📺 Full Screen
+                📺 Open camera
               </button>
             )}
 
@@ -1555,9 +1595,9 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
       )}
 
       {/* Entities (filtered to exclude hero readings) - hidden for switches */}
-      {filteredEntities.length > 0 && !isSwitch && (
+      {visibleEntities.length > 0 && !isSwitch && (
         <div className="info-card">
-          <h3>🔗 Entities ({filteredEntities.length})</h3>
+          <h3>🔗 Entities ({visibleEntities.length})</h3>
           <table className="device-table">
             <thead>
               <tr>
@@ -1567,7 +1607,7 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {filteredEntities.map((entity) => (
+              {visibleEntities.map((entity) => (
                 <EntityRow
                   key={entity.entity_id}
                   entity={entity}

@@ -271,6 +271,12 @@ DEFAULT_DEVICE_SCAN_INTERVAL: Final = 600
 DEFAULT_CLIENT_SCAN_INTERVAL: Final = 90
 """Default scan interval in seconds for clients (90 seconds)."""
 
+NETWORK_CLIENTS_PAGE_SIZE: Final = 5000
+"""Max Meraki page size for getNetworkClients to avoid 10-row pagination."""
+
+NETWORK_CLIENTS_TIMESPAN: Final = 3600
+"""Look back one hour when listing network clients for presence tracking."""
+
 DEFAULT_SSID_SCAN_INTERVAL: Final = 600
 """Default scan interval in seconds for SSIDs (10 minutes)."""
 

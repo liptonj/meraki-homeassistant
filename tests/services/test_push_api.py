@@ -129,6 +129,28 @@ async def test_push_manager_skips_unavailable_topics(
     assert mock_api.push.create_push_profile.await_count == 1
 
 
+async def test_push_manager_empty_topics_is_not_enrollment_failure(
+    mock_api: MagicMock, mock_entry: MagicMock
+) -> None:
+    """Orgs not in the Push API beta skip registration without an error."""
+    mock_api.push.get_push_topics = AsyncMock(return_value=[])
+    hass = MagicMock()
+    manager = PushApiManager(hass, mock_api, mock_entry)
+
+    with patch(
+        "custom_components.meraki_ha.services.push_api.get_webhook_url",
+        return_value="https://ha.example.com/api/webhook/test_entry_id_push",
+    ):
+        result = await manager.async_register()
+
+    assert result is True
+    assert manager.status["status"] == "unavailable"
+    assert "beta" in manager.status["message"].lower()
+    assert manager.status.get("errors") in (None, [])
+    mock_api.push.create_http_server.assert_not_called()
+    mock_api.push.create_push_profile.assert_not_called()
+
+
 async def test_push_manager_reuses_existing_topic_profile(
     mock_api: MagicMock, mock_entry: MagicMock
 ) -> None:
@@ -259,3 +281,11 @@ async def test_push_webhook_routes_valid_payload() -> None:
     manager.mark_message_received.assert_called_once()
     coordinator.mark_push_received.assert_called_once()
     handle.assert_awaited_once()
+
+
+def test_meraki_sdk_exposes_push_topics() -> None:
+    """Installed meraki package must include Push API topic listing."""
+    from meraki.aio.api.organizations import AsyncOrganizations
+
+    assert hasattr(AsyncOrganizations, "getOrganizationApiPushTopics")
+    assert hasattr(AsyncOrganizations, "createOrganizationApiPushProfile")
