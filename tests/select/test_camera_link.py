@@ -87,12 +87,14 @@ async def test_selecting_blue_iris_camera_saves_pairing(
         mock_camera_coordinator, mock_config_entry, mock_camera_device
     )
     select.hass = hass
-    select.async_write_ha_state = MagicMock()
 
-    with patch(
-        "custom_components.meraki_ha.select.camera_link.async_set_camera_pairing",
-        new_callable=AsyncMock,
-    ) as set_pairing:
+    with (
+        patch.object(select, "async_write_ha_state"),
+        patch(
+            "custom_components.meraki_ha.select.camera_link.async_set_camera_pairing",
+            new_callable=AsyncMock,
+        ) as set_pairing,
+    ):
         await select.async_select_option("camera.blue_iris_front")
 
     set_pairing.assert_awaited_once_with(
@@ -113,13 +115,15 @@ async def test_selecting_not_linked_clears_pairing(
         mock_camera_coordinator, mock_config_entry, mock_camera_device
     )
     select.hass = hass
-    select.async_write_ha_state = MagicMock()
     select._current_linked = "camera.blue_iris_front"
 
-    with patch(
-        "custom_components.meraki_ha.select.camera_link.async_set_camera_pairing",
-        new_callable=AsyncMock,
-    ) as set_pairing:
+    with (
+        patch.object(select, "async_write_ha_state"),
+        patch(
+            "custom_components.meraki_ha.select.camera_link.async_set_camera_pairing",
+            new_callable=AsyncMock,
+        ) as set_pairing,
+    ):
         await select.async_select_option(CAMERA_LINK_NONE)
 
     set_pairing.assert_awaited_once_with(hass, "entry-1", "Q2GV-XXXX", "")
