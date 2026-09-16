@@ -36,10 +36,16 @@ from .const import (
 from .core.errors import MerakiError
 from .core.timed_access_manager import TimedAccessManager
 from .helpers.camera_mappings import (
-    load_camera_mappings as _load_camera_mappings,
+    apply_camera_pairing,
+    clear_camera_pairing,
+    mapping_entity_id,
+    mapping_original_device_id,
+    mappings_as_entity_ids,
+    pairing_record,
+    resolve_camera_identity,
 )
 from .helpers.camera_mappings import (
-    resolve_camera_identity,
+    load_camera_mappings as _load_camera_mappings,
 )
 from .helpers.camera_mappings import (
     save_camera_mappings as _save_camera_mappings,
@@ -514,7 +520,7 @@ async def handle_get_camera_mappings(
     """
     config_entry_id = msg["config_entry_id"]
     all_mappings = await _load_camera_mappings(hass)
-    mappings = all_mappings.get(config_entry_id, {})
+    mappings = mappings_as_entity_ids(all_mappings.get(config_entry_id, {}))
     connection.send_result(msg["id"], {"mappings": mappings})
 
 
@@ -565,10 +571,19 @@ async def handle_set_camera_mapping(
 
     # Get mappings for this config entry
     mappings = dict(all_mappings.get(config_entry_id, {}))
+    previous = mappings.get(serial)
+    if previous is not None:
+        clear_camera_pairing(
+            hass,
+            serial,
+            mapping_entity_id(previous),
+            mapping_original_device_id(previous),
+        )
 
     # Update or remove mapping
     if linked_entity_id:
-        mappings[serial] = linked_entity_id
+        original_device_id = apply_camera_pairing(hass, serial, linked_entity_id)
+        mappings[serial] = pairing_record(linked_entity_id, original_device_id)
     elif serial in mappings:
         del mappings[serial]
 
@@ -577,7 +592,10 @@ async def handle_set_camera_mapping(
     await _save_camera_mappings(hass, all_mappings)
     _async_refresh_paired_camera(hass, config_entry_id, serial, linked_entity_id)
 
-    connection.send_result(msg["id"], {"success": True, "mappings": mappings})
+    connection.send_result(
+        msg["id"],
+        {"success": True, "mappings": mappings_as_entity_ids(mappings)},
+    )
 
 
 @websocket_api.async_response

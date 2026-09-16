@@ -398,7 +398,17 @@ export class MerakiCameraCard extends MerakiCardBase {
         linked_entity_id: this._selectedCamera,
         linked_camera_entity_id: this._selectedCamera,
       });
+      this.config.linked_camera_id = this._selectedCamera;
       this._showLinkPanel = false;
+      if (typeof CustomEvent === 'function' && document.body) {
+        document.body.dispatchEvent(
+          new CustomEvent('hass-more-info', {
+            bubbles: true,
+            composed: true,
+            detail: { entityId: this._selectedCamera },
+          })
+        );
+      }
       // Refresh to use the new linked camera
       await this.fetchData();
     } catch (err) {

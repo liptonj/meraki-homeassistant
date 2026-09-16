@@ -1,7 +1,7 @@
-var Or = Object.defineProperty;
-var Pr = (r, a, i) => a in r ? Or(r, a, { enumerable: !0, configurable: !0, writable: !0, value: i }) : r[a] = i;
-var ze = (r, a, i) => Pr(r, typeof a != "symbol" ? a + "" : a, i);
-import de, { memo as ee, useState as ue, useRef as Te, useEffect as Le, useCallback as xe, useMemo as Ie } from "react";
+var Pr = Object.defineProperty;
+var Or = (r, a, i) => a in r ? Pr(r, a, { enumerable: !0, configurable: !0, writable: !0, value: i }) : r[a] = i;
+var De = (r, a, i) => Or(r, typeof a != "symbol" ? a + "" : a, i);
+import de, { memo as re, useState as ue, useRef as Ee, useEffect as We, useCallback as xe, useMemo as $e } from "react";
 import Fr from "react-dom";
 var xr = { exports: {} }, Ye = {};
 /**
@@ -17,13 +17,13 @@ var br;
 function Ur() {
   if (br) return Ye;
   br = 1;
-  var r = de, a = Symbol.for("react.element"), i = Symbol.for("react.fragment"), s = Object.prototype.hasOwnProperty, l = r.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner, n = { key: !0, ref: !0, __self: !0, __source: !0 };
-  function x(g, m, M) {
-    var o, h = {}, y = null, f = null;
-    M !== void 0 && (y = "" + M), m.key !== void 0 && (y = "" + m.key), m.ref !== void 0 && (f = m.ref);
-    for (o in m) s.call(m, o) && !n.hasOwnProperty(o) && (h[o] = m[o]);
-    if (g && g.defaultProps) for (o in m = g.defaultProps, m) h[o] === void 0 && (h[o] = m[o]);
-    return { $$typeof: a, type: g, key: y, ref: f, props: h, _owner: l.current };
+  var r = de, a = Symbol.for("react.element"), i = Symbol.for("react.fragment"), s = Object.prototype.hasOwnProperty, c = r.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner, n = { key: !0, ref: !0, __self: !0, __source: !0 };
+  function x(g, m, I) {
+    var l, h = {}, y = null, f = null;
+    I !== void 0 && (y = "" + I), m.key !== void 0 && (y = "" + m.key), m.ref !== void 0 && (f = m.ref);
+    for (l in m) s.call(m, l) && !n.hasOwnProperty(l) && (h[l] = m[l]);
+    if (g && g.defaultProps) for (l in m = g.defaultProps, m) h[l] === void 0 && (h[l] = m[l]);
+    return { $$typeof: a, type: g, key: y, ref: f, props: h, _owner: c.current };
   }
   return Ye.Fragment = i, Ye.jsx = x, Ye.jsxs = x, Ye;
 }
@@ -40,15 +40,15 @@ var Ge = {};
 var yr;
 function Br() {
   return yr || (yr = 1, process.env.NODE_ENV !== "production" && function() {
-    var r = de, a = Symbol.for("react.element"), i = Symbol.for("react.portal"), s = Symbol.for("react.fragment"), l = Symbol.for("react.strict_mode"), n = Symbol.for("react.profiler"), x = Symbol.for("react.provider"), g = Symbol.for("react.context"), m = Symbol.for("react.forward_ref"), M = Symbol.for("react.suspense"), o = Symbol.for("react.suspense_list"), h = Symbol.for("react.memo"), y = Symbol.for("react.lazy"), f = Symbol.for("react.offscreen"), C = Symbol.iterator, L = "@@iterator";
-    function P(t) {
+    var r = de, a = Symbol.for("react.element"), i = Symbol.for("react.portal"), s = Symbol.for("react.fragment"), c = Symbol.for("react.strict_mode"), n = Symbol.for("react.profiler"), x = Symbol.for("react.provider"), g = Symbol.for("react.context"), m = Symbol.for("react.forward_ref"), I = Symbol.for("react.suspense"), l = Symbol.for("react.suspense_list"), h = Symbol.for("react.memo"), y = Symbol.for("react.lazy"), f = Symbol.for("react.offscreen"), C = Symbol.iterator, $ = "@@iterator";
+    function F(t) {
       if (t === null || typeof t != "object")
         return null;
-      var u = C && t[C] || t[L];
+      var u = C && t[C] || t[$];
       return typeof u == "function" ? u : null;
     }
     var z = r.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-    function W(t) {
+    function A(t) {
       {
         for (var u = arguments.length, v = new Array(u > 1 ? u - 1 : 0), D = 1; D < u; D++)
           v[D - 1] = arguments[D];
@@ -59,22 +59,22 @@ function Br() {
       {
         var D = z.ReactDebugCurrentFrame, V = D.getStackAddendum();
         V !== "" && (u += "%s", v = v.concat([V]));
-        var G = v.map(function(F) {
-          return String(F);
+        var G = v.map(function(U) {
+          return String(U);
         });
         G.unshift("Warning: " + u), Function.prototype.apply.call(console[t], console, G);
       }
     }
-    var J = !1, U = !1, ie = !1, re = !1, pe = !1, ye;
+    var J = !1, T = !1, ie = !1, te = !1, pe = !1, ye;
     ye = Symbol.for("react.module.reference");
     function ge(t) {
-      return !!(typeof t == "string" || typeof t == "function" || t === s || t === n || pe || t === l || t === M || t === o || re || t === f || J || U || ie || typeof t == "object" && t !== null && (t.$$typeof === y || t.$$typeof === h || t.$$typeof === x || t.$$typeof === g || t.$$typeof === m || // This needs to include all possible module reference object
+      return !!(typeof t == "string" || typeof t == "function" || t === s || t === n || pe || t === c || t === I || t === l || te || t === f || J || T || ie || typeof t == "object" && t !== null && (t.$$typeof === y || t.$$typeof === h || t.$$typeof === x || t.$$typeof === g || t.$$typeof === m || // This needs to include all possible module reference object
       // types supported by any Flight configuration anywhere since
       // we don't know which Flight build this will end up being used
       // with.
       t.$$typeof === ye || t.getModuleId !== void 0));
     }
-    function N(t, u, v) {
+    function k(t, u, v) {
       var D = t.displayName;
       if (D)
         return D;
@@ -87,7 +87,7 @@ function Br() {
     function q(t) {
       if (t == null)
         return null;
-      if (typeof t.tag == "number" && W("Received an unexpected object in getComponentNameFromType(). This is likely a bug in React. Please file an issue."), typeof t == "function")
+      if (typeof t.tag == "number" && A("Received an unexpected object in getComponentNameFromType(). This is likely a bug in React. Please file an issue."), typeof t == "function")
         return t.displayName || t.name || null;
       if (typeof t == "string")
         return t;
@@ -98,11 +98,11 @@ function Br() {
           return "Portal";
         case n:
           return "Profiler";
-        case l:
+        case c:
           return "StrictMode";
-        case M:
+        case I:
           return "Suspense";
-        case o:
+        case l:
           return "SuspenseList";
       }
       if (typeof t == "object")
@@ -114,14 +114,14 @@ function Br() {
             var v = t;
             return R(v._context) + ".Provider";
           case m:
-            return N(t, t.render, "ForwardRef");
+            return k(t, t.render, "ForwardRef");
           case h:
             var D = t.displayName || null;
             return D !== null ? D : q(t.type) || "Memo";
           case y: {
-            var V = t, G = V._payload, F = V._init;
+            var V = t, G = V._payload, U = V._init;
             try {
-              return q(F(G));
+              return q(U(G));
             } catch {
               return null;
             }
@@ -129,18 +129,18 @@ function Br() {
         }
       return null;
     }
-    var H = Object.assign, ce = 0, k, T, j, Q, w, $, B;
-    function A() {
+    var H = Object.assign, ce = 0, N, E, j, Q, w, W, B;
+    function P() {
     }
-    A.__reactDisabledLog = !0;
+    P.__reactDisabledLog = !0;
     function Y() {
       {
         if (ce === 0) {
-          k = console.log, T = console.info, j = console.warn, Q = console.error, w = console.group, $ = console.groupCollapsed, B = console.groupEnd;
+          N = console.log, E = console.info, j = console.warn, Q = console.error, w = console.group, W = console.groupCollapsed, B = console.groupEnd;
           var t = {
             configurable: !0,
             enumerable: !0,
-            value: A,
+            value: P,
             writable: !0
           };
           Object.defineProperties(console, {
@@ -166,10 +166,10 @@ function Br() {
           };
           Object.defineProperties(console, {
             log: H({}, t, {
-              value: k
+              value: N
             }),
             info: H({}, t, {
-              value: T
+              value: E
             }),
             warn: H({}, t, {
               value: j
@@ -181,17 +181,17 @@ function Br() {
               value: w
             }),
             groupCollapsed: H({}, t, {
-              value: $
+              value: W
             }),
             groupEnd: H({}, t, {
               value: B
             })
           });
         }
-        ce < 0 && W("disabledDepth fell below zero. This is a bug in React. Please file an issue.");
+        ce < 0 && A("disabledDepth fell below zero. This is a bug in React. Please file an issue.");
       }
     }
-    var te = z.ReactCurrentDispatcher, he;
+    var ae = z.ReactCurrentDispatcher, he;
     function le(t, u, v) {
       {
         if (he === void 0)
@@ -210,7 +210,7 @@ function Br() {
       var S = typeof WeakMap == "function" ? WeakMap : Map;
       b = new S();
     }
-    function I(t, u) {
+    function L(t, u) {
       if (!t || d)
         return "";
       {
@@ -223,30 +223,30 @@ function Br() {
       var V = Error.prepareStackTrace;
       Error.prepareStackTrace = void 0;
       var G;
-      G = te.current, te.current = null, Y();
+      G = ae.current, ae.current = null, Y();
       try {
         if (u) {
-          var F = function() {
+          var U = function() {
             throw Error();
           };
-          if (Object.defineProperty(F.prototype, "props", {
+          if (Object.defineProperty(U.prototype, "props", {
             set: function() {
               throw Error();
             }
           }), typeof Reflect == "object" && Reflect.construct) {
             try {
-              Reflect.construct(F, []);
+              Reflect.construct(U, []);
             } catch (be) {
               D = be;
             }
-            Reflect.construct(t, [], F);
+            Reflect.construct(t, [], U);
           } else {
             try {
-              F.call();
+              U.call();
             } catch (be) {
               D = be;
             }
-            t.call(F.prototype);
+            t.call(U.prototype);
           }
         } else {
           try {
@@ -276,13 +276,13 @@ function Br() {
             }
         }
       } finally {
-        d = !1, te.current = G, ne(), Error.prepareStackTrace = V;
+        d = !1, ae.current = G, ne(), Error.prepareStackTrace = V;
       }
-      var Pe = t ? t.displayName || t.name : "", Ee = Pe ? le(Pe) : "";
-      return typeof t == "function" && b.set(t, Ee), Ee;
+      var Ue = t ? t.displayName || t.name : "", Ie = Ue ? le(Ue) : "";
+      return typeof t == "function" && b.set(t, Ie), Ie;
     }
     function X(t, u, v) {
-      return I(t, !1);
+      return L(t, !1);
     }
     function me(t) {
       var u = t.prototype;
@@ -292,13 +292,13 @@ function Br() {
       if (t == null)
         return "";
       if (typeof t == "function")
-        return I(t, me(t));
+        return L(t, me(t));
       if (typeof t == "string")
         return le(t);
       switch (t) {
-        case M:
+        case I:
           return le("Suspense");
-        case o:
+        case l:
           return le("SuspenseList");
       }
       if (typeof t == "object")
@@ -317,7 +317,7 @@ function Br() {
         }
       return "";
     }
-    var E = Object.prototype.hasOwnProperty, _ = {}, fe = z.ReactDebugCurrentFrame;
+    var M = Object.prototype.hasOwnProperty, _ = {}, fe = z.ReactDebugCurrentFrame;
     function _e(t) {
       if (t) {
         var u = t._owner, v = Z(t.type, t._source, u ? u.type : null);
@@ -325,28 +325,28 @@ function Br() {
       } else
         fe.setExtraStackFrame(null);
     }
-    function $e(t, u, v, D, V) {
+    function Ae(t, u, v, D, V) {
       {
-        var G = Function.call.bind(E);
-        for (var F in t)
-          if (G(t, F)) {
+        var G = Function.call.bind(M);
+        for (var U in t)
+          if (G(t, U)) {
             var O = void 0;
             try {
-              if (typeof t[F] != "function") {
-                var ve = Error((D || "React class") + ": " + v + " type `" + F + "` is invalid; it must be a function, usually from the `prop-types` package, but received `" + typeof t[F] + "`.This often happens because of typos such as `PropTypes.function` instead of `PropTypes.func`.");
+              if (typeof t[U] != "function") {
+                var ve = Error((D || "React class") + ": " + v + " type `" + U + "` is invalid; it must be a function, usually from the `prop-types` package, but received `" + typeof t[U] + "`.This often happens because of typos such as `PropTypes.function` instead of `PropTypes.func`.");
                 throw ve.name = "Invariant Violation", ve;
               }
-              O = t[F](u, F, D, v, null, "SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED");
+              O = t[U](u, U, D, v, null, "SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED");
             } catch (se) {
               O = se;
             }
-            O && !(O instanceof Error) && (_e(V), W("%s: type specification of %s `%s` is invalid; the type checker function must return `null` or an `Error` but returned a %s. You may have forgotten to pass an argument to the type checker creator (arrayOf, instanceOf, objectOf, oneOf, oneOfType, and shape all require an argument).", D || "React class", v, F, typeof O), _e(null)), O instanceof Error && !(O.message in _) && (_[O.message] = !0, _e(V), W("Failed %s type: %s", v, O.message), _e(null));
+            O && !(O instanceof Error) && (_e(V), A("%s: type specification of %s `%s` is invalid; the type checker function must return `null` or an `Error` but returned a %s. You may have forgotten to pass an argument to the type checker creator (arrayOf, instanceOf, objectOf, oneOf, oneOfType, and shape all require an argument).", D || "React class", v, U, typeof O), _e(null)), O instanceof Error && !(O.message in _) && (_[O.message] = !0, _e(V), A("Failed %s type: %s", v, O.message), _e(null));
           }
       }
     }
-    var We = Array.isArray;
+    var Pe = Array.isArray;
     function Ce(t) {
-      return We(t);
+      return Pe(t);
     }
     function Je(t) {
       {
@@ -356,47 +356,47 @@ function Br() {
     }
     function qe(t) {
       try {
-        return Fe(t), !1;
+        return Be(t), !1;
       } catch {
         return !0;
       }
     }
-    function Fe(t) {
+    function Be(t) {
       return "" + t;
     }
     function Xe(t) {
       if (qe(t))
-        return W("The provided key is an unsupported type %s. This value must be coerced to a string before before using it here.", Je(t)), Fe(t);
+        return A("The provided key is an unsupported type %s. This value must be coerced to a string before before using it here.", Je(t)), Be(t);
     }
-    var Ze = z.ReactCurrentOwner, Ue = {
+    var Ze = z.ReactCurrentOwner, gr = {
       key: !0,
       ref: !0,
       __self: !0,
       __source: !0
-    }, Ae, Oe;
-    function or(t) {
-      if (E.call(t, "ref")) {
+    }, Se, Oe;
+    function Ve(t) {
+      if (M.call(t, "ref")) {
         var u = Object.getOwnPropertyDescriptor(t, "ref").get;
         if (u && u.isReactWarning)
           return !1;
       }
       return t.ref !== void 0;
     }
-    function er(t) {
-      if (E.call(t, "key")) {
+    function lr(t) {
+      if (M.call(t, "key")) {
         var u = Object.getOwnPropertyDescriptor(t, "key").get;
         if (u && u.isReactWarning)
           return !1;
       }
       return t.key !== void 0;
     }
-    function rr(t, u) {
+    function Me(t, u) {
       typeof t.ref == "string" && Ze.current;
     }
-    function lr(t, u) {
+    function er(t, u) {
       {
         var v = function() {
-          Ae || (Ae = !0, W("%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://reactjs.org/link/special-props)", u));
+          Se || (Se = !0, A("%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://reactjs.org/link/special-props)", u));
         };
         v.isReactWarning = !0, Object.defineProperty(t, "key", {
           get: v,
@@ -407,7 +407,7 @@ function Br() {
     function cr(t, u) {
       {
         var v = function() {
-          Oe || (Oe = !0, W("%s: `ref` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://reactjs.org/link/special-props)", u));
+          Oe || (Oe = !0, A("%s: `ref` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://reactjs.org/link/special-props)", u));
         };
         v.isReactWarning = !0, Object.defineProperty(t, "ref", {
           get: v,
@@ -415,7 +415,7 @@ function Br() {
         });
       }
     }
-    var dr = function(t, u, v, D, V, G, F) {
+    var dr = function(t, u, v, D, V, G, U) {
       var O = {
         // This tag allows us to uniquely identify this as a React Element
         $$typeof: a,
@@ -423,7 +423,7 @@ function Br() {
         type: t,
         key: u,
         ref: v,
-        props: F,
+        props: U,
         // Record the component responsible for creating this element.
         _owner: G
       };
@@ -446,39 +446,39 @@ function Br() {
     };
     function ur(t, u, v, D, V) {
       {
-        var G, F = {}, O = null, ve = null;
-        v !== void 0 && (Xe(v), O = "" + v), er(u) && (Xe(u.key), O = "" + u.key), or(u) && (ve = u.ref, rr(u, V));
+        var G, U = {}, O = null, ve = null;
+        v !== void 0 && (Xe(v), O = "" + v), lr(u) && (Xe(u.key), O = "" + u.key), Ve(u) && (ve = u.ref, Me(u, V));
         for (G in u)
-          E.call(u, G) && !Ue.hasOwnProperty(G) && (F[G] = u[G]);
+          M.call(u, G) && !gr.hasOwnProperty(G) && (U[G] = u[G]);
         if (t && t.defaultProps) {
           var se = t.defaultProps;
           for (G in se)
-            F[G] === void 0 && (F[G] = se[G]);
+            U[G] === void 0 && (U[G] = se[G]);
         }
         if (O || ve) {
           var oe = typeof t == "function" ? t.displayName || t.name || "Unknown" : t;
-          O && lr(F, oe), ve && cr(F, oe);
+          O && er(U, oe), ve && cr(U, oe);
         }
-        return dr(t, O, ve, V, D, Ze.current, F);
+        return dr(t, O, ve, V, D, Ze.current, U);
       }
     }
-    var Be = z.ReactCurrentOwner, tr = z.ReactDebugCurrentFrame;
-    function Se(t) {
+    var He = z.ReactCurrentOwner, rr = z.ReactDebugCurrentFrame;
+    function Re(t) {
       if (t) {
         var u = t._owner, v = Z(t.type, t._source, u ? u.type : null);
-        tr.setExtraStackFrame(v);
+        rr.setExtraStackFrame(v);
       } else
-        tr.setExtraStackFrame(null);
+        rr.setExtraStackFrame(null);
     }
-    var Re;
-    Re = !1;
-    function Ve(t) {
+    var Fe;
+    Fe = !1;
+    function ze(t) {
       return typeof t == "object" && t !== null && t.$$typeof === a;
     }
-    function He() {
+    function tr() {
       {
-        if (Be.current) {
-          var t = q(Be.current.type);
+        if (He.current) {
+          var t = q(He.current.type);
           if (t)
             return `
 
@@ -487,13 +487,13 @@ Check the render method of \`` + t + "`.";
         return "";
       }
     }
-    function c(t) {
+    function ar(t) {
       return "";
     }
-    var p = {};
-    function ae(t) {
+    var o = {};
+    function p(t) {
       {
-        var u = He();
+        var u = tr();
         if (!u) {
           var v = typeof t == "string" ? t : t.displayName || t.name;
           v && (u = `
@@ -503,35 +503,35 @@ Check the top-level render call using <` + v + ">.");
         return u;
       }
     }
-    function je(t, u) {
+    function ee(t, u) {
       {
         if (!t._store || t._store.validated || t.key != null)
           return;
         t._store.validated = !0;
-        var v = ae(u);
-        if (p[v])
+        var v = p(u);
+        if (o[v])
           return;
-        p[v] = !0;
+        o[v] = !0;
         var D = "";
-        t && t._owner && t._owner !== Be.current && (D = " It was passed a child from " + q(t._owner.type) + "."), Se(t), W('Each child in a list should have a unique "key" prop.%s%s See https://reactjs.org/link/warning-keys for more information.', v, D), Se(null);
+        t && t._owner && t._owner !== He.current && (D = " It was passed a child from " + q(t._owner.type) + "."), Re(t), A('Each child in a list should have a unique "key" prop.%s%s See https://reactjs.org/link/warning-keys for more information.', v, D), Re(null);
       }
     }
-    function gr(t, u) {
+    function je(t, u) {
       {
         if (typeof t != "object")
           return;
         if (Ce(t))
           for (var v = 0; v < t.length; v++) {
             var D = t[v];
-            Ve(D) && je(D, u);
+            ze(D) && ee(D, u);
           }
-        else if (Ve(t))
+        else if (ze(t))
           t._store && (t._store.validated = !0);
         else if (t) {
-          var V = P(t);
+          var V = F(t);
           if (typeof V == "function" && V !== t.entries)
-            for (var G = V.call(t), F; !(F = G.next()).done; )
-              Ve(F.value) && je(F.value, u);
+            for (var G = V.call(t), U; !(U = G.next()).done; )
+              ze(U.value) && ee(U.value, u);
         }
       }
     }
@@ -551,13 +551,13 @@ Check the top-level render call using <` + v + ">.");
           return;
         if (v) {
           var D = q(u);
-          $e(v, t.props, "prop", D, t);
-        } else if (u.PropTypes !== void 0 && !Re) {
-          Re = !0;
+          Ae(v, t.props, "prop", D, t);
+        } else if (u.PropTypes !== void 0 && !Fe) {
+          Fe = !0;
           var V = q(u);
-          W("Component %s declared `PropTypes` instead of `propTypes`. Did you misspell the property assignment?", V || "Unknown");
+          A("Component %s declared `PropTypes` instead of `propTypes`. Did you misspell the property assignment?", V || "Unknown");
         }
-        typeof u.getDefaultProps == "function" && !u.getDefaultProps.isReactClassApproved && W("getDefaultProps is only used on classic React.createClass definitions. Use a static property named `defaultProps` instead.");
+        typeof u.getDefaultProps == "function" && !u.getDefaultProps.isReactClassApproved && A("getDefaultProps is only used on classic React.createClass definitions. Use a static property named `defaultProps` instead.");
       }
     }
     function Er(t) {
@@ -565,53 +565,53 @@ Check the top-level render call using <` + v + ">.");
         for (var u = Object.keys(t.props), v = 0; v < u.length; v++) {
           var D = u[v];
           if (D !== "children" && D !== "key") {
-            Se(t), W("Invalid prop `%s` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.", D), Se(null);
+            Re(t), A("Invalid prop `%s` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.", D), Re(null);
             break;
           }
         }
-        t.ref !== null && (Se(t), W("Invalid attribute `ref` supplied to `React.Fragment`."), Se(null));
+        t.ref !== null && (Re(t), A("Invalid attribute `ref` supplied to `React.Fragment`."), Re(null));
       }
     }
     var fr = {};
     function vr(t, u, v, D, V, G) {
       {
-        var F = ge(t);
-        if (!F) {
+        var U = ge(t);
+        if (!U) {
           var O = "";
           (t === void 0 || typeof t == "object" && t !== null && Object.keys(t).length === 0) && (O += " You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.");
-          var ve = c();
-          ve ? O += ve : O += He();
+          var ve = ar();
+          ve ? O += ve : O += tr();
           var se;
-          t === null ? se = "null" : Ce(t) ? se = "array" : t !== void 0 && t.$$typeof === a ? (se = "<" + (q(t.type) || "Unknown") + " />", O = " Did you accidentally export a JSX literal instead of a component?") : se = typeof t, W("React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: %s.%s", se, O);
+          t === null ? se = "null" : Ce(t) ? se = "array" : t !== void 0 && t.$$typeof === a ? (se = "<" + (q(t.type) || "Unknown") + " />", O = " Did you accidentally export a JSX literal instead of a component?") : se = typeof t, A("React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: %s.%s", se, O);
         }
         var oe = ur(t, u, v, V, G);
         if (oe == null)
           return oe;
-        if (F) {
+        if (U) {
           var we = u.children;
           if (we !== void 0)
             if (D)
               if (Ce(we)) {
-                for (var Pe = 0; Pe < we.length; Pe++)
-                  gr(we[Pe], t);
+                for (var Ue = 0; Ue < we.length; Ue++)
+                  je(we[Ue], t);
                 Object.freeze && Object.freeze(we);
               } else
-                W("React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.");
+                A("React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.");
             else
-              gr(we, t);
+              je(we, t);
         }
-        if (E.call(u, "key")) {
-          var Ee = q(t), be = Object.keys(u).filter(function(Ar) {
+        if (M.call(u, "key")) {
+          var Ie = q(t), be = Object.keys(u).filter(function(Ar) {
             return Ar !== "key";
           }), pr = be.length > 0 ? "{key: someKey, " + be.join(": ..., ") + ": ...}" : "{key: someKey}";
-          if (!fr[Ee + pr]) {
+          if (!fr[Ie + pr]) {
             var Wr = be.length > 0 ? "{" + be.join(": ..., ") + ": ...}" : "{}";
-            W(`A props object containing a "key" prop is being spread into JSX:
+            A(`A props object containing a "key" prop is being spread into JSX:
   let props = %s;
   <%s {...props} />
 React keys must be passed directly to JSX without using spread:
   let props = %s;
-  <%s key={someKey} {...props} />`, pr, Ee, Wr, Ee), fr[Ee + pr] = !0;
+  <%s key={someKey} {...props} />`, pr, Ie, Wr, Ie), fr[Ie + pr] = !0;
           }
         }
         return t === s ? Er(oe) : Tr(oe), oe;
@@ -632,20 +632,20 @@ var e = xr.exports, Qe = {}, Ke = Fr;
 if (process.env.NODE_ENV === "production")
   Qe.createRoot = Ke.createRoot, Qe.hydrateRoot = Ke.hydrateRoot;
 else {
-  var ar = Ke.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+  var sr = Ke.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
   Qe.createRoot = function(r, a) {
-    ar.usingClientEntryPoint = !0;
+    sr.usingClientEntryPoint = !0;
     try {
       return Ke.createRoot(r, a);
     } finally {
-      ar.usingClientEntryPoint = !1;
+      sr.usingClientEntryPoint = !1;
     }
   }, Qe.hydrateRoot = function(r, a, i) {
-    ar.usingClientEntryPoint = !0;
+    sr.usingClientEntryPoint = !0;
     try {
       return Ke.hydrateRoot(r, a, i);
     } finally {
-      ar.usingClientEntryPoint = !1;
+      sr.usingClientEntryPoint = !1;
     }
   };
 }
@@ -654,15 +654,15 @@ const Vr = ({
   value: a,
   icon: i,
   variant: s = "default",
-  onClick: l,
+  onClick: c,
   clickable: n = !1
 }) => {
-  const x = s === "default" ? "" : s, g = l || n;
+  const x = s === "default" ? "" : s, g = c || n;
   return /* @__PURE__ */ e.jsxs(
     "div",
     {
       className: `stat-card ${g ? "clickable" : ""}`,
-      onClick: l,
+      onClick: c,
       children: [
         /* @__PURE__ */ e.jsx("div", { className: "label", children: r }),
         /* @__PURE__ */ e.jsxs("div", { className: `value ${x}`, children: [
@@ -672,7 +672,7 @@ const Vr = ({
       ]
     }
   );
-}, sr = ee(Vr), hr = ee(({ status: r }) => {
+}, ir = re(Vr), hr = re(({ status: r }) => {
   const a = (i) => {
     switch (i) {
       case "connected":
@@ -704,11 +704,11 @@ const Vr = ({
   );
 });
 hr.displayName = "StatusBadge";
-const nr = (r) => {
+const or = (r) => {
   if (!r) return "Never";
   const a = new Date(r), s = (/* @__PURE__ */ new Date()).getTime() - a.getTime();
   return s < 6e4 ? "Just now" : s < 36e5 ? `${Math.floor(s / 6e4)}m ago` : s < 864e5 ? `${Math.floor(s / 36e5)}h ago` : a.toLocaleDateString();
-}, De = ee(
+}, Te = re(
   ({ label: r, value: a }) => /* @__PURE__ */ e.jsxs(
     "div",
     {
@@ -724,8 +724,8 @@ const nr = (r) => {
     }
   )
 );
-De.displayName = "StatItem";
-const Cr = ee(
+Te.displayName = "StatItem";
+const Cr = re(
   ({ name: r, dest: a }) => {
     const i = {
       backgroundColor: "var(--primary-background-color, #f5f5f5)",
@@ -768,17 +768,17 @@ const Cr = ee(
       ),
       /* @__PURE__ */ e.jsxs("div", { style: { marginTop: "8px", fontSize: "12px" }, children: [
         /* @__PURE__ */ e.jsx(
-          De,
+          Te,
           {
             label: "Messages Relayed",
             value: a.messages_relayed.toLocaleString()
           }
         ),
         /* @__PURE__ */ e.jsx(
-          De,
+          Te,
           {
             label: "Last Relay",
-            value: nr(a.last_relay_time)
+            value: or(a.last_relay_time)
           }
         ),
         a.last_error && /* @__PURE__ */ e.jsxs(
@@ -800,7 +800,7 @@ const Cr = ee(
                     fontSize: "10px",
                     color: "var(--secondary-text-color)"
                   },
-                  children: nr(a.last_error_time)
+                  children: or(a.last_error_time)
                 }
               )
             ]
@@ -834,7 +834,7 @@ const Hr = ({
     marginBottom: "16px",
     paddingBottom: "12px",
     borderBottom: "1px solid var(--divider-color, #e0e0e0)"
-  }, l = {
+  }, c = {
     marginBottom: "16px"
   };
   return /* @__PURE__ */ e.jsxs("div", { style: i, children: [
@@ -869,7 +869,7 @@ const Hr = ({
         }
       )
     ] }),
-    r && /* @__PURE__ */ e.jsxs("div", { style: l, children: [
+    r && /* @__PURE__ */ e.jsxs("div", { style: c, children: [
       /* @__PURE__ */ e.jsx(
         "h4",
         {
@@ -883,36 +883,36 @@ const Hr = ({
         }
       ),
       /* @__PURE__ */ e.jsx(
-        De,
+        Te,
         {
           label: "Messages Received",
           value: r.messages_received.toLocaleString()
         }
       ),
       /* @__PURE__ */ e.jsx(
-        De,
+        Te,
         {
           label: "Messages Processed",
           value: r.messages_processed.toLocaleString()
         }
       ),
-      /* @__PURE__ */ e.jsx(De, { label: "Sensors Mapped", value: r.sensors_mapped }),
+      /* @__PURE__ */ e.jsx(Te, { label: "Sensors Mapped", value: r.sensors_mapped }),
       /* @__PURE__ */ e.jsx(
-        De,
+        Te,
         {
           label: "Last Message",
-          value: nr(r.last_message_time)
+          value: or(r.last_message_time)
         }
       ),
       /* @__PURE__ */ e.jsx(
-        De,
+        Te,
         {
           label: "Uptime Since",
-          value: nr(r.start_time)
+          value: or(r.start_time)
         }
       )
     ] }),
-    Object.keys(a).length > 0 && /* @__PURE__ */ e.jsxs("div", { style: l, children: [
+    Object.keys(a).length > 0 && /* @__PURE__ */ e.jsxs("div", { style: c, children: [
       /* @__PURE__ */ e.jsxs(
         "h4",
         {
@@ -932,14 +932,14 @@ const Hr = ({
       Object.entries(a).map(([n, x]) => /* @__PURE__ */ e.jsx(Cr, { name: n, dest: x }, n))
     ] })
   ] });
-}, Yr = ee(
+}, Yr = re(
   Hr,
   (r, a) => {
     const i = r.mqttStats, s = a.mqttStats;
     if ((i == null ? void 0 : i.is_running) !== (s == null ? void 0 : s.is_running) || (i == null ? void 0 : i.messages_received) !== (s == null ? void 0 : s.messages_received) || (i == null ? void 0 : i.messages_processed) !== (s == null ? void 0 : s.messages_processed) || (i == null ? void 0 : i.last_message_time) !== (s == null ? void 0 : s.last_message_time))
       return !1;
-    const l = Object.keys(r.relayDestinations), n = Object.keys(a.relayDestinations);
-    if (l.length !== n.length) return !1;
+    const c = Object.keys(r.relayDestinations), n = Object.keys(a.relayDestinations);
+    if (c.length !== n.length) return !1;
     for (const x of n) {
       const g = r.relayDestinations[x], m = a.relayDestinations[x];
       if (!g || g.status !== m.status || g.messages_relayed !== m.messages_relayed || g.last_relay_time !== m.last_relay_time || g.last_error !== m.last_error) return !1;
@@ -959,13 +959,13 @@ const Hr = ({
   { value: "offline", label: "Offline" },
   { value: "alerting", label: "Alerting" },
   { value: "dormant", label: "Dormant" }
-], Sr = ee(
+], Sr = re(
   ({
     device: r,
     onClick: a,
     getDeviceIcon: i,
     getDeviceTypeClass: s,
-    getDeviceDetail: l
+    getDeviceDetail: c
   }) => {
     var n;
     return /* @__PURE__ */ e.jsxs("tr", { className: "device-row", onClick: a, children: [
@@ -980,19 +980,19 @@ const Hr = ({
         /* @__PURE__ */ e.jsx("span", { children: r.status || "Unknown" })
       ] }) }),
       /* @__PURE__ */ e.jsx("td", { className: "device-model", children: r.lanIp || "—" }),
-      /* @__PURE__ */ e.jsx("td", { children: /* @__PURE__ */ e.jsx("span", { className: "detail-badge", children: l(r) || "—" }) })
+      /* @__PURE__ */ e.jsx("td", { children: /* @__PURE__ */ e.jsx("span", { className: "detail-badge", children: c(r) || "—" }) })
     ] });
   },
   (r, a) => {
-    var x, g, m, M, o, h;
+    var x, g, m, I, l, h;
     const i = r.device, s = a.device;
-    if (i.serial !== s.serial || i.status !== s.status || i.name !== s.name || i.lanIp !== s.lanIp || i.model !== s.model || ((x = i.readings) == null ? void 0 : x.temperature) !== ((g = s.readings) == null ? void 0 : g.temperature) || ((m = i.readings) == null ? void 0 : m.humidity) !== ((M = s.readings) == null ? void 0 : M.humidity)) return !1;
-    const l = (o = i.ports_statuses) == null ? void 0 : o.filter(
+    if (i.serial !== s.serial || i.status !== s.status || i.name !== s.name || i.lanIp !== s.lanIp || i.model !== s.model || ((x = i.readings) == null ? void 0 : x.temperature) !== ((g = s.readings) == null ? void 0 : g.temperature) || ((m = i.readings) == null ? void 0 : m.humidity) !== ((I = s.readings) == null ? void 0 : I.humidity)) return !1;
+    const c = (l = i.ports_statuses) == null ? void 0 : l.filter(
       (y) => y.status === "Connected"
     ).length, n = (h = s.ports_statuses) == null ? void 0 : h.filter(
       (y) => y.status === "Connected"
     ).length;
-    return l === n;
+    return c === n;
   }
 );
 Sr.displayName = "DeviceRow";
@@ -1001,24 +1001,24 @@ const Kr = ({
   data: a,
   hass: i,
   defaultViewMode: s = "network",
-  defaultDeviceTypeFilter: l = ["all"],
+  defaultDeviceTypeFilter: c = ["all"],
   defaultStatusFilter: n = "all",
   temperatureUnit: x = "celsius"
 }) => {
   const [g, m] = ue(
     /* @__PURE__ */ new Set()
-  ), [M, o] = ue(
+  ), [I, l] = ue(
     /* @__PURE__ */ new Set(["switch", "camera", "wireless", "sensor", "appliance"])
   ), [h, y] = ue(
-    (Array.isArray(l) ? l : [l]).map((d) => d)
+    (Array.isArray(c) ? c : [c]).map((d) => d)
   ), [f, C] = ue(
     n || "all"
-  ), [L, P] = ue(
+  ), [$, F] = ue(
     s || "network"
-  ), z = Te(!1);
-  if (Le(() => {
-    s && P(s);
-  }, [s]), Le(() => {
+  ), z = Ee(!1);
+  if (We(() => {
+    s && F(s);
+  }, [s]), We(() => {
     if (!z.current && (a != null && a.networks)) {
       const d = a.networks.map((b) => b.id);
       d.length > 0 && d.length <= 3 && (m(new Set(d)), z.current = !0);
@@ -1029,34 +1029,34 @@ const Kr = ({
       /* @__PURE__ */ e.jsx("div", { className: "loading-text", children: "Loading dashboard..." })
     ] });
   const {
-    devices: W = [],
+    devices: A = [],
     networks: K = [],
     ssids: J = [],
-    clients: U = [],
+    clients: T = [],
     scan_interval: ie = 90,
-    last_updated: re,
+    last_updated: te,
     mqtt: pe
-  } = a, [ye, ge] = ue(null), N = Te(null);
-  Le(() => {
-    if (!re || !ie) {
+  } = a, [ye, ge] = ue(null), k = Ee(null);
+  We(() => {
+    if (!te || !ie) {
       console.log("[Meraki] Countdown disabled - missing data:", {
-        last_updated: re,
+        last_updated: te,
         scan_interval: ie
       }), ge(null);
       return;
     }
     console.log("[Meraki] Countdown reset - new data received:", {
-      last_updated: re,
+      last_updated: te,
       scan_interval: ie
     });
     const d = () => {
-      const S = new Date(re).getTime() + ie * 1e3, I = Date.now(), X = Math.max(0, Math.floor((S - I) / 1e3));
+      const S = new Date(te).getTime() + ie * 1e3, L = Date.now(), X = Math.max(0, Math.floor((S - L) / 1e3));
       ge(X);
     };
-    return d(), N.current = setInterval(d, 1e3), () => {
-      N.current && clearInterval(N.current);
+    return d(), k.current = setInterval(d, 1e3), () => {
+      k.current && clearInterval(k.current);
     };
-  }, [re, ie]);
+  }, [te, ie]);
   const R = (d) => {
     const b = new Date(d), S = /* @__PURE__ */ new Date();
     return b.toDateString() === S.toDateString() ? b.toLocaleTimeString([], {
@@ -1070,24 +1070,24 @@ const Kr = ({
       minute: "2-digit"
     });
   }, q = (d) => d <= 0 ? "refreshing..." : d < 60 ? `${d}s` : `${Math.floor(d / 60)}m ${d % 60}s`, H = (d) => {
-    var I, X;
-    const b = ((I = d.model) == null ? void 0 : I.toUpperCase()) || "", S = ((X = d.productType) == null ? void 0 : X.toLowerCase()) || "";
+    var L, X;
+    const b = ((L = d.model) == null ? void 0 : L.toUpperCase()) || "", S = ((X = d.productType) == null ? void 0 : X.toLowerCase()) || "";
     return b.startsWith("MS") || S === "switch" ? "switch" : b.startsWith("MV") || S === "camera" ? "camera" : b.startsWith("MR") || S === "wireless" ? "wireless" : b.startsWith("MT") || S === "sensor" ? "sensor" : b.startsWith("MX") || b.startsWith("Z") || S === "appliance" ? "appliance" : "all";
-  }, k = ((d) => d.filter((b) => {
+  }, N = ((d) => d.filter((b) => {
     var S;
     return !(!h.includes("all") && !h.includes(H(b)) || f !== "all" && ((S = b.status) == null ? void 0 : S.toLowerCase()) !== f);
-  }))(W), T = W.filter(
+  }))(A), E = A.filter(
     (d) => {
       var b;
       return ((b = d.status) == null ? void 0 : b.toLowerCase()) === "online";
     }
-  ).length, j = U.length || 0, Q = J.filter((d) => d.enabled).length, w = (d) => {
+  ).length, j = T.length || 0, Q = J.filter((d) => d.enabled).length, w = (d) => {
     m((b) => {
       const S = new Set(b);
       return S.has(d) ? S.delete(d) : S.add(d), S;
     });
-  }, $ = (d) => {
-    o((b) => {
+  }, W = (d) => {
+    l((b) => {
       const S = new Set(b);
       return S.has(d) ? S.delete(d) : S.add(d), S;
     });
@@ -1107,39 +1107,39 @@ const Kr = ({
       // Security appliance/firewall
       all: "📱"
     }[b];
-  }, []), A = xe((d) => H(d), []), Y = xe(
+  }, []), P = xe((d) => H(d), []), Y = xe(
     (d) => {
-      var S, I, X;
+      var S, L, X;
       const b = H(d);
       if (b === "switch")
         return `${((S = d.ports_statuses) == null ? void 0 : S.filter(
           (Z) => {
-            var E;
-            return ((E = Z.status) == null ? void 0 : E.toLowerCase()) === "connected";
+            var M;
+            return ((M = Z.status) == null ? void 0 : M.toLowerCase()) === "connected";
           }
         ).length) || 0} ports active`;
       if (b === "camera")
-        return ((I = d.status) == null ? void 0 : I.toLowerCase()) === "online" ? "Recording" : "Offline";
+        return ((L = d.status) == null ? void 0 : L.toLowerCase()) === "online" ? "Recording" : "Offline";
       if (b === "wireless")
-        return `${U.filter(
+        return `${T.filter(
           (Z) => Z.recentDeviceSerial === d.serial
         ).length} clients`;
       if (b === "sensor") {
         if (((X = d.readings) == null ? void 0 : X.temperature) != null) {
-          const me = d.readings.temperature, Z = x === "fahrenheit" ? (me * 9 / 5 + 32).toFixed(1) : me.toFixed(1), E = x === "fahrenheit" ? "°F" : "°C", _ = d.readings.humidity ?? "--";
-          return `${Z}${E} / ${_}%`;
+          const me = d.readings.temperature, Z = x === "fahrenheit" ? (me * 9 / 5 + 32).toFixed(1) : me.toFixed(1), M = x === "fahrenheit" ? "°F" : "°C", _ = d.readings.humidity ?? "--";
+          return `${Z}${M} / ${_}%`;
         }
         return "Active";
       }
       return "";
     },
-    [U, x]
+    [T, x]
   ), ne = xe(
     (d) => {
       r({ view: "device", deviceId: d });
     },
     [r]
-  ), te = (d) => k.filter((b) => b.networkId === d), he = (d) => k.filter((b) => H(b) === d), le = (d) => /* @__PURE__ */ e.jsxs("table", { className: "device-table", children: [
+  ), ae = (d) => N.filter((b) => b.networkId === d), he = (d) => N.filter((b) => H(b) === d), le = (d) => /* @__PURE__ */ e.jsxs("table", { className: "device-table", children: [
     /* @__PURE__ */ e.jsx("thead", { children: /* @__PURE__ */ e.jsxs("tr", { children: [
       /* @__PURE__ */ e.jsx("th", { children: "Device" }),
       /* @__PURE__ */ e.jsx("th", { children: "Model" }),
@@ -1155,7 +1155,7 @@ const Kr = ({
           device: b,
           onClick: () => ne(b.serial),
           getDeviceIcon: B,
-          getDeviceTypeClass: A,
+          getDeviceTypeClass: P,
           getDeviceDetail: Y
         },
         b.serial
@@ -1164,11 +1164,11 @@ const Kr = ({
     ] })
   ] });
   return /* @__PURE__ */ e.jsxs("div", { children: [
-    re && /* @__PURE__ */ e.jsxs("div", { className: "refresh-indicator", children: [
+    te && /* @__PURE__ */ e.jsxs("div", { className: "refresh-indicator", children: [
       /* @__PURE__ */ e.jsxs("span", { className: "refresh-indicator-item", children: [
         /* @__PURE__ */ e.jsx("span", { className: "refresh-indicator-icon", children: "🔄" }),
         "Last: ",
-        R(re)
+        R(te)
       ] }),
       ye !== null && /* @__PURE__ */ e.jsxs("span", { className: "refresh-indicator-item", children: [
         /* @__PURE__ */ e.jsx("span", { className: "refresh-indicator-icon", children: "⏱️" }),
@@ -1177,10 +1177,10 @@ const Kr = ({
       ] })
     ] }),
     /* @__PURE__ */ e.jsxs("div", { className: "stats-grid", children: [
-      /* @__PURE__ */ e.jsx(sr, { title: "Total Devices", value: W.length }),
-      /* @__PURE__ */ e.jsx(sr, { title: "Online", value: T, variant: "success" }),
+      /* @__PURE__ */ e.jsx(ir, { title: "Total Devices", value: A.length }),
+      /* @__PURE__ */ e.jsx(ir, { title: "Online", value: E, variant: "success" }),
       /* @__PURE__ */ e.jsx(
-        sr,
+        ir,
         {
           title: "Connected Clients",
           value: j,
@@ -1189,7 +1189,7 @@ const Kr = ({
         }
       ),
       /* @__PURE__ */ e.jsx(
-        sr,
+        ir,
         {
           title: "Active SSIDs",
           value: Q,
@@ -1210,16 +1210,16 @@ const Kr = ({
         /* @__PURE__ */ e.jsx(
           "button",
           {
-            onClick: () => P("network"),
-            className: `view-mode-btn ${L === "network" ? "active" : ""}`,
+            onClick: () => F("network"),
+            className: `view-mode-btn ${$ === "network" ? "active" : ""}`,
             children: "🌐 By Network"
           }
         ),
         /* @__PURE__ */ e.jsx(
           "button",
           {
-            onClick: () => P("type"),
-            className: `view-mode-btn ${L === "type" ? "active" : ""}`,
+            onClick: () => F("type"),
+            className: `view-mode-btn ${$ === "type" ? "active" : ""}`,
             children: "📦 By Type"
           }
         )
@@ -1255,21 +1255,21 @@ const Kr = ({
           className: "clear-filters-btn",
           children: [
             "✕ Clear Filters (",
-            k.length,
+            N.length,
             "/",
-            W.length,
+            A.length,
             ")"
           ]
         }
       )
     ] }),
-    L === "network" && K.map((d) => {
-      const b = te(d.id), S = b.filter(
+    $ === "network" && K.map((d) => {
+      const b = ae(d.id), S = b.filter(
         (X) => {
           var me;
           return ((me = X.status) == null ? void 0 : me.toLowerCase()) === "online";
         }
-      ).length, I = g.has(d.id);
+      ).length, L = g.has(d.id);
       return /* @__PURE__ */ e.jsxs("div", { className: "network-card", children: [
         /* @__PURE__ */ e.jsxs(
           "div",
@@ -1290,17 +1290,17 @@ const Kr = ({
               /* @__PURE__ */ e.jsx(
                 "span",
                 {
-                  className: `expand-icon ${I ? "expanded" : ""}`,
+                  className: `expand-icon ${L ? "expanded" : ""}`,
                   children: "▼"
                 }
               )
             ]
           }
         ),
-        I && le(b)
+        L && le(b)
       ] }, d.id);
     }),
-    L === "type" && jr.filter((d) => d.value !== "all").map((d) => {
+    $ === "type" && jr.filter((d) => d.value !== "all").map((d) => {
       const b = he(d.value);
       if (b.length === 0 && !(h.length === 1 && h[0] === "all"))
         return null;
@@ -1309,13 +1309,13 @@ const Kr = ({
           var me;
           return ((me = X.status) == null ? void 0 : me.toLowerCase()) === "online";
         }
-      ).length, I = M.has(d.value);
+      ).length, L = I.has(d.value);
       return /* @__PURE__ */ e.jsxs("div", { className: "network-card", children: [
         /* @__PURE__ */ e.jsxs(
           "div",
           {
             className: "network-header",
-            onClick: () => $(d.value),
+            onClick: () => W(d.value),
             children: [
               /* @__PURE__ */ e.jsxs("div", { className: "title", children: [
                 /* @__PURE__ */ e.jsx("span", { className: "network-icon", children: d.icon }),
@@ -1330,48 +1330,48 @@ const Kr = ({
               /* @__PURE__ */ e.jsx(
                 "span",
                 {
-                  className: `expand-icon ${I ? "expanded" : ""}`,
+                  className: `expand-icon ${L ? "expanded" : ""}`,
                   children: "▼"
                 }
               )
             ]
           }
         ),
-        I && le(b)
+        L && le(b)
       ] }, d.value);
     }),
-    L === "network" && K.length === 0 && k.length > 0 && /* @__PURE__ */ e.jsxs("div", { className: "network-card", children: [
+    $ === "network" && K.length === 0 && N.length > 0 && /* @__PURE__ */ e.jsxs("div", { className: "network-card", children: [
       /* @__PURE__ */ e.jsx("div", { className: "network-header", children: /* @__PURE__ */ e.jsxs("div", { className: "title", children: [
         /* @__PURE__ */ e.jsx("span", { className: "network-icon", children: "🌐" }),
         /* @__PURE__ */ e.jsx("h2", { children: "All Devices" }),
         /* @__PURE__ */ e.jsxs("span", { className: "badge", children: [
-          T,
+          E,
           " online"
         ] })
       ] }) }),
-      le(k)
+      le(N)
     ] }),
-    k.length === 0 && /* @__PURE__ */ e.jsxs("div", { className: "empty-state", children: [
+    N.length === 0 && /* @__PURE__ */ e.jsxs("div", { className: "empty-state", children: [
       /* @__PURE__ */ e.jsx("div", { className: "icon", children: "📡" }),
       /* @__PURE__ */ e.jsx("h3", { children: "No Devices Found" }),
       /* @__PURE__ */ e.jsx("p", { children: !(h.length === 1 && h[0] === "all") || f !== "all" ? "No devices match your current filters." : "Your Meraki devices will appear here once discovered." })
     ] })
   ] });
-}, Qr = ee(Kr, (r, a) => {
-  var x, g, m, M, o, h, y, f, C, L, P, z, W, K;
+}, Qr = re(Kr, (r, a) => {
+  var x, g, m, I, l, h, y, f, C, $, F, z, A, K;
   if (r.defaultViewMode !== a.defaultViewMode)
     return !1;
   if (r.data === a.data)
     return !0;
   const i = r.data, s = a.data;
-  if (((x = i.devices) == null ? void 0 : x.length) !== ((g = s.devices) == null ? void 0 : g.length) || ((m = i.networks) == null ? void 0 : m.length) !== ((M = s.networks) == null ? void 0 : M.length) || ((o = i.clients) == null ? void 0 : o.length) !== ((h = s.clients) == null ? void 0 : h.length))
+  if (((x = i.devices) == null ? void 0 : x.length) !== ((g = s.devices) == null ? void 0 : g.length) || ((m = i.networks) == null ? void 0 : m.length) !== ((I = s.networks) == null ? void 0 : I.length) || ((l = i.clients) == null ? void 0 : l.length) !== ((h = s.clients) == null ? void 0 : h.length))
     return !1;
-  const l = (y = i.devices) == null ? void 0 : y.map((J) => `${J.serial}:${J.status}`).join("|"), n = (f = s.devices) == null ? void 0 : f.map((J) => `${J.serial}:${J.status}`).join("|");
-  return !(l !== n || i.last_updated !== s.last_updated || ((C = i.mqtt) == null ? void 0 : C.enabled) !== ((L = s.mqtt) == null ? void 0 : L.enabled) || ((z = (P = i.mqtt) == null ? void 0 : P.stats) == null ? void 0 : z.messages_received) !== ((K = (W = s.mqtt) == null ? void 0 : W.stats) == null ? void 0 : K.messages_received));
-}), Rr = ee(
+  const c = (y = i.devices) == null ? void 0 : y.map((J) => `${J.serial}:${J.status}`).join("|"), n = (f = s.devices) == null ? void 0 : f.map((J) => `${J.serial}:${J.status}`).join("|");
+  return !(c !== n || i.last_updated !== s.last_updated || ((C = i.mqtt) == null ? void 0 : C.enabled) !== (($ = s.mqtt) == null ? void 0 : $.enabled) || ((z = (F = i.mqtt) == null ? void 0 : F.stats) == null ? void 0 : z.messages_received) !== ((K = (A = s.mqtt) == null ? void 0 : A.stats) == null ? void 0 : K.messages_received));
+}), Rr = re(
   ({ port: r, isSelected: a, onClick: i }) => {
     var n, x, g;
-    const s = ((n = r.status) == null ? void 0 : n.toLowerCase()) === "connected", l = ((x = r.poe) == null ? void 0 : x.isAllocated) === !0 || ((g = r.poe) == null ? void 0 : g.enabled) === !0;
+    const s = ((n = r.status) == null ? void 0 : n.toLowerCase()) === "connected", c = ((x = r.poe) == null ? void 0 : x.isAllocated) === !0 || ((g = r.poe) == null ? void 0 : g.enabled) === !0;
     return /* @__PURE__ */ e.jsxs(
       "div",
       {
@@ -1380,15 +1380,15 @@ const Kr = ({
         title: `Port ${r.portId}${r.clientName ? ` - ${r.clientName}` : ""}`,
         children: [
           /* @__PURE__ */ e.jsx("span", { className: "num", children: r.portId }),
-          l && /* @__PURE__ */ e.jsx("span", { className: "poe", children: "⚡" })
+          c && /* @__PURE__ */ e.jsx("span", { className: "poe", children: "⚡" })
         ]
       }
     );
   },
   (r, a) => {
-    var l, n, x, g;
+    var c, n, x, g;
     const i = r.port, s = a.port;
-    return !(r.isSelected !== a.isSelected || i.status !== s.status || ((l = i.poe) == null ? void 0 : l.isAllocated) !== ((n = s.poe) == null ? void 0 : n.isAllocated) || ((x = i.poe) == null ? void 0 : x.enabled) !== ((g = s.poe) == null ? void 0 : g.enabled) || i.clientName !== s.clientName);
+    return !(r.isSelected !== a.isSelected || i.status !== s.status || ((c = i.poe) == null ? void 0 : c.isAllocated) !== ((n = s.poe) == null ? void 0 : n.isAllocated) || ((x = i.poe) == null ? void 0 : x.enabled) !== ((g = s.poe) == null ? void 0 : g.enabled) || i.clientName !== s.clientName);
   }
 );
 Rr.displayName = "PortIcon";
@@ -1397,33 +1397,33 @@ const Jr = ({
   model: a,
   ports: i,
   clients: s = [],
-  onClientClick: l
+  onClientClick: c
 }) => {
-  var P, z, W, K, J, U, ie, re, pe, ye, ge;
-  const [n, x] = ue(null), g = xe((N) => {
-    x(N);
-  }, []), m = (N) => {
-    let R = N.trim();
+  var F, z, A, K, J, T, ie, te, pe, ye, ge;
+  const [n, x] = ue(null), g = xe((k) => {
+    x(k);
+  }, []), m = (k) => {
+    let R = k.trim();
     return R = R.replace(/^port\s*/i, ""), R = R.replace(
       /^(TenGigabit|Gigabit|Fast|Hundred)?Ethernet/i,
       ""
     ), R = R.replace(/^(Te|Gi|Fa|Eth?)\s*/i, ""), R.toLowerCase();
-  }, M = (N) => {
-    const R = m(N);
+  }, I = (k) => {
+    const R = m(k);
     return s.filter((q) => {
       if (!q.switchport) return !1;
       const H = m(q.switchport);
       if (H === R) return !0;
-      const ce = R.split("/"), k = H.split("/");
-      return ce.length === 1 && k.length > 1 ? k[k.length - 1] === R : ce.length === k.length ? H === R : !1;
+      const ce = R.split("/"), N = H.split("/");
+      return ce.length === 1 && N.length > 1 ? N[N.length - 1] === R : ce.length === N.length ? H === R : !1;
     });
-  }, o = (N) => N >= 1e6 ? `${(N / 1e6).toFixed(1)} GB` : N >= 1e3 ? `${(N / 1e3).toFixed(1)} MB` : `${N} KB`, h = (N) => N >= 1e3 ? `${(N / 1e3).toFixed(1)} Mbps` : `${N.toFixed(1)} Kbps`, y = (N) => {
+  }, l = (k) => k >= 1e6 ? `${(k / 1e6).toFixed(1)} GB` : k >= 1e3 ? `${(k / 1e3).toFixed(1)} MB` : `${k} KB`, h = (k) => k >= 1e3 ? `${(k / 1e3).toFixed(1)} Mbps` : `${k.toFixed(1)} Kbps`, y = (k) => {
     var R;
-    return ((R = N.status) == null ? void 0 : R.toLowerCase()) === "connected";
-  }, f = (N) => {
+    return ((R = k.status) == null ? void 0 : R.toLowerCase()) === "connected";
+  }, f = (k) => {
     var R, q;
-    return ((R = N.poe) == null ? void 0 : R.isAllocated) === !0 || ((q = N.poe) == null ? void 0 : q.enabled) === !0;
-  }, C = i.filter(y).length, L = i.filter(f).length;
+    return ((R = k.poe) == null ? void 0 : R.isAllocated) === !0 || ((q = k.poe) == null ? void 0 : q.enabled) === !0;
+  }, C = i.filter(y).length, $ = i.filter(f).length;
   return /* @__PURE__ */ e.jsxs("div", { className: "info-card", children: [
     /* @__PURE__ */ e.jsxs("h3", { children: [
       /* @__PURE__ */ e.jsx("span", { children: "⚡" }),
@@ -1443,14 +1443,14 @@ const Jr = ({
             " connected"
           ] })
         ] }),
-        /* @__PURE__ */ e.jsx("div", { className: "ports-row", children: i.map((N) => /* @__PURE__ */ e.jsx(
+        /* @__PURE__ */ e.jsx("div", { className: "ports-row", children: i.map((k) => /* @__PURE__ */ e.jsx(
           Rr,
           {
-            port: N,
-            isSelected: (n == null ? void 0 : n.portId) === N.portId,
-            onClick: () => g(N)
+            port: k,
+            isSelected: (n == null ? void 0 : n.portId) === k.portId,
+            onClick: () => g(k)
           },
-          N.portId
+          k.portId
         )) })
       ] }),
       /* @__PURE__ */ e.jsxs("div", { className: "port-legend", children: [
@@ -1468,7 +1468,7 @@ const Jr = ({
         ] }),
         /* @__PURE__ */ e.jsxs("span", { children: [
           "⚡ PoE Active (",
-          L,
+          $,
           ")"
         ] })
       ] })
@@ -1488,21 +1488,21 @@ const Jr = ({
         n.status || "Unknown",
         n.isUplink && /* @__PURE__ */ e.jsx("span", { className: "port-uplink-badge", children: "↑ Uplink" })
       ] }),
-      (((P = n.errors) == null ? void 0 : P.length) || ((z = n.warnings) == null ? void 0 : z.length)) && /* @__PURE__ */ e.jsxs("div", { className: "port-alerts", children: [
-        (W = n.errors) == null ? void 0 : W.map((N, R) => /* @__PURE__ */ e.jsxs("div", { className: "port-alert error", children: [
+      (((F = n.errors) == null ? void 0 : F.length) || ((z = n.warnings) == null ? void 0 : z.length)) && /* @__PURE__ */ e.jsxs("div", { className: "port-alerts", children: [
+        (A = n.errors) == null ? void 0 : A.map((k, R) => /* @__PURE__ */ e.jsxs("div", { className: "port-alert error", children: [
           /* @__PURE__ */ e.jsx("span", { children: "🚨" }),
           " ",
-          N
+          k
         ] }, `err-${R}`)),
-        (K = n.warnings) == null ? void 0 : K.map((N, R) => /* @__PURE__ */ e.jsxs("div", { className: "port-alert warning", children: [
+        (K = n.warnings) == null ? void 0 : K.map((k, R) => /* @__PURE__ */ e.jsxs("div", { className: "port-alert warning", children: [
           /* @__PURE__ */ e.jsx("span", { children: "⚠️" }),
           " ",
-          N
+          k
         ] }, `warn-${R}`))
       ] }),
       y(n) && (() => {
-        const N = M(n.portId);
-        return N.length === 0 ? n.clientName || n.clientMac ? /* @__PURE__ */ e.jsxs("div", { className: "client-info", children: [
+        const k = I(n.portId);
+        return k.length === 0 ? n.clientName || n.clientMac ? /* @__PURE__ */ e.jsxs("div", { className: "client-info", children: [
           /* @__PURE__ */ e.jsx("div", { className: "client-avatar", children: "💻" }),
           /* @__PURE__ */ e.jsxs("div", { className: "client-details", children: [
             /* @__PURE__ */ e.jsx("div", { className: "name", children: n.clientName || "Connected Device" }),
@@ -1511,16 +1511,16 @@ const Jr = ({
         ] }) : null : /* @__PURE__ */ e.jsxs("div", { className: "port-clients", children: [
           /* @__PURE__ */ e.jsxs("h5", { className: "port-clients-header", children: [
             "👥 Connected Clients (",
-            N.length,
+            k.length,
             ")"
           ] }),
-          /* @__PURE__ */ e.jsx("div", { className: "port-clients-list", children: N.map((R) => {
+          /* @__PURE__ */ e.jsx("div", { className: "port-clients-list", children: k.map((R) => {
             var q, H, ce;
             return /* @__PURE__ */ e.jsxs(
               "div",
               {
-                className: `port-client-item ${l ? "clickable" : ""}`,
-                onClick: () => l == null ? void 0 : l(R.id),
+                className: `port-client-item ${c ? "clickable" : ""}`,
+                onClick: () => c == null ? void 0 : c(R.id),
                 children: [
                   /* @__PURE__ */ e.jsx("div", { className: "port-client-icon", children: (q = R.os) != null && q.toLowerCase().includes("ios") || (H = R.manufacturer) != null && H.toLowerCase().includes("apple") ? "📱" : (ce = R.os) != null && ce.toLowerCase().includes("windows") ? "💻" : "🔌" }),
                   /* @__PURE__ */ e.jsxs("div", { className: "port-client-info", children: [
@@ -1562,9 +1562,9 @@ const Jr = ({
           /* @__PURE__ */ e.jsx("div", { className: "label", children: "Live Traffic" }),
           /* @__PURE__ */ e.jsx("div", { className: "value", children: h(n.trafficInKbps.total) })
         ] }),
-        ((U = n.usageInKb) == null ? void 0 : U.total) != null && /* @__PURE__ */ e.jsxs("div", { className: "port-stat", children: [
+        ((T = n.usageInKb) == null ? void 0 : T.total) != null && /* @__PURE__ */ e.jsxs("div", { className: "port-stat", children: [
           /* @__PURE__ */ e.jsx("div", { className: "label", children: "Total Usage" }),
-          /* @__PURE__ */ e.jsx("div", { className: "value", children: o(n.usageInKb.total) })
+          /* @__PURE__ */ e.jsx("div", { className: "value", children: l(n.usageInKb.total) })
         ] }),
         f(n) && /* @__PURE__ */ e.jsxs("div", { className: "port-stat", children: [
           /* @__PURE__ */ e.jsx("div", { className: "label", children: "PoE Energy" }),
@@ -1572,7 +1572,7 @@ const Jr = ({
         ] })
       ] }),
       !y(n) && /* @__PURE__ */ e.jsx("div", { className: "port-empty-state", children: n.enabled === !1 ? "🔒 Port is disabled" : "📴 No device connected to this port" }),
-      (((ie = n.lldp) == null ? void 0 : ie.systemName) || ((re = n.cdp) == null ? void 0 : re.deviceId)) && /* @__PURE__ */ e.jsxs("div", { className: "neighbor-discovery", children: [
+      (((ie = n.lldp) == null ? void 0 : ie.systemName) || ((te = n.cdp) == null ? void 0 : te.deviceId)) && /* @__PURE__ */ e.jsxs("div", { className: "neighbor-discovery", children: [
         /* @__PURE__ */ e.jsx("h5", { className: "neighbor-discovery-header", children: "🔗 Neighbor Discovery" }),
         ((pe = n.lldp) == null ? void 0 : pe.systemName) && /* @__PURE__ */ e.jsxs("div", { className: "neighbor-protocol", children: [
           /* @__PURE__ */ e.jsx("div", { className: "neighbor-protocol-label", children: "LLDP" }),
@@ -1613,11 +1613,11 @@ const Jr = ({
     ] }),
     !n && /* @__PURE__ */ e.jsx("div", { className: "port-select-prompt", children: "Click a port to view details" })
   ] });
-}, qr = ee(
+}, qr = re(
   Jr,
   (r, a) => {
-    var l, n;
-    if (r.ports.length !== a.ports.length || ((l = r.clients) == null ? void 0 : l.length) !== ((n = a.clients) == null ? void 0 : n.length)) return !1;
+    var c, n;
+    if (r.ports.length !== a.ports.length || ((c = r.clients) == null ? void 0 : c.length) !== ((n = a.clients) == null ? void 0 : n.length)) return !1;
     const i = r.ports.filter(
       (x) => {
         var g;
@@ -1640,13 +1640,13 @@ const Jr = ({
   value: a,
   unit: i,
   min: s,
-  max: l,
+  max: c,
   status: n = "normal",
   temperatureUnit: x = "celsius",
   lastUpdated: g,
   dataSource: m
 }) => {
-  const M = () => {
+  const I = () => {
     switch (r) {
       case "temperature":
         return "🌡️";
@@ -1671,7 +1671,7 @@ const Jr = ({
       default:
         return "📊";
     }
-  }, o = () => {
+  }, l = () => {
     switch (r) {
       case "temperature":
         return "Temperature";
@@ -1718,8 +1718,8 @@ const Jr = ({
         return "";
     }
   }, y = () => r === "temperature" && x === "fahrenheit" ? a * 9 / 5 + 32 : a, f = () => {
-    if (s !== void 0 && l !== void 0)
-      return r === "temperature" && x === "fahrenheit" ? { min: s * 9 / 5 + 32, max: l * 9 / 5 + 32 } : { min: s, max: l };
+    if (s !== void 0 && c !== void 0)
+      return r === "temperature" && x === "fahrenheit" ? { min: s * 9 / 5 + 32, max: c * 9 / 5 + 32 } : { min: s, max: c };
     switch (r) {
       case "temperature":
         return x === "fahrenheit" ? { min: 32, max: 122 } : { min: 0, max: 50 };
@@ -1750,13 +1750,13 @@ const Jr = ({
       default:
         return "";
     }
-  }, L = () => {
-    const U = f(), ie = y();
-    return U.max === U.min ? 0 : Math.min(
+  }, $ = () => {
+    const T = f(), ie = y();
+    return T.max === T.min ? 0 : Math.min(
       100,
-      Math.max(0, (ie - U.min) / (U.max - U.min) * 100)
+      Math.max(0, (ie - T.min) / (T.max - T.min) * 100)
     );
-  }, P = () => {
+  }, F = () => {
     switch (r) {
       case "temperature":
         return "temp";
@@ -1774,10 +1774,10 @@ const Jr = ({
       default:
         return "default";
     }
-  }, z = i || h(), W = L(), K = y(), J = f();
+  }, z = i || h(), A = $(), K = y(), J = f();
   return /* @__PURE__ */ e.jsxs("div", { className: `reading-card ${r}`, style: { position: "relative" }, children: [
-    /* @__PURE__ */ e.jsx("div", { className: "icon-wrapper", children: /* @__PURE__ */ e.jsx("span", { className: "reading-icon", children: M() }) }),
-    /* @__PURE__ */ e.jsx("div", { className: "reading-label", children: o() }),
+    /* @__PURE__ */ e.jsx("div", { className: "icon-wrapper", children: /* @__PURE__ */ e.jsx("span", { className: "reading-icon", children: I() }) }),
+    /* @__PURE__ */ e.jsx("div", { className: "reading-label", children: l() }),
     /* @__PURE__ */ e.jsxs("div", { className: "reading-value", children: [
       typeof K == "number" ? K.toFixed(1) : K,
       /* @__PURE__ */ e.jsx("span", { className: "reading-unit", children: z })
@@ -1791,8 +1791,8 @@ const Jr = ({
     /* @__PURE__ */ e.jsx("div", { className: "gauge-wrapper", children: /* @__PURE__ */ e.jsx(
       "div",
       {
-        className: `gauge-fill ${P()}`,
-        style: { width: `${W}%` }
+        className: `gauge-fill ${F()}`,
+        style: { width: `${A}%` }
       }
     ) }),
     /* @__PURE__ */ e.jsxs("div", { className: "gauge-labels", children: [
@@ -1839,18 +1839,18 @@ const Jr = ({
     if (Math.abs(s - i) > 3e4) return !1;
   }
   return !0;
-}, Me = ee(Zr, et), rt = ({
+}, Le = re(Zr, et), rt = ({
   icon: r,
   label: a,
   value: i,
   unit: s = "",
-  secondaryValue: l,
+  secondaryValue: c,
   gauge: n,
   status: x = "normal",
   statusMessage: g,
   onClick: m
 }) => {
-  const M = () => {
+  const I = () => {
     switch (x) {
       case "normal":
         return "✅";
@@ -1863,10 +1863,10 @@ const Jr = ({
       default:
         return "";
     }
-  }, o = () => {
+  }, l = () => {
     if (!n || typeof i != "number") return 0;
-    const { min: P, max: z } = n;
-    return z === P ? 0 : Math.min(100, Math.max(0, (i - P) / (z - P) * 100));
+    const { min: F, max: z } = n;
+    return z === F ? 0 : Math.min(100, Math.max(0, (i - F) / (z - F) * 100));
   }, h = () => {
     if (!(n != null && n.color))
       switch (x) {
@@ -1880,7 +1880,7 @@ const Jr = ({
           return "primary";
       }
     return n.color;
-  }, y = () => `metric-icon-wrapper metric-icon-${h()}`, f = () => typeof i == "number" ? Number.isInteger(i) ? i.toString() : i.toFixed(1) : i, C = o(), L = (n == null ? void 0 : n.showLabels) !== !1 && n;
+  }, y = () => `metric-icon-wrapper metric-icon-${h()}`, f = () => typeof i == "number" ? Number.isInteger(i) ? i.toString() : i.toFixed(1) : i, C = l(), $ = (n == null ? void 0 : n.showLabels) !== !1 && n;
   return /* @__PURE__ */ e.jsxs(
     "div",
     {
@@ -1895,9 +1895,9 @@ const Jr = ({
           f(),
           s && /* @__PURE__ */ e.jsx("span", { className: "metric-unit", children: s })
         ] }),
-        l && /* @__PURE__ */ e.jsx("div", { className: "metric-secondary", children: l }),
+        c && /* @__PURE__ */ e.jsx("div", { className: "metric-secondary", children: c }),
         g && /* @__PURE__ */ e.jsxs("div", { className: `metric-status metric-status-${x}`, children: [
-          /* @__PURE__ */ e.jsx("span", { children: M() }),
+          /* @__PURE__ */ e.jsx("span", { children: I() }),
           g
         ] }),
         n && /* @__PURE__ */ e.jsxs(e.Fragment, { children: [
@@ -1908,7 +1908,7 @@ const Jr = ({
               style: { width: `${C}%` }
             }
           ) }),
-          L && /* @__PURE__ */ e.jsxs("div", { className: "metric-gauge-labels", children: [
+          $ && /* @__PURE__ */ e.jsxs("div", { className: "metric-gauge-labels", children: [
             /* @__PURE__ */ e.jsxs("span", { children: [
               n.min,
               s
@@ -1922,19 +1922,19 @@ const Jr = ({
       ]
     }
   );
-}, ke = ee(rt), tt = ee(
+}, Ne = re(rt), tt = re(
   ({ entity: r, onClick: a }) => /* @__PURE__ */ e.jsxs("tr", { className: "device-row", onClick: a, children: [
     /* @__PURE__ */ e.jsx("td", { children: r.name }),
     /* @__PURE__ */ e.jsx("td", { className: "text-mono text-sm text-muted", children: r.entity_id }),
     /* @__PURE__ */ e.jsx("td", { children: /* @__PURE__ */ e.jsx("span", { className: "detail-badge", children: r.state }) })
   ] }),
   (r, a) => r.entity.entity_id === a.entity.entity_id && r.entity.name === a.entity.name && r.entity.state === a.entity.state
-), at = ee(
+), at = re(
   ({ client: r, onClick: a }) => {
-    var i, s, l;
+    var i, s, c;
     return /* @__PURE__ */ e.jsxs("tr", { className: "device-row clickable", onClick: a, children: [
       /* @__PURE__ */ e.jsx("td", { children: /* @__PURE__ */ e.jsxs("div", { className: "client-row-cell", children: [
-        /* @__PURE__ */ e.jsx("span", { className: "client-row-icon", children: (i = r.os) != null && i.toLowerCase().includes("ios") || (s = r.manufacturer) != null && s.toLowerCase().includes("apple") ? "📱" : (l = r.os) != null && l.toLowerCase().includes("windows") ? "💻" : "🔌" }),
+        /* @__PURE__ */ e.jsx("span", { className: "client-row-icon", children: (i = r.os) != null && i.toLowerCase().includes("ios") || (s = r.manufacturer) != null && s.toLowerCase().includes("apple") ? "📱" : (c = r.os) != null && c.toLowerCase().includes("windows") ? "💻" : "🔌" }),
         /* @__PURE__ */ e.jsxs("div", { className: "client-row-info", children: [
           /* @__PURE__ */ e.jsx("div", { className: "font-medium", children: r.description || r.mac }),
           r.manufacturer && /* @__PURE__ */ e.jsx("div", { className: "text-sm text-muted", children: r.manufacturer })
@@ -1946,7 +1946,7 @@ const Jr = ({
     ] });
   },
   (r, a) => r.client.id === a.client.id && r.client.mac === a.client.mac && r.client.description === a.client.description && r.client.ip === a.client.ip && r.client.manufacturer === a.client.manufacturer && r.client.os === a.client.os && r.client.ssid === a.client.ssid && r.client.switchport === a.client.switchport
-), st = ee(
+), st = re(
   ({ bss: r }) => {
     var a;
     return /* @__PURE__ */ e.jsxs("tr", { children: [
@@ -1982,26 +1982,26 @@ const Jr = ({
   setActiveView: a,
   data: i,
   clients: s,
-  haDevices: l,
+  haDevices: c,
   hass: n,
   configEntryId: x,
   cameraLinkIntegration: g,
   configEntryOptions: m
 }) => {
-  const M = (m == null ? void 0 : m.temperature_unit) || "celsius", o = i.devices.find((c) => c.serial === r.deviceId), h = l.find(
-    (c) => c.identifiers.some((p) => p[0] === "meraki_ha" && p[1] === (o == null ? void 0 : o.serial))
+  const I = (m == null ? void 0 : m.temperature_unit) || "celsius", l = i.devices.find((o) => o.serial === r.deviceId), h = c.find(
+    (o) => o.identifiers.some((p) => p[0] === "meraki_ha" && p[1] === (l == null ? void 0 : l.serial))
   ), y = s.filter(
-    (c) => c.via_device_id === (h == null ? void 0 : h.id)
-  ), [f, C] = de.useState(null), [L, P] = de.useState(!1), [z, W] = de.useState(
+    (o) => o.via_device_id === (h == null ? void 0 : h.id)
+  ), [f, C] = de.useState(null), [$, F] = de.useState(!1), [z, A] = de.useState(
     null
-  ), [K, J] = de.useState([]), [U, ie] = de.useState(""), [re, pe] = de.useState(!1), [ye, ge] = de.useState(
+  ), [K, J] = de.useState([]), [T, ie] = de.useState(""), [te, pe] = de.useState(!1), [ye, ge] = de.useState(
     null
-  ), [N, R] = de.useState(!1), [q, H] = de.useState(!1), [ce, k] = de.useState(
+  ), [k, R] = de.useState(!1), [q, H] = de.useState(!1), [ce, N] = de.useState(
     null
-  ), [T, j] = de.useState(!1), [Q, w] = de.useState(!1), [$, B] = de.useState("none"), A = Te(n);
-  A.current = n;
-  const Y = Te(null);
-  if (!o)
+  ), [E, j] = de.useState(!1), [Q, w] = de.useState(!1), [W, B] = de.useState("none"), P = Ee(n);
+  P.current = n;
+  const Y = Ee(null);
+  if (!l)
     return /* @__PURE__ */ e.jsxs("div", { children: [
       /* @__PURE__ */ e.jsx(
         "button",
@@ -2019,27 +2019,27 @@ const Jr = ({
     ] });
   const {
     name: ne,
-    model: te = "",
+    model: ae = "",
     serial: he,
     firmware: le,
     status: d,
     lanIp: b,
     mac: S,
-    productType: I,
+    productType: L,
     status_messages: X = [],
     entities: me = [],
     ports_statuses: Z = [],
-    readings: E,
+    readings: M,
     readings_meta: _,
     uptime: fe,
     lastReportedAt: _e
-  } = o, $e = () => {
-    const c = te.toUpperCase(), p = (I == null ? void 0 : I.toLowerCase()) || "";
-    return c.startsWith("MS") || p === "switch" ? "🔀" : c.startsWith("MV") || p === "camera" ? "📹" : c.startsWith("MR") || p === "wireless" ? "📶" : c.startsWith("MT") || p === "sensor" ? c.startsWith("MT10") || c.startsWith("MT11") || c.startsWith("MT15") ? "🌡️" : c.startsWith("MT12") ? "🚪" : c.startsWith("MT14") ? "💨" : c.startsWith("MT20") ? "🔘" : c.startsWith("MT30") ? "⚡" : "📡" : c.startsWith("MX") || c.startsWith("Z") || p === "appliance" ? "🛡️" : "📱";
-  }, We = () => {
-    const c = te.toUpperCase(), p = (I == null ? void 0 : I.toLowerCase()) || "";
-    return c.startsWith("MS") || p === "switch" ? "switch" : c.startsWith("MV") || p === "camera" ? "camera" : c.startsWith("MR") || p === "wireless" ? "wireless" : c.startsWith("MT") || p === "sensor" ? "sensor" : c.startsWith("MX") || c.startsWith("Z") || p === "appliance" ? "appliance" : "";
-  }, Ce = te.toUpperCase().startsWith("MS") || I === "switch", Je = te.toUpperCase().startsWith("MT") || I === "sensor", qe = te.toUpperCase().startsWith("MV") || I === "camera", Fe = te.toUpperCase().startsWith("MR") || I === "wireless", Xe = te.toUpperCase().startsWith("MX") || te.toUpperCase().startsWith("Z") || I === "appliance", Ze = [
+  } = l, Ae = () => {
+    const o = ae.toUpperCase(), p = (L == null ? void 0 : L.toLowerCase()) || "";
+    return o.startsWith("MS") || p === "switch" ? "🔀" : o.startsWith("MV") || p === "camera" ? "📹" : o.startsWith("MR") || p === "wireless" ? "📶" : o.startsWith("MT") || p === "sensor" ? o.startsWith("MT10") || o.startsWith("MT11") || o.startsWith("MT15") ? "🌡️" : o.startsWith("MT12") ? "🚪" : o.startsWith("MT14") ? "💨" : o.startsWith("MT20") ? "🔘" : o.startsWith("MT30") ? "⚡" : "📡" : o.startsWith("MX") || o.startsWith("Z") || p === "appliance" ? "🛡️" : "📱";
+  }, Pe = () => {
+    const o = ae.toUpperCase(), p = (L == null ? void 0 : L.toLowerCase()) || "";
+    return o.startsWith("MS") || p === "switch" ? "switch" : o.startsWith("MV") || p === "camera" ? "camera" : o.startsWith("MR") || p === "wireless" ? "wireless" : o.startsWith("MT") || p === "sensor" ? "sensor" : o.startsWith("MX") || o.startsWith("Z") || p === "appliance" ? "appliance" : "";
+  }, Ce = ae.toUpperCase().startsWith("MS") || L === "switch", Je = ae.toUpperCase().startsWith("MT") || L === "sensor", qe = ae.toUpperCase().startsWith("MV") || L === "camera", Be = ae.toUpperCase().startsWith("MR") || L === "wireless", Xe = ae.toUpperCase().startsWith("MX") || ae.toUpperCase().startsWith("Z") || L === "appliance", Ze = [
     "temperature",
     "humidity",
     "battery",
@@ -2051,22 +2051,28 @@ const Jr = ({
     "indoor_air_quality",
     "air_quality",
     "voc"
-  ], Ue = me.filter((c) => {
-    const p = c.name.toLowerCase(), ae = c.entity_id.toLowerCase();
+  ], Se = me.filter((o) => {
+    const p = o.name.toLowerCase(), ee = o.entity_id.toLowerCase();
     return !Ze.some(
-      (je) => p.includes(je) || ae.includes(je)
+      (je) => p.includes(je) || ee.includes(je)
     );
-  }), Ae = (c) => {
-    if (!c) return null;
-    const p = Math.floor(c / 86400), ae = Math.floor(c % 86400 / 3600);
+  }).filter((o) => T ? !o.entity_id.startsWith("camera.") || o.entity_id === T : !0);
+  T && !Se.some((o) => o.entity_id === T) && Se.unshift({
+    entity_id: T,
+    name: "Camera",
+    state: "linked"
+  });
+  const Oe = (o) => {
+    if (!o) return null;
+    const p = Math.floor(o / 86400), ee = Math.floor(o % 86400 / 3600);
     if (p > 0)
-      return `${p}d ${ae}h`;
-    const je = Math.floor(c % 3600 / 60);
-    return `${ae}h ${je}m`;
-  }, Oe = (c) => c ? Math.floor(c / 86400) : 0, or = (c) => {
-    if (!c) return "Just now";
-    const p = new Date(c), ae = /* @__PURE__ */ new Date();
-    return p.toDateString() === ae.toDateString() ? p.toLocaleTimeString([], {
+      return `${p}d ${ee}h`;
+    const je = Math.floor(o % 3600 / 60);
+    return `${ee}h ${je}m`;
+  }, Ve = (o) => o ? Math.floor(o / 86400) : 0, lr = (o) => {
+    if (!o) return "Just now";
+    const p = new Date(o), ee = /* @__PURE__ */ new Date();
+    return p.toDateString() === ee.toDateString() ? p.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit"
@@ -2076,56 +2082,56 @@ const Jr = ({
       hour: "2-digit",
       minute: "2-digit"
     });
-  }, er = (c) => {
+  }, Me = (o) => {
     const p = new CustomEvent("hass-more-info", {
       bubbles: !0,
       composed: !0,
-      detail: { entityId: c }
+      detail: { entityId: o }
     });
     document.body.dispatchEvent(p);
-  }, rr = async () => {
-    const c = A.current;
-    if (!(!c || !x || !o)) {
-      P(!0);
+  }, er = async () => {
+    const o = P.current;
+    if (!(!o || !x || !l)) {
+      F(!0);
       try {
-        const p = await c.callWS({
+        const p = await o.callWS({
           type: "meraki_ha/get_camera_snapshot",
           config_entry_id: x,
-          serial: o.serial
+          serial: l.serial
         });
         p != null && p.url && C(p.url);
       } catch (p) {
         console.error("Failed to fetch snapshot:", p);
       } finally {
-        P(!1);
+        F(!1);
       }
     }
-  }, lr = async () => {
-    const c = A.current;
-    if (!(!c || !x || !o))
+  }, cr = async () => {
+    const o = P.current;
+    if (!(!o || !x || !l))
       try {
-        const p = await c.callWS({
+        const p = await o.callWS({
           type: "meraki_ha/get_camera_stream_url",
           config_entry_id: x,
-          serial: o.serial,
+          serial: l.serial,
           stream_source: "cloud"
         });
-        p != null && p.url && W(p.url);
+        p != null && p.url && A(p.url);
       } catch (p) {
         console.error("Failed to fetch cloud video URL:", p);
       }
-  }, cr = () => {
+  }, dr = () => {
     z && window.open(z, "_blank", "noopener,noreferrer");
-  }, dr = async () => {
-    const c = A.current;
-    if (c)
+  }, ur = async () => {
+    const o = P.current;
+    if (o)
       try {
-        const p = await c.callWS({
+        const p = await o.callWS({
           type: "meraki_ha/get_available_cameras",
           integration_filter: g || ""
-        }), ae = (p == null ? void 0 : p.cameras) || [];
+        }), ee = (p == null ? void 0 : p.cameras) || [];
         J(
-          ae.map((je) => ({
+          ee.map((je) => ({
             entity_id: je.entity_id,
             friendly_name: je.friendly_name || je.name || je.entity_id
           }))
@@ -2133,39 +2139,39 @@ const Jr = ({
       } catch (p) {
         console.error("Failed to fetch available cameras:", p);
       }
-  }, ur = async () => {
-    const c = A.current;
-    if (!(!c || !x || !o))
+  }, He = async () => {
+    const o = P.current;
+    if (!(!o || !x || !l))
       try {
-        const p = await c.callWS({
+        const p = await o.callWS({
           type: "meraki_ha/get_camera_mappings",
           config_entry_id: x
-        }), ae = (p == null ? void 0 : p.mappings) || {};
-        ie(ae[o.serial] || "");
+        }), ee = (p == null ? void 0 : p.mappings) || {};
+        ie(ee[l.serial] || "");
       } catch (p) {
         console.error("Failed to fetch camera mappings:", p);
       }
-  }, Be = async (c) => {
-    const p = A.current;
-    if (!(!p || !x || !o))
+  }, rr = async (o) => {
+    const p = P.current;
+    if (!(!p || !x || !l))
       try {
         await p.callWS({
           type: "meraki_ha/set_camera_mapping",
           config_entry_id: x,
-          serial: o.serial,
-          linked_entity_id: c
-        }), ie(c), pe(!1), ge(null), B("none"), c && setTimeout(() => Re(), 100);
-      } catch (ae) {
-        console.error("Failed to save camera mapping:", ae);
+          serial: l.serial,
+          linked_entity_id: o
+        }), ie(o), pe(!1), ge(null), B("none"), o && (Me(o), setTimeout(() => ze(), 100));
+      } catch (ee) {
+        console.error("Failed to save camera mapping:", ee);
       }
-  }, tr = async () => {
-    const c = A.current;
-    if (!c || !U) return !1;
+  }, Re = async () => {
+    const o = P.current;
+    if (!o || !T) return !1;
     R(!0), H(!1);
     try {
-      const p = await c.callWS({
+      const p = await o.callWS({
         type: "auth/sign_path",
-        path: `/api/camera_proxy_stream/${U}`,
+        path: `/api/camera_proxy_stream/${T}`,
         expires: 300
         // URL valid for 5 minutes for continuous streaming
       });
@@ -2175,38 +2181,38 @@ const Jr = ({
     } finally {
       R(!1);
     }
-  }, Se = async () => {
-    const c = A.current;
-    if (!c || !(o != null && o.serial) || !x) return !1;
+  }, Fe = async () => {
+    const o = P.current;
+    if (!o || !(l != null && l.serial) || !x) return !1;
     j(!0), w(!1);
     try {
-      const p = await c.callWS({
+      const p = await o.callWS({
         type: "meraki_ha/get_rtsp_url",
         config_entry_id: x,
-        serial: o.serial
+        serial: l.serial
       });
-      return p != null && p.rtsp_url ? (k(p.rtsp_url), B("rtsp"), !0) : (w(!0), !1);
+      return p != null && p.rtsp_url ? (N(p.rtsp_url), B("rtsp"), !0) : (w(!0), !1);
     } catch (p) {
-      return console.error("Failed to get RTSP stream URL:", p), k(null), w(!0), !1;
+      return console.error("Failed to get RTSP stream URL:", p), N(null), w(!0), !1;
     } finally {
       j(!1);
     }
-  }, Re = async () => {
-    U && await tr() || (o != null && o.rtsp_url || o != null && o.rtspEnabled) && await Se() || B(f ? "snapshot" : "none");
+  }, ze = async () => {
+    T && await Re() || (l != null && l.rtsp_url || l != null && l.rtspEnabled) && await Fe() || B(f ? "snapshot" : "none");
   };
   de.useEffect(() => {
-    var ae;
-    const c = o && (((ae = o.model) == null ? void 0 : ae.toUpperCase().startsWith("MV")) || o.productType === "camera"), p = o == null ? void 0 : o.serial;
-    c && p && x && A.current && Y.current !== p && (Y.current = p, ge(null), k(null), B("none"), rr(), lr(), ur(), dr());
-  }, [o == null ? void 0 : o.serial, x]), de.useEffect(() => {
+    var ee;
+    const o = l && (((ee = l.model) == null ? void 0 : ee.toUpperCase().startsWith("MV")) || l.productType === "camera"), p = l == null ? void 0 : l.serial;
+    o && p && x && P.current && Y.current !== p && (Y.current = p, ge(null), N(null), B("none"), er(), cr(), He(), ur());
+  }, [l == null ? void 0 : l.serial, x]), de.useEffect(() => {
     var p;
-    o && (((p = o.model) == null ? void 0 : p.toUpperCase().startsWith("MV")) || o.productType === "camera") && A.current && Re();
-  }, [U, o == null ? void 0 : o.serial, f]);
-  const Ve = Z.reduce(
-    (c, p) => c + (p.powerUsageInWh || 0),
+    l && (((p = l.model) == null ? void 0 : p.toUpperCase().startsWith("MV")) || l.productType === "camera") && P.current && ze();
+  }, [T, l == null ? void 0 : l.serial, f]);
+  const tr = Z.reduce(
+    (o, p) => o + (p.powerUsageInWh || 0),
     0
-  ), He = Z.reduce(
-    (c, p) => c + (p.clientCount || 0),
+  ), ar = Z.reduce(
+    (o, p) => o + (p.clientCount || 0),
     0
   );
   return /* @__PURE__ */ e.jsxs("div", { children: [
@@ -2219,14 +2225,14 @@ const Jr = ({
       }
     ),
     /* @__PURE__ */ e.jsxs("div", { className: "device-header", children: [
-      /* @__PURE__ */ e.jsx("div", { className: `device-icon ${We()}`, children: $e() }),
+      /* @__PURE__ */ e.jsx("div", { className: `device-icon ${Pe()}`, children: Ae() }),
       /* @__PURE__ */ e.jsxs("div", { className: "device-info", children: [
         /* @__PURE__ */ e.jsx("h1", { children: ne || he }),
         /* @__PURE__ */ e.jsxs("div", { className: "meta", children: [
           /* @__PURE__ */ e.jsxs("span", { children: [
             /* @__PURE__ */ e.jsx("strong", { children: "Model:" }),
             " ",
-            te
+            ae
           ] }),
           /* @__PURE__ */ e.jsxs("span", { children: [
             /* @__PURE__ */ e.jsx("strong", { children: "Serial:" }),
@@ -2248,17 +2254,17 @@ const Jr = ({
             " ",
             /* @__PURE__ */ e.jsx("span", { style: { fontFamily: "monospace" }, children: S })
           ] }),
-          Je && (E == null ? void 0 : E.battery) != null && /* @__PURE__ */ e.jsxs("span", { children: [
+          Je && (M == null ? void 0 : M.battery) != null && /* @__PURE__ */ e.jsxs("span", { children: [
             /* @__PURE__ */ e.jsx("strong", { children: "Battery:" }),
             " ",
             /* @__PURE__ */ e.jsxs(
               "span",
               {
                 style: {
-                  color: E.battery > 20 ? "var(--success)" : "var(--warning)"
+                  color: M.battery > 20 ? "var(--success)" : "var(--warning)"
                 },
                 children: [
-                  E.battery,
+                  M.battery,
                   "%"
                 ]
               }
@@ -2272,7 +2278,7 @@ const Jr = ({
             style: { marginTop: "4px", fontSize: "12px" },
             children: /* @__PURE__ */ e.jsxs("span", { style: { color: "var(--text-muted)" }, children: [
               "Last updated: ",
-              or(_e)
+              lr(_e)
             ] })
           }
         )
@@ -2284,11 +2290,11 @@ const Jr = ({
     ] }),
     Ce && Z.length > 0 && /* @__PURE__ */ e.jsxs("div", { className: "metric-cards-grid", children: [
       /* @__PURE__ */ e.jsx(
-        ke,
+        Ne,
         {
           icon: "⚡",
           label: "PoE Energy",
-          value: Ve,
+          value: tr,
           unit: "Wh",
           gauge: { min: 0, max: 500, color: "warning" },
           status: "normal",
@@ -2296,40 +2302,40 @@ const Jr = ({
         }
       ),
       /* @__PURE__ */ e.jsx(
-        ke,
+        Ne,
         {
           icon: "👥",
           label: "Connected Clients",
-          value: He,
+          value: ar,
           gauge: {
             min: 0,
-            max: Math.max(50, He),
+            max: Math.max(50, ar),
             color: "info"
           },
           status: "normal"
         }
       ),
       fe != null && /* @__PURE__ */ e.jsx(
-        ke,
+        Ne,
         {
           icon: "⏱️",
           label: "Uptime",
-          value: Oe(fe),
+          value: Ve(fe),
           unit: " days",
-          secondaryValue: Ae(fe) || void 0,
+          secondaryValue: Oe(fe) || void 0,
           status: "normal",
           statusMessage: "Running"
         }
       ),
       /* @__PURE__ */ e.jsx(
-        ke,
+        Ne,
         {
           icon: "🔌",
           label: "Connected Ports",
           value: Z.filter(
-            (c) => {
+            (o) => {
               var p;
-              return ((p = c.status) == null ? void 0 : p.toLowerCase()) === "connected";
+              return ((p = o.status) == null ? void 0 : p.toLowerCase()) === "connected";
             }
           ).length,
           secondaryValue: `of ${Z.length} total`,
@@ -2342,9 +2348,9 @@ const Jr = ({
         }
       )
     ] }),
-    Fe && /* @__PURE__ */ e.jsxs("div", { className: "metric-cards-grid", children: [
+    Be && /* @__PURE__ */ e.jsxs("div", { className: "metric-cards-grid", children: [
       /* @__PURE__ */ e.jsx(
-        ke,
+        Ne,
         {
           icon: "👥",
           label: "Connected Clients",
@@ -2357,29 +2363,29 @@ const Jr = ({
           status: "normal"
         }
       ),
-      o.basicServiceSets && /* @__PURE__ */ e.jsx(
-        ke,
+      l.basicServiceSets && /* @__PURE__ */ e.jsx(
+        Ne,
         {
           icon: "📶",
           label: "Active SSIDs",
-          value: o.basicServiceSets.filter((c) => c.enabled).length,
-          secondaryValue: `of ${o.basicServiceSets.length} total`,
+          value: l.basicServiceSets.filter((o) => o.enabled).length,
+          secondaryValue: `of ${l.basicServiceSets.length} total`,
           gauge: {
             min: 0,
-            max: o.basicServiceSets.length || 1,
+            max: l.basicServiceSets.length || 1,
             color: "success"
           },
           status: "normal"
         }
       ),
       fe != null && /* @__PURE__ */ e.jsx(
-        ke,
+        Ne,
         {
           icon: "⏱️",
           label: "Uptime",
-          value: Oe(fe),
+          value: Ve(fe),
           unit: " days",
-          secondaryValue: Ae(fe) || void 0,
+          secondaryValue: Oe(fe) || void 0,
           status: "normal",
           statusMessage: "Running"
         }
@@ -2387,7 +2393,7 @@ const Jr = ({
     ] }),
     Xe && /* @__PURE__ */ e.jsxs("div", { className: "metric-cards-grid", children: [
       /* @__PURE__ */ e.jsx(
-        ke,
+        Ne,
         {
           icon: "🌐",
           label: "WAN Status",
@@ -2397,13 +2403,13 @@ const Jr = ({
         }
       ),
       fe != null && /* @__PURE__ */ e.jsx(
-        ke,
+        Ne,
         {
           icon: "⏱️",
           label: "Uptime",
-          value: Oe(fe),
+          value: Ve(fe),
           unit: " days",
-          secondaryValue: Ae(fe) || void 0,
+          secondaryValue: Oe(fe) || void 0,
           status: "normal",
           statusMessage: "Running"
         }
@@ -2411,7 +2417,7 @@ const Jr = ({
     ] }),
     qe && /* @__PURE__ */ e.jsxs("div", { className: "metric-cards-grid", children: [
       /* @__PURE__ */ e.jsx(
-        ke,
+        Ne,
         {
           icon: "🔴",
           label: "Recording",
@@ -2421,7 +2427,7 @@ const Jr = ({
         }
       ),
       /* @__PURE__ */ e.jsx(
-        ke,
+        Ne,
         {
           icon: "👁️",
           label: "Motion Detection",
@@ -2446,7 +2452,7 @@ const Jr = ({
             /* @__PURE__ */ e.jsx(
               "button",
               {
-                onClick: () => pe(!re),
+                onClick: () => pe(!te),
                 style: {
                   padding: "6px 12px",
                   borderRadius: "var(--radius-sm)",
@@ -2462,7 +2468,7 @@ const Jr = ({
           ]
         }
       ),
-      re && /* @__PURE__ */ e.jsxs(
+      te && /* @__PURE__ */ e.jsxs(
         "div",
         {
           style: {
@@ -2482,15 +2488,15 @@ const Jr = ({
                   color: "var(--text-secondary)",
                   marginBottom: "12px"
                 },
-                children: "Select a camera entity to display live video. This can be the Meraki camera's RTSP stream via an NVR (like Blue Iris) or any other camera in Home Assistant."
+                children: "Choose the Home Assistant camera that should represent this Meraki device. That entity becomes the only camera feed in HA (the Meraki camera is hidden) and opening live view goes to that camera."
               }
             ),
             /* @__PURE__ */ e.jsxs("div", { style: { display: "flex", gap: "8px", flexWrap: "wrap" }, children: [
               /* @__PURE__ */ e.jsxs(
                 "select",
                 {
-                  value: U,
-                  onChange: (c) => ie(c.target.value),
+                  value: T,
+                  onChange: (o) => ie(o.target.value),
                   style: {
                     flex: 1,
                     minWidth: "200px",
@@ -2503,14 +2509,14 @@ const Jr = ({
                   },
                   children: [
                     /* @__PURE__ */ e.jsx("option", { value: "", children: "-- Select camera entity --" }),
-                    K.map((c) => /* @__PURE__ */ e.jsx("option", { value: c.entity_id, children: c.friendly_name }, c.entity_id))
+                    K.map((o) => /* @__PURE__ */ e.jsx("option", { value: o.entity_id, children: o.friendly_name }, o.entity_id))
                   ]
                 }
               ),
               /* @__PURE__ */ e.jsx(
                 "button",
                 {
-                  onClick: () => Be(U),
+                  onClick: () => rr(T),
                   style: {
                     padding: "8px 16px",
                     borderRadius: "var(--radius-sm)",
@@ -2524,7 +2530,7 @@ const Jr = ({
                 }
               )
             ] }),
-            U && /* @__PURE__ */ e.jsxs(
+            T && /* @__PURE__ */ e.jsxs(
               "p",
               {
                 style: {
@@ -2535,11 +2541,11 @@ const Jr = ({
                 },
                 children: [
                   "✓ Linked to: ",
-                  U
+                  T
                 ]
               }
             ),
-            o.rtsp_url && /* @__PURE__ */ e.jsxs(
+            l.rtsp_url && /* @__PURE__ */ e.jsxs(
               "div",
               {
                 style: {
@@ -2559,7 +2565,7 @@ const Jr = ({
                         fontFamily: "monospace",
                         color: "var(--text-secondary)"
                       },
-                      children: o.rtsp_url
+                      children: l.rtsp_url
                     }
                   )
                 ]
@@ -2579,10 +2585,19 @@ const Jr = ({
             width: "100%",
             maxWidth: "100%",
             aspectRatio: "16/9",
-            marginBottom: "16px"
+            marginBottom: "16px",
+            cursor: T ? "pointer" : "default"
           },
+          onClick: () => {
+            T && Me(T);
+          },
+          onKeyDown: (o) => {
+            T && (o.key === "Enter" || o.key === " ") && Me(T);
+          },
+          role: T ? "button" : void 0,
+          tabIndex: T ? 0 : void 0,
           children: [
-            (N || T) && /* @__PURE__ */ e.jsxs(
+            (k || E) && /* @__PURE__ */ e.jsxs(
               "div",
               {
                 style: {
@@ -2597,12 +2612,12 @@ const Jr = ({
                 children: [
                   "⏳ Loading",
                   " ",
-                  N ? "linked camera" : "RTSP stream",
+                  k ? "linked camera" : "RTSP stream",
                   "..."
                 ]
               }
             ),
-            $ === "linked" && ye && /* @__PURE__ */ e.jsx(
+            W === "linked" && ye && /* @__PURE__ */ e.jsx(
               "img",
               {
                 src: ye,
@@ -2615,11 +2630,11 @@ const Jr = ({
                 onError: () => {
                   console.error(
                     "Linked camera stream failed, trying fallback"
-                  ), ge(null), H(!0), o != null && o.rtsp_url || o != null && o.rtspEnabled ? Se() : B(f ? "snapshot" : "none");
+                  ), ge(null), H(!0), l != null && l.rtsp_url || l != null && l.rtspEnabled ? Fe() : B(f ? "snapshot" : "none");
                 }
               }
             ),
-            $ === "rtsp" && ce && /* @__PURE__ */ e.jsxs(
+            W === "rtsp" && ce && /* @__PURE__ */ e.jsxs(
               "div",
               {
                 style: {
@@ -2655,7 +2670,7 @@ const Jr = ({
                 ]
               }
             ),
-            $ === "snapshot" && f && /* @__PURE__ */ e.jsx(
+            W === "snapshot" && f && /* @__PURE__ */ e.jsx(
               "img",
               {
                 src: f,
@@ -2667,7 +2682,7 @@ const Jr = ({
                 }
               }
             ),
-            $ === "none" && !N && !T && /* @__PURE__ */ e.jsxs(
+            W === "none" && !k && !E && /* @__PURE__ */ e.jsxs(
               "div",
               {
                 style: {
@@ -2691,7 +2706,9 @@ const Jr = ({
                         /* @__PURE__ */ e.jsx(
                           "button",
                           {
-                            onClick: () => Re(),
+                            onClick: (o) => {
+                              o.stopPropagation(), ze();
+                            },
                             style: {
                               padding: "8px 16px",
                               borderRadius: "var(--radius-sm)",
@@ -2707,7 +2724,9 @@ const Jr = ({
                         /* @__PURE__ */ e.jsx(
                           "button",
                           {
-                            onClick: () => pe(!0),
+                            onClick: (o) => {
+                              o.stopPropagation(), pe(!0);
+                            },
                             style: {
                               padding: "8px 16px",
                               borderRadius: "var(--radius-sm)",
@@ -2726,7 +2745,7 @@ const Jr = ({
                 ]
               }
             ),
-            $ !== "none" && !N && !T && /* @__PURE__ */ e.jsxs(
+            W !== "none" && !k && !E && /* @__PURE__ */ e.jsxs(
               "div",
               {
                 style: {
@@ -2742,9 +2761,9 @@ const Jr = ({
                   textTransform: "uppercase"
                 },
                 children: [
-                  $ === "linked" && "● Live",
-                  $ === "rtsp" && "● RTSP",
-                  $ === "snapshot" && "📷 Snapshot"
+                  W === "linked" && "● Live",
+                  W === "rtsp" && "● RTSP",
+                  W === "snapshot" && "📷 Snapshot"
                 ]
               }
             )
@@ -2764,24 +2783,26 @@ const Jr = ({
             /* @__PURE__ */ e.jsx(
               "button",
               {
-                onClick: () => Re(),
-                disabled: N || T,
+                onClick: () => ze(),
+                disabled: k || E,
                 style: {
                   padding: "10px 20px",
                   borderRadius: "var(--radius-md)",
                   border: "none",
                   background: "var(--primary)",
                   color: "white",
-                  cursor: N || T ? "wait" : "pointer",
+                  cursor: k || E ? "wait" : "pointer",
                   fontWeight: 500
                 },
-                children: N || T ? "⏳ Loading..." : "🔄 Refresh Stream"
+                children: k || E ? "⏳ Loading..." : "🔄 Refresh Stream"
               }
             ),
-            $ === "linked" && U && /* @__PURE__ */ e.jsx(
+            W === "linked" && T && /* @__PURE__ */ e.jsx(
               "button",
               {
-                onClick: () => er(U),
+                onClick: (o) => {
+                  o.stopPropagation(), Me(T);
+                },
                 style: {
                   padding: "10px 20px",
                   borderRadius: "var(--radius-md)",
@@ -2791,24 +2812,24 @@ const Jr = ({
                   cursor: "pointer",
                   fontWeight: 500
                 },
-                children: "📺 Full Screen"
+                children: "📺 Open camera"
               }
             ),
             /* @__PURE__ */ e.jsx(
               "button",
               {
-                onClick: rr,
-                disabled: L,
+                onClick: er,
+                disabled: $,
                 style: {
                   padding: "10px 20px",
                   borderRadius: "var(--radius-md)",
                   border: "1px solid var(--card-border)",
                   background: "var(--bg-secondary)",
                   color: "var(--text-primary)",
-                  cursor: L ? "wait" : "pointer",
+                  cursor: $ ? "wait" : "pointer",
                   fontWeight: 500
                 },
-                children: L ? "⏳..." : "📷 Snapshot"
+                children: $ ? "⏳..." : "📷 Snapshot"
               }
             ),
             /* @__PURE__ */ e.jsxs(
@@ -2826,7 +2847,7 @@ const Jr = ({
                 },
                 children: [
                   "⚙️ ",
-                  U ? "Change" : "Link",
+                  T ? "Change" : "Link",
                   " Camera"
                 ]
               }
@@ -2834,7 +2855,7 @@ const Jr = ({
             z && /* @__PURE__ */ e.jsx(
               "button",
               {
-                onClick: cr,
+                onClick: dr,
                 style: {
                   padding: "10px 20px",
                   borderRadius: "var(--radius-md)",
@@ -2850,7 +2871,7 @@ const Jr = ({
           ]
         }
       ),
-      U && /* @__PURE__ */ e.jsxs(
+      T && /* @__PURE__ */ e.jsxs(
         "div",
         {
           style: {
@@ -2861,7 +2882,7 @@ const Jr = ({
           },
           children: [
             "Streaming from: ",
-            U
+            T
           ]
         }
       )
@@ -2870,87 +2891,87 @@ const Jr = ({
       qr,
       {
         deviceName: ne || he,
-        model: te,
+        model: ae,
         ports: Z,
         clients: y,
-        onClientClick: (c) => {
-          const p = `/config/devices/device/${c}`, ae = new CustomEvent("hass-navigate", {
+        onClientClick: (o) => {
+          const p = `/config/devices/device/${o}`, ee = new CustomEvent("hass-navigate", {
             detail: { path: p },
             bubbles: !0,
             composed: !0
           });
-          window.dispatchEvent(ae);
+          window.dispatchEvent(ee);
         }
       }
     ),
-    Je && E && /* @__PURE__ */ e.jsxs("div", { className: "readings-grid", children: [
-      E.temperature != null && /* @__PURE__ */ e.jsx(
-        Me,
+    Je && M && /* @__PURE__ */ e.jsxs("div", { className: "readings-grid", children: [
+      M.temperature != null && /* @__PURE__ */ e.jsx(
+        Le,
         {
           type: "temperature",
-          value: E.temperature,
-          temperatureUnit: M,
+          value: M.temperature,
+          temperatureUnit: I,
           status: "normal",
           lastUpdated: _ == null ? void 0 : _.last_updated,
           dataSource: _ == null ? void 0 : _.data_source
         }
       ),
-      E.humidity != null && /* @__PURE__ */ e.jsx(
-        Me,
+      M.humidity != null && /* @__PURE__ */ e.jsx(
+        Le,
         {
           type: "humidity",
-          value: E.humidity,
+          value: M.humidity,
           status: "normal",
           lastUpdated: _ == null ? void 0 : _.last_updated,
           dataSource: _ == null ? void 0 : _.data_source
         }
       ),
-      E.indoorAirQuality != null && /* @__PURE__ */ e.jsx(
-        Me,
+      M.indoorAirQuality != null && /* @__PURE__ */ e.jsx(
+        Le,
         {
           type: "indoorAirQuality",
-          value: E.indoorAirQuality,
-          status: E.indoorAirQuality >= 70 ? "normal" : E.indoorAirQuality >= 50 ? "warning" : "critical",
+          value: M.indoorAirQuality,
+          status: M.indoorAirQuality >= 70 ? "normal" : M.indoorAirQuality >= 50 ? "warning" : "critical",
           lastUpdated: _ == null ? void 0 : _.last_updated,
           dataSource: _ == null ? void 0 : _.data_source
         }
       ),
-      E.tvoc != null && /* @__PURE__ */ e.jsx(
-        Me,
+      M.tvoc != null && /* @__PURE__ */ e.jsx(
+        Le,
         {
           type: "tvoc",
-          value: E.tvoc,
-          status: E.tvoc <= 400 ? "normal" : E.tvoc <= 800 ? "warning" : "critical",
+          value: M.tvoc,
+          status: M.tvoc <= 400 ? "normal" : M.tvoc <= 800 ? "warning" : "critical",
           lastUpdated: _ == null ? void 0 : _.last_updated,
           dataSource: _ == null ? void 0 : _.data_source
         }
       ),
-      E.pm25 != null && /* @__PURE__ */ e.jsx(
-        Me,
+      M.pm25 != null && /* @__PURE__ */ e.jsx(
+        Le,
         {
           type: "pm25",
-          value: E.pm25,
-          status: E.pm25 <= 35 ? "normal" : E.pm25 <= 75 ? "warning" : "critical",
+          value: M.pm25,
+          status: M.pm25 <= 35 ? "normal" : M.pm25 <= 75 ? "warning" : "critical",
           lastUpdated: _ == null ? void 0 : _.last_updated,
           dataSource: _ == null ? void 0 : _.data_source
         }
       ),
-      E.co2 != null && /* @__PURE__ */ e.jsx(
-        Me,
+      M.co2 != null && /* @__PURE__ */ e.jsx(
+        Le,
         {
           type: "co2",
-          value: E.co2,
-          status: E.co2 <= 1e3 ? "normal" : E.co2 <= 2e3 ? "warning" : "critical",
+          value: M.co2,
+          status: M.co2 <= 1e3 ? "normal" : M.co2 <= 2e3 ? "warning" : "critical",
           lastUpdated: _ == null ? void 0 : _.last_updated,
           dataSource: _ == null ? void 0 : _.data_source
         }
       ),
-      E.noise != null && /* @__PURE__ */ e.jsx(
-        Me,
+      M.noise != null && /* @__PURE__ */ e.jsx(
+        Le,
         {
           type: "noise",
-          value: E.noise,
-          status: E.noise <= 60 ? "normal" : E.noise <= 80 ? "warning" : "critical",
+          value: M.noise,
+          status: M.noise <= 60 ? "normal" : M.noise <= 80 ? "warning" : "critical",
           lastUpdated: _ == null ? void 0 : _.last_updated,
           dataSource: _ == null ? void 0 : _.data_source
         }
@@ -2971,16 +2992,16 @@ const Jr = ({
                 paddingLeft: "20px",
                 color: "var(--text-secondary)"
               },
-              children: X.map((c, p) => /* @__PURE__ */ e.jsx("li", { style: { marginBottom: "8px" }, children: c }, p))
+              children: X.map((o, p) => /* @__PURE__ */ e.jsx("li", { style: { marginBottom: "8px" }, children: o }, p))
             }
           )
         ]
       }
     ),
-    Ue.length > 0 && !Ce && /* @__PURE__ */ e.jsxs("div", { className: "info-card", children: [
+    Se.length > 0 && !Ce && /* @__PURE__ */ e.jsxs("div", { className: "info-card", children: [
       /* @__PURE__ */ e.jsxs("h3", { children: [
         "🔗 Entities (",
-        Ue.length,
+        Se.length,
         ")"
       ] }),
       /* @__PURE__ */ e.jsxs("table", { className: "device-table", children: [
@@ -2989,13 +3010,13 @@ const Jr = ({
           /* @__PURE__ */ e.jsx("th", { children: "Entity ID" }),
           /* @__PURE__ */ e.jsx("th", { children: "State" })
         ] }) }),
-        /* @__PURE__ */ e.jsx("tbody", { children: Ue.map((c) => /* @__PURE__ */ e.jsx(
+        /* @__PURE__ */ e.jsx("tbody", { children: Se.map((o) => /* @__PURE__ */ e.jsx(
           tt,
           {
-            entity: c,
-            onClick: () => er(c.entity_id)
+            entity: o,
+            onClick: () => Me(o.entity_id)
           },
-          c.entity_id
+          o.entity_id
         )) })
       ] })
     ] }),
@@ -3011,22 +3032,22 @@ const Jr = ({
           /* @__PURE__ */ e.jsx("th", { children: "IP Address" }),
           /* @__PURE__ */ e.jsx("th", { children: "Connection" })
         ] }) }),
-        /* @__PURE__ */ e.jsx("tbody", { children: y.slice(0, 10).map((c) => /* @__PURE__ */ e.jsx(
+        /* @__PURE__ */ e.jsx("tbody", { children: y.slice(0, 10).map((o) => /* @__PURE__ */ e.jsx(
           at,
           {
-            client: c,
+            client: o,
             onClick: () => {
-              if (c.ha_device_id) {
-                const p = `/config/devices/device/${c.ha_device_id}`, ae = new CustomEvent("hass-navigate", {
+              if (o.ha_device_id) {
+                const p = `/config/devices/device/${o.ha_device_id}`, ee = new CustomEvent("hass-navigate", {
                   detail: { path: p },
                   bubbles: !0,
                   composed: !0
                 });
-                window.dispatchEvent(ae);
+                window.dispatchEvent(ee);
               }
             }
           },
-          c.id || c.mac
+          o.id || o.mac
         )) })
       ] }),
       y.length > 10 && /* @__PURE__ */ e.jsxs(
@@ -3062,9 +3083,9 @@ const Jr = ({
         }
       )
     ] }),
-    Fe && /* @__PURE__ */ e.jsxs("div", { className: "info-card", children: [
+    Be && /* @__PURE__ */ e.jsxs("div", { className: "info-card", children: [
       /* @__PURE__ */ e.jsx("h3", { children: "📶 Wireless Access Point" }),
-      o.basicServiceSets && o.basicServiceSets.length > 0 ? /* @__PURE__ */ e.jsxs("div", { children: [
+      l.basicServiceSets && l.basicServiceSets.length > 0 ? /* @__PURE__ */ e.jsxs("div", { children: [
         /* @__PURE__ */ e.jsxs("table", { className: "device-table", style: { marginTop: "16px" }, children: [
           /* @__PURE__ */ e.jsx("thead", { children: /* @__PURE__ */ e.jsxs("tr", { children: [
             /* @__PURE__ */ e.jsx("th", { children: "SSID" }),
@@ -3074,9 +3095,9 @@ const Jr = ({
             /* @__PURE__ */ e.jsx("th", { children: "Power" }),
             /* @__PURE__ */ e.jsx("th", { children: "Status" })
           ] }) }),
-          /* @__PURE__ */ e.jsx("tbody", { children: o.basicServiceSets.filter((c) => c.enabled).map((c, p) => /* @__PURE__ */ e.jsx(st, { bss: c, index: p }, `bss-${p}`)) })
+          /* @__PURE__ */ e.jsx("tbody", { children: l.basicServiceSets.filter((o) => o.enabled).map((o, p) => /* @__PURE__ */ e.jsx(st, { bss: o, index: p }, `bss-${p}`)) })
         ] }),
-        o.basicServiceSets.filter((c) => !c.enabled).length > 0 && /* @__PURE__ */ e.jsxs(
+        l.basicServiceSets.filter((o) => !o.enabled).length > 0 && /* @__PURE__ */ e.jsxs(
           "div",
           {
             style: {
@@ -3085,7 +3106,7 @@ const Jr = ({
               color: "var(--text-muted)"
             },
             children: [
-              o.basicServiceSets.filter((c) => !c.enabled).length,
+              l.basicServiceSets.filter((o) => !o.enabled).length,
               " ",
               "disabled SSIDs not shown"
             ]
@@ -3103,8 +3124,8 @@ const Jr = ({
       ] })
     ] })
   ] });
-}, nt = ee(it, (r, a) => {
-  var l, n, x, g;
+}, nt = re(it, (r, a) => {
+  var c, n, x, g;
   if (r.activeView.deviceId !== a.activeView.deviceId)
     return !1;
   const i = r.data.devices.find(
@@ -3112,14 +3133,14 @@ const Jr = ({
   ), s = a.data.devices.find(
     (m) => m.serial === a.activeView.deviceId
   );
-  return !((i == null ? void 0 : i.status) !== (s == null ? void 0 : s.status) || ((l = i == null ? void 0 : i.ports_statuses) == null ? void 0 : l.length) !== ((n = s == null ? void 0 : s.ports_statuses) == null ? void 0 : n.length) || ((x = r.clients) == null ? void 0 : x.length) !== ((g = a.clients) == null ? void 0 : g.length));
+  return !((i == null ? void 0 : i.status) !== (s == null ? void 0 : s.status) || ((c = i == null ? void 0 : i.ports_statuses) == null ? void 0 : c.length) !== ((n = s == null ? void 0 : s.ports_statuses) == null ? void 0 : n.length) || ((x = r.clients) == null ? void 0 : x.length) !== ((g = a.clients) == null ? void 0 : g.length));
 }), mr = (r) => {
   if (r === 0) return "0 B";
   const a = 1024, i = ["B", "KB", "MB", "GB", "TB"], s = Math.floor(Math.log(r) / Math.log(a));
   return parseFloat((r / Math.pow(a, s)).toFixed(2)) + " " + i[s];
 }, wr = (r) => r ? new Date(r).toLocaleString() : "—", ot = (r) => {
-  var s, l;
-  const a = ((s = r.os) == null ? void 0 : s.toLowerCase()) || "", i = ((l = r.manufacturer) == null ? void 0 : l.toLowerCase()) || "";
+  var s, c;
+  const a = ((s = r.os) == null ? void 0 : s.toLowerCase()) || "", i = ((c = r.manufacturer) == null ? void 0 : c.toLowerCase()) || "";
   return a.includes("ios") || i.includes("apple") || a.includes("android") ? "📱" : a.includes("windows") ? "💻" : a.includes("mac") ? "🖥️" : a.includes("linux") ? "🐧" : i.includes("amazon") || i.includes("roku") || i.includes("samsung") ? "📺" : i.includes("sonos") ? "🔊" : "🔌";
 }, lt = ({
   client: r,
@@ -3292,7 +3313,7 @@ const Jr = ({
       }
     )
   ] });
-}, ct = ee(lt), zr = ee(
+}, ct = re(lt), zr = re(
   ({ client: r, onClick: a, getClientIcon: i, formatBytes: s }) => /* @__PURE__ */ e.jsxs("tr", { className: "device-row", onClick: a, children: [
     /* @__PURE__ */ e.jsx("td", { children: /* @__PURE__ */ e.jsxs("div", { className: "device-name-cell", children: [
       /* @__PURE__ */ e.jsx("div", { className: "device-icon text-xl", children: i(r) }),
@@ -3313,9 +3334,9 @@ const Jr = ({
     ] }) : "—" })
   ] }),
   (r, a) => {
-    var l, n, x, g;
+    var c, n, x, g;
     const i = r.client, s = a.client;
-    return !(i.id !== s.id || i.mac !== s.mac || i.ip !== s.ip || i.description !== s.description || i.status !== s.status || i.ssid !== s.ssid || i.switchport !== s.switchport || ((l = i.usage) == null ? void 0 : l.sent) !== ((n = s.usage) == null ? void 0 : n.sent) || ((x = i.usage) == null ? void 0 : x.recv) !== ((g = s.usage) == null ? void 0 : g.recv));
+    return !(i.id !== s.id || i.mac !== s.mac || i.ip !== s.ip || i.description !== s.description || i.status !== s.status || i.ssid !== s.ssid || i.switchport !== s.switchport || ((c = i.usage) == null ? void 0 : c.sent) !== ((n = s.usage) == null ? void 0 : n.sent) || ((x = i.usage) == null ? void 0 : x.recv) !== ((g = s.usage) == null ? void 0 : g.recv));
   }
 );
 zr.displayName = "ClientRow";
@@ -3324,43 +3345,43 @@ const dt = ({
   onBack: a,
   initialClientId: i
 }) => {
-  const [s, l] = ue(""), [n, x] = ue(
+  const [s, c] = ue(""), [n, x] = ue(
     i || null
   ), g = n && r.find(
     (f) => f.id === n || f.mac === n
   ) || null, m = xe((f) => {
     x(f.id || f.mac);
-  }, []), M = xe((f) => {
+  }, []), I = xe((f) => {
     if (f.ha_device_id) {
-      const C = `/config/devices/device/${f.ha_device_id}`, L = new CustomEvent("hass-navigate", {
+      const C = `/config/devices/device/${f.ha_device_id}`, $ = new CustomEvent("hass-navigate", {
         detail: { path: C },
         bubbles: !0,
         composed: !0
       });
-      window.dispatchEvent(L);
+      window.dispatchEvent($);
     } else
       console.warn("Cannot navigate: client is missing ha_device_id", f);
-  }, []), o = r.filter((f) => {
-    var L, P, z, W, K, J;
+  }, []), l = r.filter((f) => {
+    var $, F, z, A, K, J;
     const C = s.toLowerCase();
-    return ((L = f.description) == null ? void 0 : L.toLowerCase().includes(C)) || ((P = f.mac) == null ? void 0 : P.toLowerCase().includes(C)) || ((z = f.ip) == null ? void 0 : z.toLowerCase().includes(C)) || ((W = f.manufacturer) == null ? void 0 : W.toLowerCase().includes(C)) || ((K = f.user) == null ? void 0 : K.toLowerCase().includes(C)) || ((J = f.os) == null ? void 0 : J.toLowerCase().includes(C));
+    return (($ = f.description) == null ? void 0 : $.toLowerCase().includes(C)) || ((F = f.mac) == null ? void 0 : F.toLowerCase().includes(C)) || ((z = f.ip) == null ? void 0 : z.toLowerCase().includes(C)) || ((A = f.manufacturer) == null ? void 0 : A.toLowerCase().includes(C)) || ((K = f.user) == null ? void 0 : K.toLowerCase().includes(C)) || ((J = f.os) == null ? void 0 : J.toLowerCase().includes(C));
   }), h = xe((f) => {
     if (f === 0) return "0 B";
-    const C = 1024, L = ["B", "KB", "MB", "GB", "TB"], P = Math.floor(Math.log(f) / Math.log(C));
-    return parseFloat((f / Math.pow(C, P)).toFixed(2)) + " " + L[P];
+    const C = 1024, $ = ["B", "KB", "MB", "GB", "TB"], F = Math.floor(Math.log(f) / Math.log(C));
+    return parseFloat((f / Math.pow(C, F)).toFixed(2)) + " " + $[F];
   }, []);
   xe((f) => f ? new Date(f).toLocaleString() : "—", []);
   const y = xe((f) => {
-    var P, z;
-    const C = ((P = f.os) == null ? void 0 : P.toLowerCase()) || "", L = ((z = f.manufacturer) == null ? void 0 : z.toLowerCase()) || "";
-    return C.includes("ios") || L.includes("apple") || C.includes("android") ? "📱" : C.includes("windows") ? "💻" : C.includes("mac") ? "🖥️" : C.includes("linux") ? "🐧" : L.includes("amazon") || L.includes("roku") || L.includes("samsung") ? "📺" : "🔌";
+    var F, z;
+    const C = ((F = f.os) == null ? void 0 : F.toLowerCase()) || "", $ = ((z = f.manufacturer) == null ? void 0 : z.toLowerCase()) || "";
+    return C.includes("ios") || $.includes("apple") || C.includes("android") ? "📱" : C.includes("windows") ? "💻" : C.includes("mac") ? "🖥️" : C.includes("linux") ? "🐧" : $.includes("amazon") || $.includes("roku") || $.includes("samsung") ? "📺" : "🔌";
   }, []);
   return g ? /* @__PURE__ */ e.jsx(
     ct,
     {
       client: g,
       onBack: () => x(null),
-      onNavigateToDevice: () => M(g)
+      onNavigateToDevice: () => I(g)
     }
   ) : /* @__PURE__ */ e.jsxs("div", { children: [
     /* @__PURE__ */ e.jsx("button", { onClick: a, className: "back-button", children: "← Back to Dashboard" }),
@@ -3380,7 +3401,7 @@ const dt = ({
         type: "text",
         placeholder: "Search clients by name, MAC, IP, manufacturer...",
         value: s,
-        onChange: (f) => l(f.target.value),
+        onChange: (f) => c(f.target.value),
         className: "search-input"
       }
     ) }),
@@ -3394,7 +3415,7 @@ const dt = ({
         /* @__PURE__ */ e.jsx("th", { children: "Usage" })
       ] }) }),
       /* @__PURE__ */ e.jsxs("tbody", { children: [
-        o.map((f) => /* @__PURE__ */ e.jsx(
+        l.map((f) => /* @__PURE__ */ e.jsx(
           zr,
           {
             client: f,
@@ -3404,16 +3425,16 @@ const dt = ({
           },
           f.id || f.mac
         )),
-        o.length === 0 && /* @__PURE__ */ e.jsx("tr", { children: /* @__PURE__ */ e.jsx("td", { colSpan: 6, className: "empty-state-message", children: s ? "No clients match your search" : "No clients found" }) })
+        l.length === 0 && /* @__PURE__ */ e.jsx("tr", { children: /* @__PURE__ */ e.jsx("td", { colSpan: 6, className: "empty-state-message", children: s ? "No clients match your search" : "No clients found" }) })
       ] })
     ] }) })
   ] });
-}, ut = ee(dt, (r, a) => {
+}, ut = re(dt, (r, a) => {
   if (r.clients.length !== a.clients.length)
     return !1;
-  const i = r.clients.map((l) => l.id).join("|"), s = a.clients.map((l) => l.id).join("|");
+  const i = r.clients.map((c) => c.id).join("|"), s = a.clients.map((c) => c.id).join("|");
   return i === s;
-}), Dr = ee(
+}), Dr = re(
   ({ ssid: r, clientCount: a, onClick: i }) => /* @__PURE__ */ e.jsxs(
     "tr",
     {
@@ -3456,25 +3477,25 @@ const pt = ({
   clients: a,
   networks: i,
   onBack: s,
-  onSSIDClick: l
+  onSSIDClick: c
 }) => {
   const n = r.reduce(
-    (o, h) => {
+    (l, h) => {
       const y = h.networkId || "unknown";
-      return o[y] || (o[y] = []), o[y].push(h), o;
+      return l[y] || (l[y] = []), l[y].push(h), l;
     },
     {}
   ), x = xe(
-    (o) => {
-      const h = i.find((y) => y.id === o);
-      return (h == null ? void 0 : h.name) || o;
+    (l) => {
+      const h = i.find((y) => y.id === l);
+      return (h == null ? void 0 : h.name) || l;
     },
     [i]
   ), g = xe(
-    (o) => a.filter((h) => h.ssid === o).length,
+    (l) => a.filter((h) => h.ssid === l).length,
     [a]
-  ), m = r.filter((o) => o.enabled).length, M = r.reduce(
-    (o, h) => o + g(h.name),
+  ), m = r.filter((l) => l.enabled).length, I = r.reduce(
+    (l, h) => l + g(h.name),
     0
   );
   return /* @__PURE__ */ e.jsxs("div", { className: "ssids-list-view", children: [
@@ -3496,17 +3517,17 @@ const pt = ({
             ] }),
             /* @__PURE__ */ e.jsx("span", { className: "separator", children: "•" }),
             /* @__PURE__ */ e.jsxs("span", { children: [
-              M,
+              I,
               " connected clients"
             ] })
           ] })
         ] })
       ] }) })
     ] }),
-    Object.entries(n).map(([o, h]) => /* @__PURE__ */ e.jsxs("div", { className: "card ssid-network-card", children: [
+    Object.entries(n).map(([l, h]) => /* @__PURE__ */ e.jsxs("div", { className: "card ssid-network-card", children: [
       /* @__PURE__ */ e.jsx("div", { className: "card-header", children: /* @__PURE__ */ e.jsxs("h3", { children: [
         /* @__PURE__ */ e.jsx("span", { children: "🌐" }),
-        x(o),
+        x(l),
         /* @__PURE__ */ e.jsxs("span", { className: "text-muted ssid-count", children: [
           "(",
           h.length,
@@ -3526,25 +3547,25 @@ const pt = ({
           {
             ssid: y,
             clientCount: g(y.name),
-            onClick: () => l(y)
+            onClick: () => c(y)
           },
           `${y.networkId}-${y.number}`
         )) })
       ] }) })
-    ] }, o)),
+    ] }, l)),
     r.length === 0 && /* @__PURE__ */ e.jsxs("div", { className: "empty-state-message", children: [
       /* @__PURE__ */ e.jsx("div", { className: "empty-icon", children: "📶" }),
       /* @__PURE__ */ e.jsx("h3", { children: "No SSIDs Found" }),
       /* @__PURE__ */ e.jsx("p", { children: "No wireless networks are configured in your Meraki organization." })
     ] })
   ] });
-}, mt = ee(pt, (r, a) => {
+}, mt = re(pt, (r, a) => {
   if (r.ssids.length !== a.ssids.length || r.clients.length !== a.clients.length) return !1;
-  const i = r.ssids.filter((l) => l.enabled).length, s = a.ssids.filter((l) => l.enabled).length;
+  const i = r.ssids.filter((c) => c.enabled).length, s = a.ssids.filter((c) => c.enabled).length;
   return i === s;
-}), xt = ee(
+}), xt = re(
   ({ client: r, onClick: a, formatLastSeen: i, formatBytes: s }) => {
-    var l, n, x, g;
+    var c, n, x, g;
     return /* @__PURE__ */ e.jsxs(
       "tr",
       {
@@ -3552,7 +3573,7 @@ const pt = ({
         onClick: a,
         children: [
           /* @__PURE__ */ e.jsx("td", { children: /* @__PURE__ */ e.jsxs("div", { className: "device-name-cell", children: [
-            /* @__PURE__ */ e.jsx("span", { className: "text-xl", children: (l = r.os) != null && l.toLowerCase().includes("android") ? "📱" : (n = r.os) != null && n.toLowerCase().includes("ios") || (x = r.os) != null && x.toLowerCase().includes("apple") ? "🍎" : (g = r.os) != null && g.toLowerCase().includes("windows") ? "💻" : "📱" }),
+            /* @__PURE__ */ e.jsx("span", { className: "text-xl", children: (c = r.os) != null && c.toLowerCase().includes("android") ? "📱" : (n = r.os) != null && n.toLowerCase().includes("ios") || (x = r.os) != null && x.toLowerCase().includes("apple") ? "🍎" : (g = r.os) != null && g.toLowerCase().includes("windows") ? "💻" : "📱" }),
             /* @__PURE__ */ e.jsxs("div", { children: [
               /* @__PURE__ */ e.jsx("div", { className: "name", children: r.description || r.mac }),
               r.description && /* @__PURE__ */ e.jsx("div", { className: "text-xs text-muted text-mono", children: r.mac })
@@ -3572,15 +3593,15 @@ const pt = ({
     );
   },
   (r, a) => {
-    var i, s, l, n;
-    return r.client.id === a.client.id && r.client.mac === a.client.mac && r.client.description === a.client.description && r.client.ip === a.client.ip && r.client.manufacturer === a.client.manufacturer && r.client.os === a.client.os && r.client.lastSeen === a.client.lastSeen && ((i = r.client.usage) == null ? void 0 : i.sent) === ((s = a.client.usage) == null ? void 0 : s.sent) && ((l = r.client.usage) == null ? void 0 : l.recv) === ((n = a.client.usage) == null ? void 0 : n.recv);
+    var i, s, c, n;
+    return r.client.id === a.client.id && r.client.mac === a.client.mac && r.client.description === a.client.description && r.client.ip === a.client.ip && r.client.manufacturer === a.client.manufacturer && r.client.os === a.client.os && r.client.lastSeen === a.client.lastSeen && ((i = r.client.usage) == null ? void 0 : i.sent) === ((s = a.client.usage) == null ? void 0 : s.sent) && ((c = r.client.usage) == null ? void 0 : c.recv) === ((n = a.client.usage) == null ? void 0 : n.recv);
   }
 ), ht = ({
   ssid: r,
   clients: a,
   network: i,
   hass: s,
-  onBack: l,
+  onBack: c,
   onClientClick: n
 }) => {
   const x = a.filter((h) => h.ssid === r.name), g = async () => {
@@ -3600,11 +3621,11 @@ const pt = ({
     if (h === 0) return "0 B";
     const y = 1024, f = ["B", "KB", "MB", "GB", "TB"], C = Math.floor(Math.log(h) / Math.log(y));
     return parseFloat((h / Math.pow(y, C)).toFixed(1)) + " " + f[C];
-  }, []), M = xe((h) => {
+  }, []), I = xe((h) => {
     if (!h) return "Unknown";
-    const y = new Date(h), C = (/* @__PURE__ */ new Date()).getTime() - y.getTime(), L = Math.floor(C / 6e4), P = Math.floor(C / 36e5), z = Math.floor(C / 864e5);
-    return L < 1 ? "Just now" : L < 60 ? `${L}m ago` : P < 24 ? `${P}h ago` : `${z}d ago`;
-  }, []), o = x.reduce(
+    const y = new Date(h), C = (/* @__PURE__ */ new Date()).getTime() - y.getTime(), $ = Math.floor(C / 6e4), F = Math.floor(C / 36e5), z = Math.floor(C / 864e5);
+    return $ < 1 ? "Just now" : $ < 60 ? `${$}m ago` : F < 24 ? `${F}h ago` : `${z}d ago`;
+  }, []), l = x.reduce(
     (h, y) => {
       var f, C;
       return {
@@ -3616,7 +3637,7 @@ const pt = ({
   );
   return /* @__PURE__ */ e.jsxs("div", { className: "ssid-view", children: [
     /* @__PURE__ */ e.jsxs("div", { className: "device-header", children: [
-      /* @__PURE__ */ e.jsx("button", { className: "back-button", onClick: l, children: "← Back" }),
+      /* @__PURE__ */ e.jsx("button", { className: "back-button", onClick: c, children: "← Back" }),
       /* @__PURE__ */ e.jsx("div", { className: "device-icon wireless", children: "📶" }),
       /* @__PURE__ */ e.jsxs("div", { className: "device-info", children: [
         /* @__PURE__ */ e.jsx("h1", { children: r.name }),
@@ -3665,15 +3686,15 @@ const pt = ({
         ] }),
         /* @__PURE__ */ e.jsxs("div", { className: "stat-card", children: [
           /* @__PURE__ */ e.jsx("div", { className: "label", children: "Data Sent" }),
-          /* @__PURE__ */ e.jsx("div", { className: "value success", children: m(o.sent) })
+          /* @__PURE__ */ e.jsx("div", { className: "value success", children: m(l.sent) })
         ] }),
         /* @__PURE__ */ e.jsxs("div", { className: "stat-card", children: [
           /* @__PURE__ */ e.jsx("div", { className: "label", children: "Data Received" }),
-          /* @__PURE__ */ e.jsx("div", { className: "value", children: m(o.recv) })
+          /* @__PURE__ */ e.jsx("div", { className: "value", children: m(l.recv) })
         ] }),
         /* @__PURE__ */ e.jsxs("div", { className: "stat-card", children: [
           /* @__PURE__ */ e.jsx("div", { className: "label", children: "Total Traffic" }),
-          /* @__PURE__ */ e.jsx("div", { className: "value", children: m(o.sent + o.recv) })
+          /* @__PURE__ */ e.jsx("div", { className: "value", children: m(l.sent + l.recv) })
         ] })
       ] })
     ] }),
@@ -3696,7 +3717,7 @@ const pt = ({
           {
             client: h,
             onClick: n && h.ha_device_id ? () => n(h.ha_device_id) : void 0,
-            formatLastSeen: M,
+            formatLastSeen: I,
             formatBytes: m
           },
           h.id || h.mac
@@ -3707,16 +3728,16 @@ const pt = ({
       ] })
     ] })
   ] });
-}, gt = ee(ht, (r, a) => {
+}, gt = re(ht, (r, a) => {
   if (r.ssid.number !== a.ssid.number || r.ssid.networkId !== a.ssid.networkId || r.ssid.enabled !== a.ssid.enabled) return !1;
   const i = r.clients.filter(
-    (l) => l.ssid === r.ssid.name
+    (c) => c.ssid === r.ssid.name
   ).length, s = a.clients.filter(
-    (l) => l.ssid === a.ssid.name
+    (c) => c.ssid === a.ssid.name
   ).length;
   return i === s;
 }), ft = "meraki_ha_theme_mode";
-function Ne(r) {
+function ke(r) {
   try {
     const a = getComputedStyle(document.documentElement).getPropertyValue(r).trim();
     if (a) return a;
@@ -3724,39 +3745,39 @@ function Ne(r) {
   }
   return null;
 }
-function Nr(r) {
+function kr(r) {
   if (!r) return 0.5;
   if (r.startsWith("#")) {
     const i = r.slice(1);
-    let s, l, n;
-    return i.length === 3 ? (s = parseInt(i[0] + i[0], 16), l = parseInt(i[1] + i[1], 16), n = parseInt(i[2] + i[2], 16)) : (s = parseInt(i.slice(0, 2), 16), l = parseInt(i.slice(2, 4), 16), n = parseInt(i.slice(4, 6), 16)), (0.299 * s + 0.587 * l + 0.114 * n) / 255;
+    let s, c, n;
+    return i.length === 3 ? (s = parseInt(i[0] + i[0], 16), c = parseInt(i[1] + i[1], 16), n = parseInt(i[2] + i[2], 16)) : (s = parseInt(i.slice(0, 2), 16), c = parseInt(i.slice(2, 4), 16), n = parseInt(i.slice(4, 6), 16)), (0.299 * s + 0.587 * c + 0.114 * n) / 255;
   }
   const a = r.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
   if (a) {
-    const [, i, s, l] = a.map(Number);
-    return (0.299 * i + 0.587 * s + 0.114 * l) / 255;
+    const [, i, s, c] = a.map(Number);
+    return (0.299 * i + 0.587 * s + 0.114 * c) / 255;
   }
   return r.includes("fff") || r.includes("fafafa") || r.includes("f5f5f5") ? 0.95 : r.includes("000") || r.includes("1c1c") || r.includes("111") ? 0.05 : 0.5;
 }
 function vt(r, a) {
-  const i = Nr(r);
-  return i > 0.6 ? !0 : i < 0.4 ? !1 : Nr(a) < 0.5;
+  const i = kr(r);
+  return i > 0.6 ? !0 : i < 0.4 ? !1 : kr(a) < 0.5;
 }
 function bt() {
   return {
     // Read HA's variables directly
-    "--primary-color": Ne("--primary-color") || "#03a9f4",
-    "--accent-color": Ne("--accent-color") || "#ff9800",
-    "--primary-text-color": Ne("--primary-text-color") || "#212121",
-    "--secondary-text-color": Ne("--secondary-text-color") || "#727272",
-    "--disabled-text-color": Ne("--disabled-text-color") || "#bdbdbd",
-    "--primary-background-color": Ne("--primary-background-color") || "#fafafa",
-    "--secondary-background-color": Ne("--secondary-background-color") || "#e5e5e5",
-    "--card-background-color": Ne("--card-background-color") || "#ffffff",
-    "--divider-color": Ne("--divider-color") || "rgba(0, 0, 0, 0.12)",
-    "--success-color": Ne("--success-color") || "#43a047",
-    "--warning-color": Ne("--warning-color") || "#ffa600",
-    "--error-color": Ne("--error-color") || "#db4437"
+    "--primary-color": ke("--primary-color") || "#03a9f4",
+    "--accent-color": ke("--accent-color") || "#ff9800",
+    "--primary-text-color": ke("--primary-text-color") || "#212121",
+    "--secondary-text-color": ke("--secondary-text-color") || "#727272",
+    "--disabled-text-color": ke("--disabled-text-color") || "#bdbdbd",
+    "--primary-background-color": ke("--primary-background-color") || "#fafafa",
+    "--secondary-background-color": ke("--secondary-background-color") || "#e5e5e5",
+    "--card-background-color": ke("--card-background-color") || "#ffffff",
+    "--divider-color": ke("--divider-color") || "rgba(0, 0, 0, 0.12)",
+    "--success-color": ke("--success-color") || "#43a047",
+    "--warning-color": ke("--warning-color") || "#ffa600",
+    "--error-color": ke("--error-color") || "#db4437"
   };
 }
 function yt() {
@@ -3769,10 +3790,10 @@ function yt() {
   return "auto";
 }
 function jt(r) {
-  const a = Te(null), [i, s] = ue(yt);
-  Le(() => {
-    const m = (M) => {
-      s(M.detail);
+  const a = Ee(null), [i, s] = ue(yt);
+  We(() => {
+    const m = (I) => {
+      s(I.detail);
     };
     return window.addEventListener(
       "meraki-theme-change",
@@ -3784,29 +3805,29 @@ function jt(r) {
       );
     };
   }, []);
-  const l = Ie(() => bt(), [r == null ? void 0 : r.themes]), n = Ie(() => {
+  const c = $e(() => bt(), [r == null ? void 0 : r.themes]), n = $e(() => {
     if (i === "dark") return !0;
     if (i === "light") return !1;
-    const m = l["--primary-text-color"], M = l["--primary-background-color"];
-    return vt(m, M);
-  }, [l, i]), x = Ie(() => n ? "#2c2c2e" : "#f2f2f7", [n]), g = Ie(() => {
+    const m = c["--primary-text-color"], I = c["--primary-background-color"];
+    return vt(m, I);
+  }, [c, i]), x = $e(() => n ? "#2c2c2e" : "#f2f2f7", [n]), g = $e(() => {
     const m = {};
-    return m["--text-primary"] = l["--primary-text-color"], m["--text-secondary"] = l["--secondary-text-color"], m["--text-muted"] = l["--disabled-text-color"], m["--bg-primary"] = l["--primary-background-color"], m["--bg-secondary"] = l["--secondary-background-color"], m["--bg-tertiary"] = x, m["--card-bg"] = l["--card-background-color"], m["--card-border"] = l["--divider-color"], m["--primary"] = l["--primary-color"], m["--primary-light"] = n ? "rgba(10, 132, 255, 0.15)" : "rgba(0, 122, 255, 0.1)", m["--success"] = l["--success-color"], m["--success-light"] = n ? "rgba(48, 209, 88, 0.2)" : "rgba(52, 199, 89, 0.15)", m["--warning"] = l["--warning-color"], m["--warning-light"] = n ? "rgba(255, 159, 10, 0.2)" : "rgba(255, 149, 0, 0.15)", m["--error"] = l["--error-color"], m["--error-light"] = n ? "rgba(255, 69, 58, 0.2)" : "rgba(255, 59, 48, 0.15)", m;
-  }, [l, x, n]);
-  return Le(() => {
+    return m["--text-primary"] = c["--primary-text-color"], m["--text-secondary"] = c["--secondary-text-color"], m["--text-muted"] = c["--disabled-text-color"], m["--bg-primary"] = c["--primary-background-color"], m["--bg-secondary"] = c["--secondary-background-color"], m["--bg-tertiary"] = x, m["--card-bg"] = c["--card-background-color"], m["--card-border"] = c["--divider-color"], m["--primary"] = c["--primary-color"], m["--primary-light"] = n ? "rgba(10, 132, 255, 0.15)" : "rgba(0, 122, 255, 0.1)", m["--success"] = c["--success-color"], m["--success-light"] = n ? "rgba(48, 209, 88, 0.2)" : "rgba(52, 199, 89, 0.15)", m["--warning"] = c["--warning-color"], m["--warning-light"] = n ? "rgba(255, 159, 10, 0.2)" : "rgba(255, 149, 0, 0.15)", m["--error"] = c["--error-color"], m["--error-light"] = n ? "rgba(255, 69, 58, 0.2)" : "rgba(255, 59, 48, 0.15)", m;
+  }, [c, x, n]);
+  return We(() => {
     const m = document.documentElement;
     m.setAttribute("data-theme", n ? "dark" : "light");
-    for (const [o, h] of Object.entries(g))
-      m.style.setProperty(o, h);
-    const M = document.querySelector(".meraki-panel");
-    if (M && M instanceof HTMLElement) {
-      a.current = M;
-      for (const [o, h] of Object.entries(g))
-        M.style.setProperty(o, h);
+    for (const [l, h] of Object.entries(g))
+      m.style.setProperty(l, h);
+    const I = document.querySelector(".meraki-panel");
+    if (I && I instanceof HTMLElement) {
+      a.current = I;
+      for (const [l, h] of Object.entries(g))
+        I.style.setProperty(l, h);
     }
-  }, [g, n]), { isDarkMode: n, themeVars: l, style: g, themeMode: i };
+  }, [g, n]), { isDarkMode: n, themeVars: c, style: g, themeMode: i };
 }
-const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container", children: [
+const Nr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container", children: [
   /* @__PURE__ */ e.jsx("div", { className: "loading-spinner" }),
   /* @__PURE__ */ e.jsx("span", { className: "loading-text", children: "Loading Meraki data..." })
 ] }), wt = ({
@@ -3819,7 +3840,7 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
     /* @__PURE__ */ e.jsx("p", { children: r }),
     a && /* @__PURE__ */ e.jsx("button", { onClick: a, className: "retry-button", children: "Retry" })
   ] })
-] }), ir = ({ version: r, onSettingsClick: a }) => /* @__PURE__ */ e.jsxs("div", { className: "meraki-header", children: [
+] }), nr = ({ version: r, onSettingsClick: a }) => /* @__PURE__ */ e.jsxs("div", { className: "meraki-header", children: [
   /* @__PURE__ */ e.jsx("div", { className: "logo", children: "🌐" }),
   /* @__PURE__ */ e.jsx("h1", { children: "Meraki Dashboard" }),
   r && /* @__PURE__ */ e.jsxs("span", { className: "version", children: [
@@ -3835,33 +3856,33 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
       children: "⚙️ Settings"
     }
   ) })
-] }), Nt = ({ hass: r, panel: a, narrow: i }) => {
+] }), kt = ({ hass: r, panel: a, narrow: i }) => {
   var ce;
-  const [s, l] = ue(null), [n, x] = ue(!0), [g, m] = ue(null), [M, o] = ue({ view: "dashboard" }), [h, y] = ue(0), [f, C] = ue([]), [L, P] = ue([]), [z, W] = ue({}), { style: K } = jt(r), J = xe(() => {
-    ie.current = !1, y((k) => k + 1);
-  }, []), U = Te(r);
-  U.current = r, Le(() => {
-    const k = U.current;
-    if (!k) return;
+  const [s, c] = ue(null), [n, x] = ue(!0), [g, m] = ue(null), [I, l] = ue({ view: "dashboard" }), [h, y] = ue(0), [f, C] = ue([]), [$, F] = ue([]), [z, A] = ue({}), { style: K } = jt(r), J = xe(() => {
+    ie.current = !1, y((N) => N + 1);
+  }, []), T = Ee(r);
+  T.current = r, We(() => {
+    const N = T.current;
+    if (!N) return;
     (async () => {
       try {
-        const [w, $, B] = await Promise.all([
-          k.callWS({
+        const [w, W, B] = await Promise.all([
+          N.callWS({
             type: "config/device_registry/list"
           }),
-          k.callWS({
+          N.callWS({
             type: "config/entity_registry/list"
           }),
-          k.callWS({ type: "get_states" })
+          N.callWS({ type: "get_states" })
         ]);
-        C(w), P($);
-        const A = B.reduce(
+        C(w), F(W);
+        const P = B.reduce(
           (Y, ne) => (Y[ne.entity_id] = ne, Y),
           {}
         );
-        W(A), console.log("[Meraki] Fetched HA registries:", {
+        A(P), console.log("[Meraki] Fetched HA registries:", {
           devices: w.length,
-          entities: $.length,
+          entities: W.length,
           states: B.length
         });
       } catch (w) {
@@ -3870,16 +3891,16 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
     })();
     const Q = (async () => {
       try {
-        return await k.connection.subscribeMessage(
+        return await N.connection.subscribeMessage(
           (w) => {
             if (w.event_type === "state_changed") {
-              const { entity_id: $, new_state: B } = w.data;
-              W(B ? (A) => ({
-                ...A,
-                [$]: B
-              }) : (A) => {
-                const Y = { ...A };
-                return delete Y[$], Y;
+              const { entity_id: W, new_state: B } = w.data;
+              A(B ? (P) => ({
+                ...P,
+                [W]: B
+              }) : (P) => {
+                const Y = { ...P };
+                return delete Y[W], Y;
               });
             }
           },
@@ -3893,96 +3914,96 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
     return () => {
       Q.then((w) => w());
     };
-  }, [U, h]);
-  const ie = Te(!1), re = (ce = a == null ? void 0 : a.config) == null ? void 0 : ce.config_entry_id, pe = xe((k) => {
-    if (k.networks && k.enabled_networks) {
-      const T = k.networks.map((j) => ({
+  }, [T, h]);
+  const ie = Ee(!1), te = (ce = a == null ? void 0 : a.config) == null ? void 0 : ce.config_entry_id, pe = xe((N) => {
+    if (N.networks && N.enabled_networks) {
+      const E = N.networks.map((j) => ({
         ...j,
-        is_enabled: k.enabled_networks.includes(j.id)
+        is_enabled: N.enabled_networks.includes(j.id)
       }));
-      return { ...k, networks: T };
+      return { ...N, networks: E };
     }
-    return k;
+    return N;
   }, []), ye = xe(
-    (k, T) => {
-      var B, A, Y, ne, te, he, le, d, b, S;
-      if (!k || ((B = k.devices) == null ? void 0 : B.length) !== ((A = T.devices) == null ? void 0 : A.length) || ((Y = k.networks) == null ? void 0 : Y.length) !== ((ne = T.networks) == null ? void 0 : ne.length) || ((te = k.ssids) == null ? void 0 : te.length) !== ((he = T.ssids) == null ? void 0 : he.length))
+    (N, E) => {
+      var B, P, Y, ne, ae, he, le, d, b, S;
+      if (!N || ((B = N.devices) == null ? void 0 : B.length) !== ((P = E.devices) == null ? void 0 : P.length) || ((Y = N.networks) == null ? void 0 : Y.length) !== ((ne = E.networks) == null ? void 0 : ne.length) || ((ae = N.ssids) == null ? void 0 : ae.length) !== ((he = E.ssids) == null ? void 0 : he.length))
         return !0;
-      const j = (le = k.devices) == null ? void 0 : le.map((I) => `${I.serial}:${I.status}`).sort().join("|"), Q = (d = T.devices) == null ? void 0 : d.map((I) => `${I.serial}:${I.status}`).sort().join("|");
+      const j = (le = N.devices) == null ? void 0 : le.map((L) => `${L.serial}:${L.status}`).sort().join("|"), Q = (d = E.devices) == null ? void 0 : d.map((L) => `${L.serial}:${L.status}`).sort().join("|");
       if (j !== Q)
         return !0;
-      const w = (b = k.clients) == null ? void 0 : b.map((I) => I.recentDeviceSerial).sort().join("|"), $ = (S = T.clients) == null ? void 0 : S.map((I) => I.recentDeviceSerial).sort().join("|");
-      return w !== $;
+      const w = (b = N.clients) == null ? void 0 : b.map((L) => L.recentDeviceSerial).sort().join("|"), W = (S = E.clients) == null ? void 0 : S.map((L) => L.recentDeviceSerial).sort().join("|");
+      return w !== W;
     },
     []
-  ), ge = Te(null), N = Ie(() => s != null && s.clients && s.clients.length > 0 ? s.clients.map((T) => {
-    const j = T.mac.replace(/:/g, "_").toLowerCase(), Q = `device_tracker.meraki_client_${j}`, w = z[Q], $ = L.find(
+  ), ge = Ee(null), k = $e(() => s != null && s.clients && s.clients.length > 0 ? s.clients.map((E) => {
+    const j = E.mac.replace(/:/g, "_").toLowerCase(), Q = `device_tracker.meraki_client_${j}`, w = z[Q], W = $.find(
       (ne) => ne.entity_id === Q
-    ), B = $ != null && $.device_id ? f.find((ne) => ne.id === $.device_id) : null, A = `switch.meraki_client_${j}_block`, Y = z[A];
+    ), B = W != null && W.device_id ? f.find((ne) => ne.id === W.device_id) : null, P = `switch.meraki_client_${j}_block`, Y = z[P];
     return {
-      ...T,
-      id: T.id || ($ == null ? void 0 : $.device_id) || T.mac,
-      ha_device_id: ($ == null ? void 0 : $.device_id) || "",
-      status: (w == null ? void 0 : w.state) === "home" ? "Online" : (w == null ? void 0 : w.state) === "not_home" ? "Offline" : T.status || "Unknown",
+      ...E,
+      id: E.id || (W == null ? void 0 : W.device_id) || E.mac,
+      ha_device_id: (W == null ? void 0 : W.device_id) || "",
+      status: (w == null ? void 0 : w.state) === "home" ? "Online" : (w == null ? void 0 : w.state) === "not_home" ? "Offline" : E.status || "Unknown",
       via_device_id: B == null ? void 0 : B.via_device_id,
       is_blocked: (Y == null ? void 0 : Y.state) === "on"
     };
-  }) : !L.length || !Object.keys(z).length ? [] : L.filter(
-    (T) => T.entity_id.startsWith("device_tracker.meraki_client_")
-  ).map((T) => {
-    var I, X, me, Z, E, _, fe, _e, $e, We;
-    const j = z[T.entity_id], Q = f.find((Ce) => Ce.id === T.device_id), w = T.entity_id.replace(
+  }) : !$.length || !Object.keys(z).length ? [] : $.filter(
+    (E) => E.entity_id.startsWith("device_tracker.meraki_client_")
+  ).map((E) => {
+    var L, X, me, Z, M, _, fe, _e, Ae, Pe;
+    const j = z[E.entity_id], Q = f.find((Ce) => Ce.id === E.device_id), w = E.entity_id.replace(
       "device_tracker.meraki_client_",
       ""
-    ), $ = w.replace(/_/g, ":"), B = `switch.meraki_client_${w}_block`, A = z[B], Y = `sensor.meraki_client_${w}_vlan`, ne = `sensor.meraki_client_${w}_ssid`, te = `sensor.meraki_client_${w}_connected_device`, he = `sensor.meraki_client_${w}_switchport`, le = z[Y], d = z[ne], b = z[te], S = z[he];
+    ), W = w.replace(/_/g, ":"), B = `switch.meraki_client_${w}_block`, P = z[B], Y = `sensor.meraki_client_${w}_vlan`, ne = `sensor.meraki_client_${w}_ssid`, ae = `sensor.meraki_client_${w}_connected_device`, he = `sensor.meraki_client_${w}_switchport`, le = z[Y], d = z[ne], b = z[ae], S = z[he];
     return {
-      id: T.device_id || T.entity_id,
-      mac: $,
-      ha_device_id: T.device_id || "",
-      description: (Q == null ? void 0 : Q.name) || ((I = j == null ? void 0 : j.attributes) == null ? void 0 : I.friendly_name) || $,
+      id: E.device_id || E.entity_id,
+      mac: W,
+      ha_device_id: E.device_id || "",
+      description: (Q == null ? void 0 : Q.name) || ((L = j == null ? void 0 : j.attributes) == null ? void 0 : L.friendly_name) || W,
       ip: ((X = j == null ? void 0 : j.attributes) == null ? void 0 : X.ip_address) || "",
       manufacturer: (Q == null ? void 0 : Q.manufacturer) || ((me = j == null ? void 0 : j.attributes) == null ? void 0 : me.manufacturer) || "Unknown",
       os: ((Z = j == null ? void 0 : j.attributes) == null ? void 0 : Z.os) || "",
       status: (j == null ? void 0 : j.state) === "home" ? "Online" : "Offline",
       // Use sensor entities if available, fall back to device_tracker attributes
-      ssid: (d == null ? void 0 : d.state) || ((E = j == null ? void 0 : j.attributes) == null ? void 0 : E.ssid) || "",
+      ssid: (d == null ? void 0 : d.state) || ((M = j == null ? void 0 : j.attributes) == null ? void 0 : M.ssid) || "",
       switchport: (S == null ? void 0 : S.state) || ((_ = j == null ? void 0 : j.attributes) == null ? void 0 : _.switchport),
       vlan: (le != null && le.state ? parseInt(le.state, 10) : void 0) || ((fe = j == null ? void 0 : j.attributes) == null ? void 0 : fe.vlan),
-      recentDeviceSerial: ((_e = b == null ? void 0 : b.attributes) == null ? void 0 : _e.device_serial) || (($e = j == null ? void 0 : j.attributes) == null ? void 0 : $e.connected_to_serial) || "",
-      recentDeviceName: (b == null ? void 0 : b.state) || ((We = j == null ? void 0 : j.attributes) == null ? void 0 : We.connected_to_device),
+      recentDeviceSerial: ((_e = b == null ? void 0 : b.attributes) == null ? void 0 : _e.device_serial) || ((Ae = j == null ? void 0 : j.attributes) == null ? void 0 : Ae.connected_to_serial) || "",
+      recentDeviceName: (b == null ? void 0 : b.state) || ((Pe = j == null ? void 0 : j.attributes) == null ? void 0 : Pe.connected_to_device),
       via_device_id: Q == null ? void 0 : Q.via_device_id,
-      is_blocked: (A == null ? void 0 : A.state) === "on"
+      is_blocked: (P == null ? void 0 : P.state) === "on"
     };
-  }), [s == null ? void 0 : s.clients, f, L, z]);
-  Le(() => {
-    const k = U.current;
-    if (!k || !re)
+  }), [s == null ? void 0 : s.clients, f, $, z]);
+  We(() => {
+    const N = T.current;
+    if (!N || !te)
       return;
-    let T = null, j = !0;
+    let E = null, j = !0;
     return (async () => {
       try {
-        ie.current || x(!0), m(null), T = await k.connection.subscribeMessage(
+        ie.current || x(!0), m(null), E = await N.connection.subscribeMessage(
           (w) => {
-            var $, B;
+            var W, B;
             if (j && w) {
               console.log("[Meraki] Received data update:", {
                 last_updated: w.last_updated,
                 scan_interval: w.scan_interval,
-                networks: ($ = w.networks) == null ? void 0 : $.length,
+                networks: (W = w.networks) == null ? void 0 : W.length,
                 devices: (B = w.devices) == null ? void 0 : B.length
               });
-              const A = pe(w);
-              ge.current = w.last_updated || null, l((Y) => ye(Y, A) ? (console.log(
+              const P = pe(w);
+              ge.current = w.last_updated || null, c((Y) => ye(Y, P) ? (console.log(
                 "[Meraki] Data changed, updating state",
-                A.last_updated
-              ), A) : Y && Y.last_updated !== A.last_updated ? (console.log(
+                P.last_updated
+              ), P) : Y && Y.last_updated !== P.last_updated ? (console.log(
                 "[Meraki] Only timestamp changed, light update"
-              ), { ...Y, ...A }) : (console.log("[Meraki] No changes detected, skipping update"), Y)), x(!1), ie.current = !0;
+              ), { ...Y, ...P }) : (console.log("[Meraki] No changes detected, skipping update"), Y)), x(!1), ie.current = !0;
             }
           },
           {
             type: "meraki_ha/subscribe_meraki_data",
-            config_entry_id: re
+            config_entry_id: te
           }
         );
       } catch (w) {
@@ -3991,16 +4012,16 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
         ), x(!1));
       }
     })(), () => {
-      j = !1, T && T();
+      j = !1, E && E();
     };
-  }, [re, h]);
-  const R = Ie(
+  }, [te, h]);
+  const R = $e(
     () => {
-      var k;
-      return ((k = s == null ? void 0 : s.networks) == null ? void 0 : k.filter((T) => T.is_enabled)) || [];
+      var N;
+      return ((N = s == null ? void 0 : s.networks) == null ? void 0 : N.filter((E) => E.is_enabled)) || [];
     },
     [s == null ? void 0 : s.networks]
-  ), q = Ie(
+  ), q = $e(
     () => s ? {
       ...s,
       networks: R
@@ -4009,22 +4030,22 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
   );
   if (!r)
     return /* @__PURE__ */ e.jsxs("div", { className: "meraki-panel", style: K, children: [
-      /* @__PURE__ */ e.jsx(kr, {}),
+      /* @__PURE__ */ e.jsx(Nr, {}),
       /* @__PURE__ */ e.jsx("p", { className: "loading-message", children: "Waiting for Home Assistant connection..." })
     ] });
   if (n)
     return /* @__PURE__ */ e.jsxs("div", { className: "meraki-panel", style: K, children: [
-      /* @__PURE__ */ e.jsx(ir, {}),
-      /* @__PURE__ */ e.jsx(kr, {})
+      /* @__PURE__ */ e.jsx(nr, {}),
+      /* @__PURE__ */ e.jsx(Nr, {})
     ] });
   if (g)
     return /* @__PURE__ */ e.jsxs("div", { className: "meraki-panel", style: K, children: [
-      /* @__PURE__ */ e.jsx(ir, {}),
+      /* @__PURE__ */ e.jsx(nr, {}),
       /* @__PURE__ */ e.jsx(wt, { message: g, onRetry: J })
     ] });
   if (!s || !q)
     return /* @__PURE__ */ e.jsxs("div", { className: "meraki-panel", style: K, children: [
-      /* @__PURE__ */ e.jsx(ir, {}),
+      /* @__PURE__ */ e.jsx(nr, {}),
       /* @__PURE__ */ e.jsxs("div", { className: "empty-state", children: [
         /* @__PURE__ */ e.jsx("div", { className: "icon", children: "📡" }),
         /* @__PURE__ */ e.jsx("h3", { children: "No Data Available" }),
@@ -4032,28 +4053,28 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
       ] })
     ] });
   const H = () => {
-    var k, T;
-    switch (M.view) {
+    var N, E;
+    switch (I.view) {
       case "clients":
         return /* @__PURE__ */ e.jsx(
           ut,
           {
-            clients: N,
-            onBack: () => o({ view: "dashboard" }),
-            initialClientId: M.clientId
+            clients: k,
+            onBack: () => l({ view: "dashboard" }),
+            initialClientId: I.clientId
           }
         );
       case "device":
         return /* @__PURE__ */ e.jsx(
           nt,
           {
-            activeView: M,
-            setActiveView: o,
+            activeView: I,
+            setActiveView: l,
             data: s,
-            clients: N,
+            clients: k,
             haDevices: f,
             hass: r,
-            configEntryId: re,
+            configEntryId: te,
             cameraLinkIntegration: s.camera_link_integration,
             configEntryOptions: {
               temperature_unit: s.temperature_unit
@@ -4067,8 +4088,8 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
             ssids: s.ssids || [],
             clients: s.clients || [],
             networks: s.networks || [],
-            onBack: () => o({ view: "dashboard" }),
-            onSSIDClick: (j) => o({
+            onBack: () => l({ view: "dashboard" }),
+            onSSIDClick: (j) => l({
               view: "ssid",
               ssidNetworkId: j.networkId,
               ssidNumber: j.number
@@ -4076,8 +4097,8 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
           }
         );
       case "ssid": {
-        const j = (k = s.ssids) == null ? void 0 : k.find(
-          (w) => w.networkId === M.ssidNetworkId && w.number === M.ssidNumber
+        const j = (N = s.ssids) == null ? void 0 : N.find(
+          (w) => w.networkId === I.ssidNetworkId && w.number === I.ssidNumber
         );
         if (!j)
           return /* @__PURE__ */ e.jsxs("div", { className: "error-container", children: [
@@ -4086,27 +4107,27 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
             /* @__PURE__ */ e.jsx(
               "button",
               {
-                onClick: () => o({ view: "ssids" }),
+                onClick: () => l({ view: "ssids" }),
                 className: "retry-button",
                 children: "Back to SSIDs"
               }
             )
           ] });
-        const Q = (T = s.networks) == null ? void 0 : T.find(
+        const Q = (E = s.networks) == null ? void 0 : E.find(
           (w) => w.id === j.networkId
         );
         return /* @__PURE__ */ e.jsx(
           gt,
           {
             ssid: j,
-            clients: N,
+            clients: k,
             network: Q,
             hass: r,
-            onBack: () => o({ view: "ssids" }),
+            onBack: () => l({ view: "ssids" }),
             onClientClick: (w) => {
               if (w) {
-                const $ = `/config/devices/device/${w}`, B = new CustomEvent("hass-navigate", {
-                  detail: { path: $ },
+                const W = `/config/devices/device/${w}`, B = new CustomEvent("hass-navigate", {
+                  detail: { path: W },
                   bubbles: !0,
                   composed: !0
                 });
@@ -4121,7 +4142,7 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
           Qr,
           {
             data: q,
-            setActiveView: o,
+            setActiveView: l,
             hass: r,
             defaultViewMode: s.dashboard_view_mode,
             defaultDeviceTypeFilter: s.dashboard_device_type_filter,
@@ -4133,10 +4154,10 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
   };
   return /* @__PURE__ */ e.jsxs("div", { className: "meraki-panel", style: K, children: [
     /* @__PURE__ */ e.jsx(
-      ir,
+      nr,
       {
         version: s.version,
-        onSettingsClick: () => r == null ? void 0 : r.showOptionsFlow(re || "", null, {
+        onSettingsClick: () => r == null ? void 0 : r.showOptionsFlow(te || "", null, {
           step_id: "init"
         })
       }
@@ -4144,16 +4165,16 @@ const kr = () => /* @__PURE__ */ e.jsxs("div", { className: "loading-container",
     H()
   ] });
 }, _r = '@import"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap";:root{--primary: var(--primary-color, #03a9f4);--primary-dark: #0288d1;--primary-light: rgba(3, 169, 244, .1);--success: var(--success-color, #43a047);--success-light: rgba(67, 160, 71, .15);--warning: var(--warning-color, #ffa600);--warning-light: rgba(255, 166, 0, .15);--error: var(--error-color, #db4437);--error-light: rgba(219, 68, 55, .15);--bg-primary: var(--primary-background-color, #fafafa);--bg-secondary: var(--secondary-background-color, #ffffff);--bg-tertiary: #f1f5f9;--card-bg: var(--card-background-color, #ffffff);--card-border: var(--divider-color, rgba(0, 0, 0, .12));--text-primary: var(--primary-text-color, #212121);--text-secondary: var(--secondary-text-color, #727272);--text-muted: #8e8e93;--radius-sm: 8px;--radius-md: 12px;--radius-lg: 16px;--radius-xl: 20px;--shadow-sm: 0 1px 2px rgba(0, 0, 0, .08);--shadow-md: 0 4px 6px rgba(0, 0, 0, .1);--shadow-lg: 0 10px 25px rgba(0, 0, 0, .15);--transition: all .2s ease;--switch-color: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);--camera-color: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);--wireless-color: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);--sensor-color: linear-gradient(135deg, #10b981 0%, #059669 100%);--appliance-color: linear-gradient(135deg, #f59e0b 0%, #d97706 100%)}:root[data-theme=dark]{--bg-tertiary: #2c2c2e;--text-muted: rgba(255, 255, 255, .5);--text-secondary: rgba(255, 255, 255, .6);--primary-light: rgba(3, 169, 244, .2);--success-light: rgba(67, 160, 71, .2);--warning-light: rgba(255, 166, 0, .2);--error-light: rgba(219, 68, 55, .2);--shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);--shadow-md: 0 4px 6px rgba(0, 0, 0, .3);--shadow-lg: 0 10px 25px rgba(0, 0, 0, .4)}.text-primary{color:var(--text-primary)}.text-secondary{color:var(--text-secondary)}.text-mono{font-family:monospace}.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-2{gap:8px}.gap-3{gap:12px}.client-row-cell{display:flex;align-items:center;gap:10px}.client-row-icon{font-size:18px}.client-row-info{display:flex;flex-direction:column}.band-badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:500}.band-badge.band-2_4{background:#f59e0b26;color:var(--warning)}.band-badge.band-5{background:#06b6d426;color:var(--primary)}.broadcast-status{display:inline-flex;align-items:center;gap:6px}.broadcast-status.active{color:var(--success)}.broadcast-status.inactive{color:var(--text-muted)}.broadcast-dot{width:8px;height:8px;border-radius:50%;background:currentColor}.broadcast-status.active .broadcast-dot{box-shadow:0 0 8px var(--success)}.bssid-text{font-size:11px;color:var(--text-muted);font-family:monospace}.status-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500}.status-badge.enabled,.status-badge.online,.status-badge.success{background:var(--success-light);color:var(--success)}.status-badge.disabled,.status-badge.offline,.status-badge.inactive{background:var(--bg-tertiary);color:var(--text-secondary)}.status-badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}.number-badge{display:inline-block;background:var(--bg-tertiary);padding:2px 8px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;color:var(--text-secondary)}.section-label{font-size:14px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px}.field-label{font-size:10px;color:var(--text-muted);text-transform:uppercase}.description{font-size:12px;color:var(--text-muted)}.empty-state-message{text-align:center;padding:40px 20px;color:var(--text-muted)}.arrow-indicator{color:var(--text-muted)}.meta-info{font-size:12px;color:var(--text-muted)}.refresh-indicator{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-bottom:12px;font-size:12px;color:var(--text-muted);opacity:.8}.refresh-indicator-item{display:flex;align-items:center;gap:4px}.refresh-indicator-icon{font-size:10px}.view-mode-toggle{display:flex;gap:4px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-md);padding:4px}.view-mode-btn{padding:8px 16px;border-radius:var(--radius-sm);border:none;background:transparent;color:var(--text-primary);cursor:pointer;font-weight:500;font-size:13px;transition:var(--transition)}.view-mode-btn.active{background:var(--primary);color:#fff}.filter-select{padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--card-border);background:var(--card-bg);color:var(--text-primary);font-size:13px;cursor:pointer}.clear-filters-btn{padding:8px 12px;border-radius:var(--radius-md);border:none;background:var(--warning);color:#fff;font-size:12px;cursor:pointer;font-weight:500}.cell-mono{font-family:monospace;font-size:11px}.empty-table-message{text-align:center;color:var(--text-muted);padding:20px}.usage-stats-row{display:flex;gap:32px;margin-bottom:20px;padding:16px;background:var(--bg-primary);border-radius:var(--radius-md)}.usage-stat{flex:1;text-align:center}.usage-stat-label{font-size:12px;color:var(--text-muted);margin-bottom:4px}.usage-stat-value{font-size:24px;font-weight:600}.usage-stat-value.upload{color:var(--success)}.usage-stat-value.download{color:var(--primary)}.usage-stat-value.total{color:var(--text-primary)}.usage-divider{width:1px;background:var(--card-border)}.search-input{width:100%;padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--card-border);background:var(--bg-secondary);color:var(--text-primary);font-size:14px}.search-input::-moz-placeholder{color:var(--text-muted)}.search-input::placeholder{color:var(--text-muted)}.btn-primary{padding:10px 20px;border-radius:var(--radius-md);border:none;background:var(--primary);color:#fff;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:8px}.btn-primary:hover{opacity:.9}.btn-secondary{padding:10px 20px;border-radius:var(--radius-md);border:1px solid var(--card-border);background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:8px}.device-icon-gradient{background:linear-gradient(135deg,#667eea,#764ba2)}.text-xs{font-size:10px}.text-sm{font-size:12px}.text-lg{font-size:16px}.text-xl{font-size:20px}.mt-4{margin-top:16px}.mb-5{margin-bottom:20px}.settings-overlay{position:fixed;top:0;right:0;bottom:0;left:0;background:#000000b3;display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}.settings-modal{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-lg);width:100%;max-width:800px;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}.settings-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--card-border)}.settings-header h2{margin:0;font-size:18px;font-weight:600;color:var(--text-primary)}.settings-close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);padding:4px 8px;transition:color .2s}.settings-close-btn:hover{color:var(--text-primary)}.settings-content{flex:1;overflow-y:auto;padding:24px}.settings-section{margin-bottom:32px}.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--card-border)}.settings-row-info{flex:1}.settings-row-label{font-weight:500;margin-bottom:2px;color:var(--text-primary)}.settings-row-description{font-size:12px;color:var(--text-muted)}.theme-toggle-group{display:flex;gap:4px;background:var(--bg-tertiary);border-radius:var(--radius-md);padding:4px;margin-left:16px}.theme-toggle-btn{padding:6px 12px;border-radius:var(--radius-sm);border:none;background:transparent;color:var(--text-secondary);cursor:pointer;font-weight:500;font-size:12px;transition:all .2s}.theme-toggle-btn.active{background:var(--primary);color:#fff}.theme-toggle-btn:hover:not(.active){background:var(--bg-secondary)}.toggle-switch{width:44px;height:24px;border-radius:12px;cursor:pointer;position:relative;transition:background .2s;margin-left:16px;flex-shrink:0}.toggle-switch.on{background:var(--success)}.toggle-switch.off{background:var(--bg-tertiary)}.toggle-knob{position:absolute;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px #0000004d}.toggle-switch.on .toggle-knob{left:22px}.toggle-switch.off .toggle-knob{left:2px}.sensor-ranges-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px}.sensor-range-card{padding:12px;background:var(--bg-secondary);border-radius:var(--radius-sm)}.sensor-range-label{font-weight:500;margin-bottom:8px;font-size:13px;color:var(--text-primary)}.sensor-range-inputs{display:flex;gap:8px}.sensor-range-input{flex:1}.sensor-range-input input{width:100%;padding:6px 8px;border-radius:var(--radius-sm);border:1px solid var(--card-border);background:var(--bg-primary);color:var(--text-primary);font-size:13px}.sensor-range-input input::-moz-placeholder{color:var(--text-muted)}.sensor-range-input input::placeholder{color:var(--text-muted)}.settings-footer{display:flex;justify-content:flex-end;gap:12px;padding:16px 24px}.timed-access-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}@media (max-width: 768px){.timed-access-grid{grid-template-columns:1fr}}.timed-access-create{padding-right:24px;border-right:1px solid var(--card-border)}@media (max-width: 768px){.timed-access-create{padding-right:0;border-right:none;padding-bottom:24px;border-bottom:1px solid var(--card-border)}}.timed-access-list{display:flex;flex-direction:column;gap:16px}.guest-keys-list{display:flex;flex-direction:column;gap:12px}.guest-key-card{background:var(--bg-secondary);border:1px solid var(--card-border);border-radius:var(--radius-md);padding:16px}.guest-key-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}.guest-key-name{font-weight:600;color:var(--text-primary)}.guest-key-passphrase{background:var(--bg-tertiary);padding:12px;border-radius:var(--radius-sm);font-family:monospace;font-size:18px;text-align:center;-webkit-user-select:all;-moz-user-select:all;user-select:all;margin-bottom:12px}.guest-key-footer{display:flex;justify-content:space-between;align-items:flex-end}.guest-key-expiry{font-size:13px;color:var(--primary)}.guest-key-qr{background:#fff;padding:4px;border-radius:var(--radius-sm)}.btn-revoke{background:transparent;border:1px solid var(--error);color:var(--error);padding:4px 12px;border-radius:var(--radius-sm);font-size:12px;cursor:pointer}.btn-revoke:hover{background:var(--error);color:#fff;border-top:1px solid var(--card-border)}.btn{padding:10px 20px;border-radius:var(--radius-md);cursor:pointer;font-weight:500;font-size:14px;transition:all .2s}.btn:disabled{opacity:.7;cursor:not-allowed}.btn-primary{border:none;background:var(--primary);color:#fff}.btn-primary:hover:not(:disabled){background:var(--primary-dark)}.btn-secondary{border:1px solid var(--card-border);background:var(--bg-secondary);color:var(--text-primary)}.btn-secondary:hover:not(:disabled){background:var(--bg-tertiary)}*{box-sizing:border-box;margin:0;padding:0}#meraki-panel-root{height:100%;width:100%}.meraki-panel{font-family:var( --paper-font-body1_-_font-family, "Inter", -apple-system, BlinkMacSystemFont, sans-serif );background:var(--bg-primary);min-height:100vh;color:var(--text-primary);padding:24px;max-width:1600px;margin:0 auto;width:100%}.meraki-header{display:flex;align-items:center;gap:16px;margin-bottom:32px}.meraki-header .logo{width:48px;height:48px;background:linear-gradient(135deg,var(--primary) 0%,#06b6d4 100%);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:var(--shadow-md)}.meraki-header h1{font-size:28px;font-weight:600;color:var(--text-primary)}.meraki-header .version{font-size:12px;color:var(--text-secondary);background:var(--card-bg);border:1px solid var(--card-border);padding:4px 10px;border-radius:12px}.meraki-header .header-actions{margin-left:auto;display:flex;gap:8px}.settings-btn{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:8px 16px;color:var(--text-primary);cursor:pointer;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;transition:var(--transition);box-shadow:var(--shadow-sm)}.settings-btn:hover{background:var(--bg-tertiary);border-color:var(--primary)}.loading-message{text-align:center;color:var(--text-secondary);margin-top:16px}.nav-tabs{display:flex;gap:8px;margin-bottom:24px;background:var(--card-bg);padding:6px;border-radius:var(--radius-lg);border:1px solid var(--card-border)}.nav-tab{padding:10px 20px;border:none;background:transparent;color:var(--text-secondary);font-size:14px;font-weight:500;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);font-family:inherit}.nav-tab:hover{color:var(--text-primary);background:var(--bg-tertiary)}.nav-tab.active{background:var(--primary);color:#fff}.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}.stat-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-lg);padding:20px;transition:var(--transition)}.stat-card:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow-lg)}.stat-card.clickable{cursor:pointer}.stat-card .stat-icon{margin-right:8px}.stat-card .label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-weight:500;opacity:.7}.stat-card .value{font-size:32px;font-weight:700;color:var(--primary);text-shadow:0 0 1px currentColor}.stat-card .value.success{color:var(--success)!important}.stat-card .value.warning{color:var(--warning)!important}.stat-card .value.error{color:var(--error)!important}.stat-card .value.default{color:var(--text-primary)!important;font-weight:600}.network-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px}.network-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--card-border);background:var(--bg-secondary);cursor:pointer;transition:var(--transition)}.network-header:hover{background:var(--bg-tertiary)}.network-header .title{display:flex;align-items:center;gap:12px}.network-header .network-icon{color:var(--primary);font-size:24px}.network-header h2{font-size:20px;font-weight:600;margin:0}.network-header .badge{background:var(--success);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500}.network-header .expand-icon{color:var(--text-secondary);transition:transform .2s}.network-header .expand-icon.expanded{transform:rotate(180deg)}.device-table{width:100%;border-collapse:collapse}.device-table th{text-align:left;padding:16px 24px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--card-border)}.device-table td{padding:16px 24px;border-bottom:1px solid var(--card-border);vertical-align:middle}.device-table tr:last-child td{border-bottom:none}.device-table tr:hover td{background:var(--bg-secondary)}.device-table th:first-child,.device-table td:first-child{position:sticky;left:0;background:var(--card-bg);z-index:1}.device-row{cursor:pointer;transition:var(--transition)}.device-name-cell{display:flex;align-items:center;gap:12px}.device-icon{width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}.device-icon.switch{background:var(--switch-color)}.device-icon.camera{background:var(--camera-color)}.device-icon.wireless{background:var(--wireless-color)}.device-icon.sensor{background:var(--sensor-color)}.device-icon.appliance{background:var(--appliance-color)}.device-name-cell .name{font-weight:500;color:var(--text-primary)}.device-model{color:var(--text-secondary);font-size:14px}.status-badge{display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:14px}.status-dot{width:8px;height:8px;border-radius:50%}.status-badge.online .status-dot{background:var(--success);box-shadow:0 0 8px var(--success)}.status-badge.online{color:var(--success)}.status-badge.offline .status-dot{background:var(--error);box-shadow:0 0 8px var(--error)}.status-badge.offline{color:var(--error)}.status-badge.alerting .status-dot{background:var(--warning);box-shadow:0 0 8px var(--warning)}.status-badge.alerting{color:var(--warning)}.detail-badge{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--card-border);padding:4px 10px;border-radius:6px;font-size:13px;font-weight:500}.ssid-section{padding:20px 24px;border-top:1px solid var(--card-border)}.ssid-section h3{font-size:14px;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:8px;font-weight:500}.ssid-list{display:flex;gap:12px;flex-wrap:wrap}.ssid-item{background:var(--bg-secondary);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:10px;transition:var(--transition)}.ssid-item:hover{border-color:var(--primary);background:var(--bg-tertiary)}.ssid-item .icon{color:var(--primary);font-size:20px}.ssid-item .name{font-weight:500}.ssid-item .clients{color:var(--text-muted);font-size:13px}.ssid-control-panel{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--bg-secondary);border-radius:var(--radius-md)}.ssid-control-panel.enabled{background:var(--success-light)}.ssid-control-info{flex:1}.ssid-control-status{font-size:16px;font-weight:500}.ssid-control-desc{margin-top:4px}.toggle{width:44px;height:24px;background:var(--bg-tertiary);border-radius:12px;position:relative;cursor:pointer;transition:var(--transition)}.toggle.active{background:var(--success)}.toggle:after{content:"";position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:2px;left:2px;box-shadow:var(--shadow-sm);transition:left .2s}.toggle.active:after{left:22px}.back-button{display:inline-flex;align-items:center;gap:8px;color:var(--text-primary);font-weight:500;margin-bottom:24px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;padding:8px 16px;font-family:inherit;box-shadow:var(--shadow-sm);transition:var(--transition)}.back-button:hover{background:var(--bg-secondary);border-color:var(--primary);color:var(--primary)}.device-header{display:flex;align-items:flex-start;gap:24px;margin-bottom:32px}.device-header .device-icon{width:72px;height:72px;border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0}.device-header .device-info h1{font-size:28px;font-weight:600;margin-bottom:8px;color:var(--text-primary)}.device-header .device-info .meta{display:flex;gap:24px;color:var(--text-secondary);font-size:14px;flex-wrap:wrap}.device-header .device-info .meta span strong{color:var(--text-muted);font-weight:400;margin-right:4px}.device-header .status-pill{display:inline-flex;align-items:center;gap:6px;background:var(--success-light);color:var(--success);padding:6px 14px;border-radius:20px;font-weight:500;font-size:14px;margin-left:auto}.device-header .status-pill .dot{width:8px;height:8px;background:var(--success);border-radius:50%;box-shadow:0 0 8px var(--success)}.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;margin-bottom:24px}.info-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-lg);padding:24px}.info-card h3{font-size:14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:20px;display:flex;align-items:center;gap:8px;font-weight:600}.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.info-item .label{font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;font-weight:500;opacity:.7}.info-item .value{font-size:16px;font-weight:600;color:var(--text-primary);opacity:1}.info-item .value.primary{color:var(--primary)!important}.info-item .value.success{color:var(--success)!important}.info-item .value.warning{color:var(--warning)!important}.info-item .value.error{color:var(--error)!important}.info-item .value.mono{font-family:SF Mono,Monaco,Consolas,monospace;font-size:14px}.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-lg);overflow:hidden}.card-header{padding:16px 24px;border-bottom:1px solid var(--card-border)}.card-header h3{margin:0;font-size:15px;font-weight:600;color:var(--text-primary)}.card-content{padding:24px}.ssids-list-view .view-header{display:flex;align-items:center;margin-bottom:24px}.ssids-list-view .view-header-content{flex:1;margin-left:16px}.ssids-list-view .view-header-title{display:flex;align-items:center;gap:12px}.ssids-list-view .view-header-icon{font-size:24px}.ssids-list-view .view-header-title h2{margin:0;font-size:20px}.ssids-list-view .view-header-stats{display:flex;align-items:center;gap:12px;margin-top:4px;font-size:13px}.ssids-list-view .separator{color:var(--text-muted)}.ssids-list-view .ssid-network-card{margin-bottom:16px}.ssids-list-view .ssid-network-card .card-content{padding:0}.ssids-list-view .ssid-network-card .card-header h3{display:flex;align-items:center;gap:8px}.ssids-list-view .ssid-count{font-size:12px;font-weight:400}.ssids-list-view .ssid-name-cell{display:flex;align-items:center;gap:10px}.ssids-list-view .ssid-icon{font-size:18px}.ssids-list-view .ssid-name,.ssids-list-view .client-count{font-weight:500}.ssids-list-view .arrow-cell{text-align:right}.ssids-list-view .empty-icon{font-size:48px;margin-bottom:16px}.ssids-list-view .empty-state-message h3{margin-bottom:8px}.ssid-view{padding:0}.ssid-view .view-header{display:flex;align-items:center;margin-bottom:16px}.ssid-view .back-button:hover{background:var(--bg-secondary);border-color:var(--primary);color:var(--primary)}.port-visualization{background:var(--bg-primary);border-radius:var(--radius-md);padding:24px;margin-bottom:24px}.switch-chassis{background:var(--bg-tertiary);border-radius:var(--radius-sm);padding:16px 20px;display:flex;flex-direction:column;gap:12px;border:2px solid var(--card-border)}.switch-label{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-secondary)}.ports-row{display:flex;gap:6px;flex-wrap:wrap}.port{width:40px;height:32px;background:var(--bg-primary);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;border:2px solid var(--card-border);transition:var(--transition)}.port:hover{transform:translateY(-2px);border-color:var(--primary)}.port.connected{background:#10b98133;border-color:var(--success)}.port.connected:before{content:"";width:6px;height:6px;background:var(--success);border-radius:50%;box-shadow:0 0 6px var(--success)}.port.selected{border-color:var(--primary);box-shadow:0 0 12px var(--primary)}.port .num{font-size:9px;color:var(--text-muted);position:absolute;bottom:2px}.port .poe{position:absolute;top:-8px;right:-4px;font-size:12px;color:var(--warning);text-shadow:0 0 4px var(--warning)}.port-legend{display:flex;gap:24px;margin-top:16px;font-size:13px;color:var(--text-muted)}.port-legend span{display:flex;align-items:center;gap:6px}.port-legend .dot{width:10px;height:10px;border-radius:50%}.port-legend .dot.connected{background:var(--success)}.port-legend .dot.disconnected{background:var(--text-muted)}.port-details{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-lg);padding:20px;margin-top:16px}.port-details h4{font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:8px}.client-info{background:var(--primary-light);border-radius:var(--radius-sm);padding:16px;display:flex;align-items:center;gap:16px}.client-avatar{width:48px;height:48px;background:linear-gradient(135deg,var(--primary) 0%,#06b6d4 100%);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:24px}.client-details .name{font-weight:600;margin-bottom:4px}.client-details .mac{font-size:13px;color:var(--text-muted);font-family:monospace}.port-clients{margin-top:16px}.port-clients-header{margin:0 0 12px;font-size:14px;font-weight:600;color:var(--text-secondary)}.port-clients-list{display:flex;flex-direction:column;gap:8px}.port-client-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-tertiary);border-radius:var(--radius-sm);transition:var(--transition)}.port-client-item:hover{background:var(--primary-alpha-10, rgba(3, 169, 244, .1))}.port-client-icon{font-size:20px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);border-radius:var(--radius-sm)}.port-client-info{flex:1;min-width:0}.port-client-name{font-weight:500;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.port-client-meta{display:flex;gap:8px;font-size:12px;color:var(--text-muted);margin-top:2px}.port-client-ip{font-family:monospace}.port-client-manufacturer{opacity:.8}.port-client-vlan{padding:4px 8px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px;font-weight:500;color:var(--text-secondary)}.port-details-header{font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:8px}.port-status-icon{display:inline}.port-status-icon.connected{color:var(--success)}.port-status-icon.disconnected{color:var(--text-muted)}.port-uplink-badge{margin-left:8px;font-size:12px;color:var(--primary)}.port-alerts{margin-bottom:12px}.port-alert{font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:4px}.port-alert.error{color:var(--error)}.port-alert.warning{color:var(--warning)}.port-empty-state{padding:16px;background:var(--bg-primary);border-radius:var(--radius-sm);text-align:center;color:var(--text-muted);font-size:14px;margin-top:8px}.neighbor-discovery{margin-top:16px;padding:12px;background:var(--bg-primary);border-radius:var(--radius-sm)}.neighbor-discovery-header{margin:0 0 8px;font-size:13px;color:var(--text-muted)}.neighbor-protocol{margin-bottom:8px}.neighbor-protocol:last-child{margin-bottom:0}.neighbor-protocol-label{font-size:11px;color:var(--text-muted);text-transform:uppercase}.neighbor-protocol-name{font-size:14px;font-weight:500;color:var(--text-primary)}.neighbor-protocol-detail{font-size:12px;color:var(--text-secondary)}.neighbor-protocol-address{font-size:12px;color:var(--text-secondary);font-family:monospace}.secure-port-status{margin-top:12px;font-size:13px;display:flex;align-items:center;gap:6px}.secure-port-status.active{color:var(--success)}.secure-port-status.inactive{color:var(--text-muted)}.port-select-prompt{text-align:center;padding:20px;color:var(--text-muted);font-size:14px}.value-poe{color:var(--warning)}.clickable{cursor:pointer}.port-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:16px;margin-top:16px}.port-stat .label{font-size:11px;color:var(--text-muted);text-transform:uppercase}.port-stat .value{font-size:18px;font-weight:600;color:var(--text-primary)}.readings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;margin-bottom:24px}.reading-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-lg);padding:32px;text-align:center}.reading-card .icon-wrapper{width:80px;height:80px;border-radius:50%}.reading-card .reading-icon{display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px}.reading-card.temperature .icon-wrapper{background:#f9731626;color:#f97316}.reading-card.humidity .icon-wrapper{background:#06b6d426;color:#06b6d4}.reading-card.tvoc .icon-wrapper,.reading-card.pm25 .icon-wrapper,.reading-card.co2 .icon-wrapper{background:#84cc1626;color:#84cc16}.reading-card.indoorAirQuality .icon-wrapper{background:#22c55e26;color:#22c55e}.reading-card.noise .icon-wrapper{background:#8b5cf626;color:#8b5cf6}.reading-card .reading-label{font-size:14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}.reading-card .reading-value{font-size:48px;font-weight:700;line-height:1;margin-bottom:8px}.reading-card.temperature .reading-value{color:#f97316}.reading-card.humidity .reading-value{color:#06b6d4}.reading-card.tvoc .reading-value,.reading-card.pm25 .reading-value,.reading-card.co2 .reading-value{color:#84cc16}.reading-card.indoorAirQuality .reading-value{color:#22c55e}.reading-card.noise .reading-value{color:#8b5cf6}.reading-card .reading-unit{font-size:24px;font-weight:400;opacity:.7}.reading-card .reading-status{font-size:14px;color:var(--success);display:flex;align-items:center;justify-content:center;gap:6px;margin-top:16px}.gauge-wrapper{width:100%;height:8px;background:var(--bg-tertiary);border-radius:4px;margin-top:20px;overflow:hidden}.gauge-fill{height:100%;border-radius:4px;transition:width .5s ease}.gauge-fill.temp{background:linear-gradient(90deg,#22c55e,#eab308,#ef4444)}.gauge-fill.humidity{background:#06b6d4}.gauge-fill.air-quality{background:linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)}.gauge-fill.noise{background:linear-gradient(90deg,#22c55e,#06b6d4,#8b5cf6)}.gauge-fill.battery{background:linear-gradient(90deg,#ef4444,#eab308,#22c55e 50%,#22c55e)}.gauge-fill.default{background:var(--text-muted)}.gauge-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:6px}.loading-container{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px}.loading-spinner{width:48px;height:48px;border:3px solid var(--card-border);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading-text{margin-top:16px;color:var(--text-secondary);font-size:14px}.error-container{background:var(--error-light);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius-md);padding:20px;display:flex;align-items:flex-start;gap:16px}.error-icon{color:var(--error);font-size:24px;flex-shrink:0}.error-content h3{margin:0 0 8px;font-size:16px;color:var(--error)}.error-content p{margin:0;font-size:14px;color:var(--text-primary)}.retry-button{margin-top:16px;padding:10px 20px;background:var(--error);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;transition:var(--transition);font-family:inherit}.retry-button:hover{background:#dc2626;transform:translateY(-1px)}.empty-state{text-align:center;padding:64px 24px;color:var(--text-secondary)}.empty-state .icon{font-size:64px;opacity:.3;margin-bottom:16px}.empty-state h3{font-size:18px;margin-bottom:8px;color:var(--text-primary)}.empty-state p{font-size:14px}.metric-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-lg);padding:24px;text-align:center;transition:var(--transition)}.metric-card.clickable{cursor:pointer}.metric-card.clickable:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow-lg)}.metric-icon-wrapper{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}.metric-icon{font-size:28px}.metric-icon-primary{background:var(--primary-light);color:var(--primary)}.metric-icon-success{background:var(--success-light);color:var(--success)}.metric-icon-warning{background:var(--warning-light);color:var(--warning)}.metric-icon-error{background:var(--error-light);color:var(--error)}.metric-icon-info{background:#06b6d426;color:#06b6d4}.metric-icon-purple{background:#8b5cf626;color:#8b5cf6}.metric-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:500}.metric-value{font-size:36px;font-weight:700;line-height:1;margin-bottom:4px;color:var(--text-primary)}.metric-unit{font-size:18px;font-weight:400;opacity:.7;margin-left:2px}.metric-secondary{font-size:14px;color:var(--text-secondary);margin-bottom:8px}.metric-status{font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px}.metric-status-normal{color:var(--success)}.metric-status-warning{color:var(--warning)}.metric-status-critical{color:var(--error)}.metric-status-inactive{color:var(--text-muted)}.metric-gauge-wrapper{width:100%;height:6px;background:var(--bg-tertiary);border-radius:3px;margin-top:16px;overflow:hidden}.metric-gauge-fill{height:100%;border-radius:3px;transition:width .5s ease}.metric-gauge-primary{background:var(--primary)}.metric-gauge-success{background:var(--success)}.metric-gauge-warning{background:linear-gradient(90deg,var(--success) 0%,var(--warning) 100%)}.metric-gauge-error{background:linear-gradient(90deg,var(--warning) 0%,var(--error) 100%)}.metric-gauge-info{background:#06b6d4}.metric-gauge-purple{background:#8b5cf6}.metric-gauge-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px}.metric-cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}@media (max-width: 768px){.metric-cards-grid{grid-template-columns:repeat(2,1fr)}.metric-card{padding:16px}.metric-icon-wrapper{width:48px;height:48px;margin-bottom:12px}.metric-icon{font-size:22px}.metric-value{font-size:28px}.metric-unit{font-size:14px}}@media (max-width: 480px){.metric-cards-grid{grid-template-columns:1fr 1fr;gap:12px}.metric-card{padding:12px}.metric-value{font-size:24px}.metric-label{font-size:10px}}.text-primary{color:var(--primary)}.text-success{color:var(--success)}.text-warning{color:var(--warning)}.text-error{color:var(--error)}.text-muted{color:var(--text-muted)}.font-mono{font-family:monospace}.font-medium{font-weight:500}.font-semibold{font-weight:600}.font-bold{font-weight:700}.table-wrapper{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}.filter-controls{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center}@media (max-width: 640px){.filter-controls{flex-direction:column;align-items:stretch;gap:8px}.filter-controls select,.filter-controls button{width:100%}.view-mode-toggle{order:-1;width:100%}.view-mode-toggle button{flex:1}}@media (max-width: 1024px){.info-grid{grid-template-columns:1fr 1fr}.port-stats{grid-template-columns:repeat(3,1fr)}}@media (max-width: 768px){.meraki-panel{padding:16px}.meraki-header h1{font-size:22px}.meraki-header .version{display:none}.stats-grid{grid-template-columns:repeat(2,1fr)}.info-card{overflow-x:auto}.device-table{min-width:500px}.device-table th,.device-table td{padding:12px 16px;font-size:13px;white-space:nowrap}.device-table th:first-child,.device-table td:first-child{white-space:normal;min-width:150px}.device-header{flex-direction:column;gap:16px}.device-header .status-pill{margin-left:0}.cards-grid,.info-grid{grid-template-columns:1fr}.port-stats{grid-template-columns:repeat(2,1fr)}.port-details{padding:16px}.client-info{flex-direction:column;text-align:center;gap:12px}.readings-grid{grid-template-columns:1fr}.reading-card{padding:24px}.reading-card .reading-value{font-size:36px}.nav-tabs{flex-wrap:wrap}.nav-tab{padding:8px 14px;font-size:13px}}@media (max-width: 480px){.meraki-panel{padding:12px}.meraki-header{gap:12px}.meraki-header .logo{width:40px;height:40px;font-size:20px}.meraki-header h1{font-size:18px}.stats-grid{grid-template-columns:1fr 1fr;gap:12px}.stat-card{padding:16px}.stat-card .value{font-size:24px}.device-table th,.device-table td{padding:10px 12px;font-size:12px}.device-icon{width:32px;height:32px;font-size:14px}.device-name-cell{gap:8px}.device-name-cell .name{font-size:14px}.device-model{font-size:12px}.info-card{padding:16px}.info-card h3{font-size:13px;margin-bottom:16px}.port-stats{grid-template-columns:1fr 1fr;gap:12px}.port-stat .value{font-size:16px}.switch-chassis{padding:12px 16px}.port{width:32px;height:28px}.port .num{font-size:8px}.port-legend{flex-wrap:wrap;gap:12px;font-size:12px}.back-button{font-size:13px}}';
-class kt extends HTMLElement {
+class Nt extends HTMLElement {
   constructor() {
     super(...arguments);
-    ze(this, "_hass", null);
-    ze(this, "_panel", null);
-    ze(this, "_narrow", !1);
-    ze(this, "_route", null);
-    ze(this, "_root", null);
-    ze(this, "_mountPoint", null);
-    ze(this, "_styleEl", null);
+    De(this, "_hass", null);
+    De(this, "_panel", null);
+    De(this, "_narrow", !1);
+    De(this, "_route", null);
+    De(this, "_root", null);
+    De(this, "_mountPoint", null);
+    De(this, "_styleEl", null);
   }
   /**
    * Called when the element is added to the DOM.
@@ -4215,7 +4236,7 @@ class kt extends HTMLElement {
   _render() {
     !this._root || !this._hass || this._root.render(
       /* @__PURE__ */ e.jsx(de.StrictMode, { children: /* @__PURE__ */ e.jsx(
-        Nt,
+        kt,
         {
           hass: this._hass,
           panel: this._panel,
@@ -4226,4 +4247,4 @@ class kt extends HTMLElement {
     );
   }
 }
-customElements.get("meraki-panel") || customElements.define("meraki-panel", kt);
+customElements.get("meraki-panel") || customElements.define("meraki-panel", Nt);

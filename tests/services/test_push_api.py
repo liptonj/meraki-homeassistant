@@ -259,3 +259,11 @@ async def test_push_webhook_routes_valid_payload() -> None:
     manager.mark_message_received.assert_called_once()
     coordinator.mark_push_received.assert_called_once()
     handle.assert_awaited_once()
+
+
+def test_meraki_sdk_exposes_push_topics() -> None:
+    """Installed meraki package must include Push API topic listing."""
+    from meraki.aio.api.organizations import AsyncOrganizations
+
+    assert hasattr(AsyncOrganizations, "getOrganizationApiPushTopics")
+    assert hasattr(AsyncOrganizations, "createOrganizationApiPushProfile")

@@ -915,6 +915,8 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     primary_entity = None
                     device_entities = []
                     for entity in entities_for_device:
+                        if entity.hidden_by:
+                            continue
                         # Collect entity details for the frontend
                         state = self.hass.states.get(entity.entity_id)
                         device_entities.append(
@@ -961,6 +963,8 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     # Add list of entities to device data for frontend
                     device["entities"] = []
                     for entity in entities_for_device:
+                        if entity.hidden_by:
+                            continue
                         state_obj = self.hass.states.get(entity.entity_id)
                         device["entities"].append(
                             {

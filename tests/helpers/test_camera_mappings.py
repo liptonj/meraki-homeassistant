@@ -3,9 +3,15 @@
 from unittest.mock import MagicMock, patch
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_registry import RegistryEntryHider
 
 from custom_components.meraki_ha.helpers.camera_mappings import (
+    apply_camera_pairing,
+    apply_stored_camera_pairings,
     camera_serial_from_unique_id,
+    clear_camera_pairing,
+    mapping_entity_id,
+    mappings_as_entity_ids,
     resolve_camera_identity,
 )
 
@@ -56,3 +62,147 @@ def test_resolve_camera_identity_prefers_explicit_values(
     )
     assert config_entry_id == "entry-1"
     assert serial == "Q234-CAM1"
+
+
+def test_mapping_entity_id_accepts_legacy_string() -> None:
+    """Test legacy serial→entity_id strings still resolve."""
+    assert mapping_entity_id("camera.blue_iris_front") == "camera.blue_iris_front"
+    assert mapping_entity_id("") is None
+
+
+def test_mapping_entity_id_accepts_pairing_object() -> None:
+    """Test pairing records store entity ID plus original device."""
+    assert (
+        mapping_entity_id(
+            {
+                "entity_id": "camera.blue_iris_front",
+                "original_device_id": "dev-1",
+            }
+        )
+        == "camera.blue_iris_front"
+    )
+
+
+def test_mappings_as_entity_ids_normalizes_mixed_storage() -> None:
+    """Test websocket payloads stay serial→entity_id maps."""
+    assert mappings_as_entity_ids(
+        {
+            "Q2GV-1": "camera.legacy",
+            "Q2GV-2": {
+                "entity_id": "camera.blue_iris",
+                "original_device_id": "dev-1",
+            },
+            "Q2GV-3": {"entity_id": ""},
+        }
+    ) == {
+        "Q2GV-1": "camera.legacy",
+        "Q2GV-2": "camera.blue_iris",
+    }
+
+
+def test_apply_camera_pairing_hides_meraki_and_moves_linked(
+    hass: HomeAssistant,
+) -> None:
+    """Test pairing hides the Meraki camera and attaches the linked camera."""
+    meraki_entity = MagicMock()
+    meraki_entity.hidden_by = None
+    linked_entity = MagicMock()
+    linked_entity.device_id = "blue-iris-device"
+    meraki_device = MagicMock()
+    meraki_device.id = "meraki-device"
+
+    entity_registry = MagicMock()
+    entity_registry.async_get_entity_id.return_value = "camera.meraki_front"
+    entity_registry.async_get.side_effect = lambda entity_id: {
+        "camera.meraki_front": meraki_entity,
+        "camera.blue_iris_front": linked_entity,
+    }.get(entity_id)
+
+    device_registry = MagicMock()
+    device_registry.async_get_device.return_value = meraki_device
+
+    with (
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+            return_value=entity_registry,
+        ),
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.dr.async_get",
+            return_value=device_registry,
+        ),
+    ):
+        original = apply_camera_pairing(hass, "Q2GV-XXXX", "camera.blue_iris_front")
+
+    assert original == "blue-iris-device"
+    entity_registry.async_update_entity.assert_any_call(
+        "camera.meraki_front",
+        hidden_by=RegistryEntryHider.INTEGRATION,
+    )
+    entity_registry.async_update_entity.assert_any_call(
+        "camera.blue_iris_front",
+        device_id="meraki-device",
+    )
+
+
+def test_clear_camera_pairing_restores_meraki_and_linked_device(
+    hass: HomeAssistant,
+) -> None:
+    """Test unpairing unhides the Meraki camera and restores the linked device."""
+    meraki_entity = MagicMock()
+    meraki_entity.hidden_by = RegistryEntryHider.INTEGRATION
+    linked_entity = MagicMock()
+    linked_entity.device_id = "meraki-device"
+
+    entity_registry = MagicMock()
+    entity_registry.async_get_entity_id.return_value = "camera.meraki_front"
+    entity_registry.async_get.side_effect = lambda entity_id: {
+        "camera.meraki_front": meraki_entity,
+        "camera.blue_iris_front": linked_entity,
+    }.get(entity_id)
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=entity_registry,
+    ):
+        clear_camera_pairing(
+            hass,
+            "Q2GV-XXXX",
+            "camera.blue_iris_front",
+            "blue-iris-device",
+        )
+
+    entity_registry.async_update_entity.assert_any_call(
+        "camera.meraki_front",
+        hidden_by=None,
+    )
+    entity_registry.async_update_entity.assert_any_call(
+        "camera.blue_iris_front",
+        device_id="blue-iris-device",
+    )
+
+
+async def test_apply_stored_camera_pairings_uses_saved_links(
+    hass: HomeAssistant,
+) -> None:
+    """Test startup reapplies stored pairings for a config entry."""
+    with (
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.load_camera_mappings",
+            return_value={
+                "entry-1": {
+                    "Q2GV-1": "camera.legacy",
+                    "Q2GV-2": {
+                        "entity_id": "camera.blue_iris",
+                        "original_device_id": "dev-old",
+                    },
+                }
+            },
+        ),
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.apply_camera_pairing"
+        ) as apply_pairing,
+    ):
+        await apply_stored_camera_pairings(hass, "entry-1")
+
+    apply_pairing.assert_any_call(hass, "Q2GV-1", "camera.legacy")
+    apply_pairing.assert_any_call(hass, "Q2GV-2", "camera.blue_iris")

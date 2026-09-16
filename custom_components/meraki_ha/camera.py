@@ -23,6 +23,7 @@ from .const import (
 )
 from .core.utils.naming_utils import format_device_name
 from .helpers.camera_mappings import load_camera_mappings as _load_camera_mappings
+from .helpers.camera_mappings import mapping_entity_id
 from .helpers.device_info_helpers import resolve_device_info
 from .helpers.entity_helpers import format_entity_name
 from .helpers.logging_helper import MerakiLoggers
@@ -273,7 +274,7 @@ class MerakiCamera(CoordinatorEntity, Camera):  # type: ignore[type-arg]
         """Get the linked camera entity ID from storage file."""
         all_mappings = await _load_camera_mappings(self.hass)
         entry_mappings = all_mappings.get(self._config_entry.entry_id, {})
-        linked_entity = entry_mappings.get(self._device_serial)
+        linked_entity = mapping_entity_id(entry_mappings.get(self._device_serial))
         # Cache for sync property access in extra_state_attributes
         self._cached_linked_entity = linked_entity
         return linked_entity
