@@ -75,6 +75,25 @@ def test_linked_camera_select_options_include_blue_iris(
     assert select.current_option == CAMERA_LINK_NONE
 
 
+def test_apply_linked_state_updates_current_option(
+    hass: HomeAssistant,
+    mock_camera_coordinator: MagicMock,
+    mock_camera_device: dict[str, str],
+    mock_config_entry: MagicMock,
+) -> None:
+    """Test external pairing updates the select without a local option change."""
+    mock_config_entry.entry_id = "entry-1"
+    select = MerakiCameraLinkSelect(
+        mock_camera_coordinator, mock_config_entry, mock_camera_device
+    )
+    select.hass = hass
+
+    with patch.object(select, "async_write_ha_state"):
+        select.apply_linked_state("camera.blue_iris_front")
+
+    assert select.current_option == "camera.blue_iris_front"
+
+
 async def test_selecting_blue_iris_camera_saves_pairing(
     hass: HomeAssistant,
     mock_camera_coordinator: MagicMock,

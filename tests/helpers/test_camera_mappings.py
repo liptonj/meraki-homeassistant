@@ -14,6 +14,7 @@ from custom_components.meraki_ha.helpers.camera_mappings import (
     list_linkable_cameras,
     mapping_entity_id,
     mappings_as_entity_ids,
+    refresh_camera_link_select,
     resolve_camera_identity,
 )
 
@@ -284,3 +285,96 @@ async def test_async_set_camera_pairing_saves_blue_iris_link(
     apply_pairing.assert_called_once_with(hass, "Q2GV-XXXX", "camera.blue_iris_front")
     save_mappings.assert_awaited_once()
     assert mappings == {"Q2GV-XXXX": "camera.blue_iris_front"}
+
+
+async def test_async_set_camera_pairing_clears_existing_link(
+    hass: HomeAssistant,
+) -> None:
+    """Test empty linked entity ID removes a stored pairing."""
+    with (
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.load_camera_mappings",
+            return_value={
+                "entry-1": {"Q2GV-XXXX": "camera.blue_iris_front"},
+            },
+        ),
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.save_camera_mappings",
+        ) as save_mappings,
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.clear_camera_pairing",
+        ) as clear_pairing,
+        patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.refresh_camera_link_select",
+        ) as refresh_select,
+    ):
+        mappings = await async_set_camera_pairing(hass, "entry-1", "Q2GV-XXXX", "")
+
+    clear_pairing.assert_called_once()
+    refresh_select.assert_called_once_with(hass, "Q2GV-XXXX", "")
+    save_mappings.assert_awaited_once()
+    assert mappings == {}
+
+
+def test_list_linkable_cameras_matches_blueiris_platform(
+    hass: HomeAssistant,
+) -> None:
+    """Test blue_iris filter includes cameras from the blueiris integration."""
+    hass.states.async_set(
+        "camera.front",
+        "idle",
+        {"friendly_name": "Front"},
+    )
+    registry_entry = MagicMock()
+    registry_entry.platform = "blueiris"
+    mock_registry = MagicMock()
+    mock_registry.async_get.return_value = registry_entry
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        cameras = list_linkable_cameras(hass, integration_filter="blue_iris")
+
+    assert [camera["entity_id"] for camera in cameras] == ["camera.front"]
+
+
+def test_list_linkable_cameras_skips_meraki_platform(hass: HomeAssistant) -> None:
+    """Test cameras from the Meraki platform are not pairing targets."""
+    hass.states.async_set(
+        "camera.front_door",
+        "idle",
+        {"friendly_name": "Front Door"},
+    )
+    registry_entry = MagicMock()
+    registry_entry.platform = "meraki_ha"
+    mock_registry = MagicMock()
+    mock_registry.async_get.return_value = registry_entry
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        cameras = list_linkable_cameras(hass)
+
+    assert cameras == []
+
+
+def test_refresh_camera_link_select_updates_device_page_entity(
+    hass: HomeAssistant,
+) -> None:
+    """Test panel pairing updates the Linked camera select current option."""
+    select_entity = MagicMock()
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = "select.front_linked_camera"
+    select_component = MagicMock()
+    select_component.get_entity.return_value = select_entity
+    hass.data["select"] = select_component
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_camera_link_select(hass, "Q2GV-XXXX", "camera.blue_iris_front")
+
+    select_entity.apply_linked_state.assert_called_once_with("camera.blue_iris_front")

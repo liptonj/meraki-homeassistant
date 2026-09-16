@@ -1,6 +1,6 @@
 """Tests for select platform init."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -56,12 +56,12 @@ async def test_async_setup_entry_no_networks(
 
 
 @pytest.mark.asyncio
-async def test_async_setup_entry_with_networks(
+async def test_async_setup_entry_with_networks_skips_content_filtering(
     mock_hass: MagicMock,
     mock_config_entry: MagicMock,
     mock_add_entities: MagicMock,
 ) -> None:
-    """Test setup creates select entities for networks."""
+    """Test network-only setup does not activate dormant content filtering."""
     mock_coordinator = MagicMock()
     mock_coordinator.data = {
         "networks": [
@@ -78,13 +78,9 @@ async def test_async_setup_entry_with_networks(
         }
     }
 
-    with patch(
-        "custom_components.meraki_ha.select.MerakiContentFilteringSelect"
-    ) as MockSelect:
-        MockSelect.return_value = MagicMock()
-        await async_setup_entry(mock_hass, mock_config_entry, mock_add_entities)
+    await async_setup_entry(mock_hass, mock_config_entry, mock_add_entities)
 
-    mock_add_entities.assert_called_once()
+    mock_add_entities.assert_not_called()
 
 
 @pytest.mark.asyncio

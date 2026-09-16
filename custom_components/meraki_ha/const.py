@@ -201,6 +201,9 @@ DEFAULT_CAMERA_LINK_INTEGRATION: Final = ""
 CAMERA_LINK_NONE: Final = "Not linked"
 """Select option used when an MV camera is not paired to another HA camera."""
 
+CAMERA_LINK_UNIQUE_ID_SUFFIX: Final = "-linked-camera"
+"""Suffix appended to the device serial for the Linked camera select unique ID."""
+
 CONF_TEMPERATURE_UNIT: Final = "temperature_unit"
 """Configuration key for temperature unit preference."""
 

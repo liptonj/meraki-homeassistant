@@ -11,7 +11,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from ..const import CAMERA_LINK_NONE
+from ..const import CAMERA_LINK_NONE, CAMERA_LINK_UNIQUE_ID_SUFFIX
 from ..helpers.camera_mappings import (
     async_set_camera_pairing,
     list_linkable_cameras,
@@ -46,7 +46,7 @@ class MerakiCameraLinkSelect(CoordinatorEntity, SelectEntity):  # type: ignore[t
         self._config_entry = config_entry
         self._device_data = device_data
         self._serial = str(device_data["serial"])
-        self._attr_unique_id = f"{self._serial}-linked-camera"
+        self._attr_unique_id = f"{self._serial}{CAMERA_LINK_UNIQUE_ID_SUFFIX}"
         self._current_linked: str | None = None
 
     @property
@@ -97,6 +97,11 @@ class MerakiCameraLinkSelect(CoordinatorEntity, SelectEntity):  # type: ignore[t
             self._serial,
             linked_entity_id or CAMERA_LINK_NONE,
         )
+        self.async_write_ha_state()
+
+    def apply_linked_state(self, linked_entity_id: str | None) -> None:
+        """Update current option after a pairing change from any UI."""
+        self._current_linked = linked_entity_id or None
         self.async_write_ha_state()
 
     async def _async_refresh_current(self) -> None:

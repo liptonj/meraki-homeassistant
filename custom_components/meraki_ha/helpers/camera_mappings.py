@@ -18,7 +18,12 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_registry import RegistryEntryHider
 
-from ..const import CAMERA_MAPPINGS_STORAGE, CAMERA_UNIQUE_ID_SUFFIX, DOMAIN
+from ..const import (
+    CAMERA_LINK_UNIQUE_ID_SUFFIX,
+    CAMERA_MAPPINGS_STORAGE,
+    CAMERA_UNIQUE_ID_SUFFIX,
+    DOMAIN,
+)
 from .logging_helper import MerakiLoggers
 
 if TYPE_CHECKING:
@@ -383,6 +388,7 @@ async def async_set_camera_pairing(
     all_mappings[config_entry_id] = mappings
     await save_camera_mappings(hass, all_mappings)
     refresh_paired_camera(hass, config_entry_id, serial, linked_entity_id)
+    refresh_camera_link_select(hass, serial, linked_entity_id)
     return mappings_as_entity_ids(mappings)
 
 
@@ -411,3 +417,24 @@ def refresh_paired_camera(
         linked_entity_id or "(removed)",
         config_entry_id,
     )
+
+
+def refresh_camera_link_select(
+    hass: HomeAssistant,
+    serial: str,
+    linked_entity_id: str,
+) -> None:
+    """Keep the device-page Linked camera select in sync with pairing."""
+    entity_id = er.async_get(hass).async_get_entity_id(
+        "select", DOMAIN, f"{serial}{CAMERA_LINK_UNIQUE_ID_SUFFIX}"
+    )
+    if not entity_id:
+        return
+    select_component = hass.data.get("select")
+    if select_component is None:
+        return
+    select_entity = select_component.get_entity(entity_id)
+    apply_state = getattr(select_entity, "apply_linked_state", None)
+    if select_entity is None or not callable(apply_state):
+        return
+    apply_state(linked_entity_id or None)
