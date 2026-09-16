@@ -15,6 +15,7 @@ from custom_components.meraki_ha.helpers.camera_mappings import (
     mapping_entity_id,
     mappings_as_entity_ids,
     refresh_camera_link_select,
+    refresh_paired_camera,
     resolve_camera_identity,
 )
 
@@ -378,3 +379,173 @@ def test_refresh_camera_link_select_updates_device_page_entity(
         refresh_camera_link_select(hass, "Q2GV-XXXX", "camera.blue_iris_front")
 
     select_entity.apply_linked_state.assert_called_once_with("camera.blue_iris_front")
+
+
+def test_refresh_camera_link_select_skips_missing_select_platform(
+    hass: HomeAssistant,
+) -> None:
+    """Test refresh is a no-op when the select platform is not loaded."""
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = "select.front_linked_camera"
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_camera_link_select(hass, "Q2GV-XXXX", "camera.blue_iris_front")
+
+
+def test_refresh_camera_link_select_skips_missing_entity(
+    hass: HomeAssistant,
+) -> None:
+    """Test refresh is a no-op when the Linked camera select is gone."""
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = "select.front_linked_camera"
+    select_component = MagicMock()
+    select_component.get_entity.return_value = None
+    hass.data["select"] = select_component
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_camera_link_select(hass, "Q2GV-XXXX", "camera.blue_iris_front")
+
+
+def test_refresh_paired_camera_updates_cached_link(hass: HomeAssistant) -> None:
+    """Test pairing refresh writes the linked entity onto the Meraki camera."""
+    camera_entity = MagicMock()
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = "camera.meraki_front"
+    camera_component = MagicMock()
+    camera_component.get_entity.return_value = camera_entity
+    hass.data["camera"] = camera_component
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_paired_camera(hass, "entry-1", "Q2GV-XXXX", "camera.blue_iris_front")
+
+    assert camera_entity._cached_linked_entity == "camera.blue_iris_front"
+    camera_entity.async_write_ha_state.assert_called_once()
+
+
+def test_refresh_paired_camera_skips_missing_entity_id(hass: HomeAssistant) -> None:
+    """Test refresh is a no-op when the Meraki camera is not registered."""
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = None
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_paired_camera(hass, "entry-1", "Q2GV-XXXX", "camera.blue_iris_front")
+
+
+def test_refresh_paired_camera_skips_missing_camera_platform(
+    hass: HomeAssistant,
+) -> None:
+    """Test refresh is a no-op when the camera platform is not loaded."""
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = "camera.meraki_front"
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_paired_camera(hass, "entry-1", "Q2GV-XXXX", "camera.blue_iris_front")
+
+
+def test_refresh_paired_camera_skips_missing_camera_entity(
+    hass: HomeAssistant,
+) -> None:
+    """Test refresh is a no-op when the Meraki camera entity is gone."""
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = "camera.meraki_front"
+    camera_component = MagicMock()
+    camera_component.get_entity.return_value = None
+    hass.data["camera"] = camera_component
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_paired_camera(hass, "entry-1", "Q2GV-XXXX", "camera.blue_iris_front")
+
+
+def test_refresh_paired_camera_updates_cache_without_write_method(
+    hass: HomeAssistant,
+) -> None:
+    """Test pairing cache updates even when write_ha_state is unavailable."""
+
+    class CameraWithoutWrite:
+        """Minimal camera stand-in without Home Assistant write helpers."""
+
+        _cached_linked_entity: str | None = None
+
+    camera_entity = CameraWithoutWrite()
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = "camera.meraki_front"
+    camera_component = MagicMock()
+    camera_component.get_entity.return_value = camera_entity
+    hass.data["camera"] = camera_component
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_paired_camera(hass, "entry-1", "Q2GV-XXXX", "camera.blue_iris_front")
+
+    assert camera_entity._cached_linked_entity == "camera.blue_iris_front"
+
+
+def test_refresh_camera_link_select_skips_missing_registry_id(
+    hass: HomeAssistant,
+) -> None:
+    """Test refresh is a no-op when the Linked camera select is unregistered."""
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = None
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_camera_link_select(hass, "Q2GV-XXXX", "camera.blue_iris_front")
+
+
+def test_refresh_camera_link_select_skips_entity_without_apply(
+    hass: HomeAssistant,
+) -> None:
+    """Test refresh is a no-op when the select cannot apply linked state."""
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = "select.front_linked_camera"
+    select_component = MagicMock()
+    select_component.get_entity.return_value = object()
+    hass.data["select"] = select_component
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_camera_link_select(hass, "Q2GV-XXXX", "camera.blue_iris_front")
+
+
+def test_refresh_camera_link_select_clears_current_option(
+    hass: HomeAssistant,
+) -> None:
+    """Test unpairing through the panel clears the Linked camera select."""
+    select_entity = MagicMock()
+    mock_registry = MagicMock()
+    mock_registry.async_get_entity_id.return_value = "select.front_linked_camera"
+    select_component = MagicMock()
+    select_component.get_entity.return_value = select_entity
+    hass.data["select"] = select_component
+
+    with patch(
+        "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+        return_value=mock_registry,
+    ):
+        refresh_camera_link_select(hass, "Q2GV-XXXX", "")
+
+    select_entity.apply_linked_state.assert_called_once_with(None)
