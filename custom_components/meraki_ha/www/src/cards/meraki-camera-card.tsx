@@ -175,10 +175,18 @@ const MerakiCameraCard: React.FC<MerakiCameraCardProps> = ({ hass, config }) => 
   useEffect(() => {
     const fetchAvailableCameras = async () => {
       try {
-        const cameras = await hass.callWS<{ entity_id: string; name: string }[]>({
+        const result = await hass.callWS<{
+          cameras?: { entity_id: string; name?: string; friendly_name?: string }[];
+        }>({
           type: 'meraki_ha/get_available_cameras',
         });
-        setAvailableCameras(cameras);
+        const cameras = result?.cameras || [];
+        setAvailableCameras(
+          cameras.map((camera) => ({
+            entity_id: camera.entity_id,
+            name: camera.name || camera.friendly_name || camera.entity_id,
+          }))
+        );
       } catch (err) {
         console.error('Failed to fetch available cameras.', err);
       }
@@ -192,13 +200,15 @@ const MerakiCameraCard: React.FC<MerakiCameraCardProps> = ({ hass, config }) => 
 
   const handleSaveLink = async () => {
     try {
+      const merakiEntity = hass.states[config.entity_id];
       await hass.callWS({
         type: 'meraki_ha/set_camera_mapping',
-        config_entry_id: hass.config.config_entry_id,
+        config_entry_id: config.config_entry_id,
         meraki_camera_entity_id: config.entity_id,
+        serial: config.device_serial || merakiEntity?.attributes?.serial,
+        linked_entity_id: selectedCamera,
         linked_camera_entity_id: selectedCamera,
       });
-      // This should trigger a config update and re-render
       setShowLinkPanel(false);
     } catch (err) {
       console.error('Failed to save camera mapping.', err);

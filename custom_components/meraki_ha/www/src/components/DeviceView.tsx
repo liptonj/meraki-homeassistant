@@ -579,10 +579,21 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
       const result = (await currentHass.callWS({
         type: 'meraki_ha/get_available_cameras',
         integration_filter: cameraLinkIntegration || '',
-      })) as { cameras?: Array<{ entity_id: string; friendly_name: string }> };
-      if (result?.cameras) {
-        setAvailableCameras(result.cameras);
-      }
+      })) as {
+        cameras?: Array<{
+          entity_id: string;
+          friendly_name?: string;
+          name?: string;
+        }>;
+      };
+      const cameras = result?.cameras || [];
+      setAvailableCameras(
+        cameras.map((camera) => ({
+          entity_id: camera.entity_id,
+          friendly_name:
+            camera.friendly_name || camera.name || camera.entity_id,
+        }))
+      );
     } catch (err) {
       console.error('Failed to fetch available cameras:', err);
     }
@@ -597,9 +608,8 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
         type: 'meraki_ha/get_camera_mappings',
         config_entry_id: configEntryId,
       })) as { mappings?: Record<string, string> };
-      if (result?.mappings && result.mappings[device.serial]) {
-        setLinkedCameraId(result.mappings[device.serial]);
-      }
+      const mappings = result?.mappings || {};
+      setLinkedCameraId(mappings[device.serial] || '');
     } catch (err) {
       console.error('Failed to fetch camera mappings:', err);
     }
@@ -727,6 +737,9 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
     if (isCameraDevice && deviceSerial && configEntryId && hassRef.current) {
       if (hasLoadedCameraDataRef.current !== deviceSerial) {
         hasLoadedCameraDataRef.current = deviceSerial;
+        setLinkedCameraUrl(null);
+        setRtspStreamUrl(null);
+        setActiveVideoSource('none');
         fetchSnapshot();
         fetchCloudVideoUrl();
         fetchCameraMapping();

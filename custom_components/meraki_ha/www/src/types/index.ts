@@ -3,6 +3,7 @@ import { LovelaceCardConfig } from 'custom-card-helpers';
 
 export interface MerakiCameraCardConfig extends LovelaceCardConfig {
   entity_id?: string;
+  config_entry_id?: string;
   device_serial?: string;
   linked_camera_id?: string;
   show_controls?: boolean;

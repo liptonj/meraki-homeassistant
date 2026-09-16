@@ -151,6 +151,12 @@ DEFAULT_CAMERA_SNAPSHOT_INTERVAL: Final = 0
 CONF_CAMERA_ENTITY_MAPPINGS: Final = "camera_entity_mappings"
 """Configuration key for camera entity mappings (Meraki serial -> HA entity_id)."""
 
+CAMERA_MAPPINGS_STORAGE: Final = "meraki_camera_mappings.json"
+"""Storage filename for Meraki camera to HA camera pairing mappings."""
+
+CAMERA_UNIQUE_ID_SUFFIX: Final = "-camera"
+"""Suffix appended to the device serial for Meraki camera entity unique IDs."""
+
 CONF_MANUAL_CLIENT_ASSOCIATIONS: Final = "manual_client_associations"
 """Configuration key for manual Meraki client to HA device associations."""
 

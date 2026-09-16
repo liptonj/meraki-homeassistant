@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
+from collections.abc import Mapping
 from typing import Any
 
 import aiofiles
@@ -14,6 +14,7 @@ from homeassistant.helpers import entity_registry as er
 from voluptuous import ALLOW_EXTRA, All, Optional, Required, Schema
 
 from .const import (
+    CAMERA_UNIQUE_ID_SUFFIX,
     CONF_CAMERA_LINK_INTEGRATION,
     CONF_DASHBOARD_DEVICE_TYPE_FILTER,
     CONF_DASHBOARD_STATUS_FILTER,
@@ -34,45 +35,20 @@ from .const import (
 )
 from .core.errors import MerakiError
 from .core.timed_access_manager import TimedAccessManager
+from .helpers.camera_mappings import (
+    load_camera_mappings as _load_camera_mappings,
+)
+from .helpers.camera_mappings import (
+    resolve_camera_identity,
+)
+from .helpers.camera_mappings import (
+    save_camera_mappings as _save_camera_mappings,
+)
 from .helpers.logging_helper import MerakiLoggers
 from .meraki_data_coordinator import MerakiDataCoordinator
 from .services.camera_service import CameraService
 
 _LOGGER = MerakiLoggers.FRONTEND
-
-# Storage file for camera mappings (avoids config entry reload on update)
-CAMERA_MAPPINGS_STORAGE = "meraki_camera_mappings.json"
-
-
-async def _get_camera_mappings_path(hass: HomeAssistant) -> Path:
-    """Get the path to the camera mappings storage file."""
-    return Path(hass.config.path(".storage")) / CAMERA_MAPPINGS_STORAGE
-
-
-async def _load_camera_mappings(hass: HomeAssistant) -> dict[str, dict[str, str]]:
-    """Load camera mappings from storage file."""
-    storage_path = await _get_camera_mappings_path(hass)
-    if not storage_path.exists():
-        return {}
-    try:
-        async with aiofiles.open(storage_path) as f:
-            content = await f.read()
-            return json.loads(content) if content else {}
-    except (json.JSONDecodeError, OSError) as e:
-        _LOGGER.warning("Failed to load camera mappings: %s", e)
-        return {}
-
-
-async def _save_camera_mappings(
-    hass: HomeAssistant, mappings: dict[str, dict[str, str]]
-) -> None:
-    """Save camera mappings to storage file."""
-    storage_path = await _get_camera_mappings_path(hass)
-    try:
-        async with aiofiles.open(storage_path, "w") as f:
-            await f.write(json.dumps(mappings, indent=2))
-    except OSError as e:
-        _LOGGER.error("Failed to save camera mappings: %s", e)
 
 
 def async_setup_api(hass: HomeAssistant) -> None:
@@ -103,8 +79,9 @@ def async_setup_api(hass: HomeAssistant) -> None:
         Schema(
             {
                 Required("type"): All(str, "meraki_ha/get_camera_stream_url"),
-                Required("config_entry_id"): str,
-                Required("serial"): str,
+                Optional("config_entry_id"): str,
+                Optional("serial"): str,
+                Optional("entity_id"): str,
                 Optional("stream_source"): str,  # "rtsp" or "cloud"
             },
             extra=ALLOW_EXTRA,
@@ -117,8 +94,9 @@ def async_setup_api(hass: HomeAssistant) -> None:
         Schema(
             {
                 Required("type"): All(str, "meraki_ha/get_camera_snapshot"),
-                Required("config_entry_id"): str,
-                Required("serial"): str,
+                Optional("config_entry_id"): str,
+                Optional("serial"): str,
+                Optional("entity_id"): str,
             },
             extra=ALLOW_EXTRA,
         ),
@@ -173,9 +151,11 @@ def async_setup_api(hass: HomeAssistant) -> None:
         Schema(
             {
                 Required("type"): All(str, "meraki_ha/set_camera_mapping"),
-                Required("config_entry_id"): str,
-                Required("serial"): str,
-                Required("linked_entity_id"): str,  # Empty string to remove mapping
+                Optional("config_entry_id"): str,
+                Optional("serial"): str,
+                Optional("linked_entity_id"): str,  # Empty string to remove mapping
+                Optional("meraki_camera_entity_id"): str,
+                Optional("linked_camera_entity_id"): str,
             },
             extra=ALLOW_EXTRA,
         ),
@@ -191,6 +171,72 @@ def async_setup_api(hass: HomeAssistant) -> None:
             },
             extra=ALLOW_EXTRA,
         ),
+    )
+    websocket_api.async_register_command(
+        hass,
+        "meraki_ha/get_rtsp_url",
+        handle_get_rtsp_url,
+        Schema(
+            {
+                Required("type"): All(str, "meraki_ha/get_rtsp_url"),
+                Optional("config_entry_id"): str,
+                Optional("serial"): str,
+                Optional("entity_id"): str,
+            },
+            extra=ALLOW_EXTRA,
+        ),
+    )
+
+
+def _get_entry_data(hass: HomeAssistant, config_entry_id: str) -> dict[str, Any] | None:
+    """Return integration entry data if it is a mapping."""
+    entry_data = hass.data.get(DOMAIN, {}).get(config_entry_id)
+    if isinstance(entry_data, dict):
+        return entry_data
+    return None
+
+
+def _device_rtsp_url(device: Mapping[str, Any] | None) -> str | None:
+    """Extract an RTSP URL from coordinator device data."""
+    if not device:
+        return None
+    rtsp_url = device.get("rtsp_url") or device.get("rtspUrl")
+    if isinstance(rtsp_url, str) and rtsp_url.startswith("rtsp://"):
+        return rtsp_url
+    video_settings = device.get("video_settings") or {}
+    settings_url = video_settings.get("rtspUrl") or video_settings.get("rtsp_url")
+    if isinstance(settings_url, str) and settings_url.startswith("rtsp://"):
+        return settings_url
+    return None
+
+
+def _async_refresh_paired_camera(
+    hass: HomeAssistant,
+    config_entry_id: str,
+    serial: str,
+    linked_entity_id: str,
+) -> None:
+    """Update the Meraki camera entity after a pairing change."""
+    entity_registry = er.async_get(hass)
+    meraki_entity_id = entity_registry.async_get_entity_id(
+        "camera", DOMAIN, f"{serial}{CAMERA_UNIQUE_ID_SUFFIX}"
+    )
+    if not meraki_entity_id:
+        return
+    camera_component = hass.data.get("camera")
+    if camera_component is None:
+        return
+    camera_entity = camera_component.get_entity(meraki_entity_id)
+    if camera_entity is None:
+        return
+    camera_entity._cached_linked_entity = linked_entity_id or None
+    if hasattr(camera_entity, "async_write_ha_state"):
+        camera_entity.async_write_ha_state()
+    _LOGGER.debug(
+        "Refreshed camera pairing for %s -> %s (entry %s)",
+        serial,
+        linked_entity_id or "(removed)",
+        config_entry_id,
     )
 
 
@@ -317,14 +363,19 @@ async def handle_get_camera_stream_url(
     RTSP URLs can be used for direct video streaming if enabled on the camera.
 
     """
-    config_entry_id = msg["config_entry_id"]
-    serial = msg["serial"]
+    config_entry_id, serial = resolve_camera_identity(
+        hass,
+        config_entry_id=msg.get("config_entry_id"),
+        serial=msg.get("serial"),
+        entity_id=msg.get("entity_id"),
+    )
     stream_source = msg.get("stream_source")
-    if config_entry_id not in hass.data[DOMAIN]:
+    entry_data = _get_entry_data(hass, config_entry_id) if config_entry_id else None
+    if not config_entry_id or entry_data is None or not serial:
         connection.send_error(msg["id"], "not_found", "Config entry not found")
         return
 
-    camera_service: CameraService = hass.data[DOMAIN][config_entry_id]["camera_service"]
+    camera_service: CameraService = entry_data["camera_service"]
 
     # If a specific stream source is requested, use that
     if stream_source == "cloud":
@@ -354,13 +405,18 @@ async def handle_get_camera_snapshot(
         msg: The WebSocket message.
 
     """
-    config_entry_id = msg["config_entry_id"]
-    serial = msg["serial"]
-    if config_entry_id not in hass.data[DOMAIN]:
+    config_entry_id, serial = resolve_camera_identity(
+        hass,
+        config_entry_id=msg.get("config_entry_id"),
+        serial=msg.get("serial"),
+        entity_id=msg.get("entity_id"),
+    )
+    entry_data = _get_entry_data(hass, config_entry_id) if config_entry_id else None
+    if not config_entry_id or entry_data is None or not serial:
         connection.send_error(msg["id"], "not_found", "Config entry not found")
         return
 
-    camera_service: CameraService = hass.data[DOMAIN][config_entry_id]["camera_service"]
+    camera_service: CameraService = entry_data["camera_service"]
     snapshot_url = await camera_service.get_camera_snapshot(serial)
     connection.send_result(msg["id"], {"url": snapshot_url})
 
@@ -476,9 +532,33 @@ async def handle_set_camera_mapping(
         linked_entity_id: The HA entity_id to link to (e.g., camera.blue_iris_front)
                          Pass empty string to remove the mapping.
     """
-    config_entry_id = msg["config_entry_id"]
-    serial = msg["serial"]
-    linked_entity_id = msg["linked_entity_id"]
+    linked_entity_id = msg.get("linked_entity_id")
+    if linked_entity_id is None:
+        linked_entity_id = msg.get("linked_camera_entity_id", "")
+    if not isinstance(linked_entity_id, str):
+        linked_entity_id = ""
+    meraki_camera_entity_id = msg.get("meraki_camera_entity_id")
+    config_entry_id, serial = resolve_camera_identity(
+        hass,
+        config_entry_id=msg.get("config_entry_id"),
+        serial=msg.get("serial"),
+        entity_id=meraki_camera_entity_id,
+    )
+
+    if not serial:
+        connection.send_error(
+            msg["id"],
+            "invalid_input",
+            "serial or meraki_camera_entity_id is required",
+        )
+        return
+    if not config_entry_id:
+        connection.send_error(
+            msg["id"],
+            "invalid_input",
+            "config_entry_id could not be resolved",
+        )
+        return
 
     # Load all mappings from storage
     all_mappings = await _load_camera_mappings(hass)
@@ -495,6 +575,7 @@ async def handle_set_camera_mapping(
     # Save updated mappings to storage (not config entry - avoids reload!)
     all_mappings[config_entry_id] = mappings
     await _save_camera_mappings(hass, all_mappings)
+    _async_refresh_paired_camera(hass, config_entry_id, serial, linked_entity_id)
 
     connection.send_result(msg["id"], {"success": True, "mappings": mappings})
 
@@ -554,6 +635,7 @@ async def handle_get_available_cameras(
             {
                 "entity_id": entity_id,
                 "friendly_name": friendly_name,
+                "name": friendly_name,
                 "state": state.state,
             }
         )
@@ -562,3 +644,36 @@ async def handle_get_available_cameras(
     camera_entities.sort(key=lambda x: x["friendly_name"].lower())
 
     connection.send_result(msg["id"], {"cameras": camera_entities})
+
+
+@websocket_api.async_response
+async def handle_get_rtsp_url(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return the RTSP URL for a Meraki camera.
+
+    Accepts either ``config_entry_id`` + ``serial`` (panel) or ``entity_id``
+    (Lovelace camera card).
+    """
+    config_entry_id, serial = resolve_camera_identity(
+        hass,
+        config_entry_id=msg.get("config_entry_id"),
+        serial=msg.get("serial"),
+        entity_id=msg.get("entity_id"),
+    )
+    entry_data = _get_entry_data(hass, config_entry_id) if config_entry_id else None
+    if not config_entry_id or entry_data is None or not serial:
+        connection.send_error(msg["id"], "not_found", "Camera not found")
+        return
+
+    coordinator: MerakiDataCoordinator = entry_data["coordinator"]
+    device = coordinator.get_device(serial)
+    rtsp_url = _device_rtsp_url(device)
+    if rtsp_url:
+        connection.send_result(msg["id"], {"rtsp_url": rtsp_url})
+        return
+
+    _LOGGER.debug("RTSP URL not found for camera %s", serial)
+    connection.send_error(msg["id"], "not_found", "RTSP URL not found for this device.")

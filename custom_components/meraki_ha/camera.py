@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import time
 from collections.abc import Mapping
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-import aiofiles
 import aiohttp
 from homeassistant.components.camera import Camera, CameraEntityFeature
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -17,6 +14,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
+    CAMERA_UNIQUE_ID_SUFFIX,
     CONF_CAMERA_SNAPSHOT_INTERVAL,
     DEFAULT_CAMERA_SNAPSHOT_INTERVAL,
     DOMAIN,
@@ -24,6 +22,7 @@ from .const import (
     ENTITY_CHUNK_SIZE,
 )
 from .core.utils.naming_utils import format_device_name
+from .helpers.camera_mappings import load_camera_mappings as _load_camera_mappings
 from .helpers.device_info_helpers import resolve_device_info
 from .helpers.entity_helpers import format_entity_name
 from .helpers.logging_helper import MerakiLoggers
@@ -38,23 +37,6 @@ if TYPE_CHECKING:
 
 
 _LOGGER = MerakiLoggers.CAMERA
-
-# Storage file for camera mappings (shared with web_api.py)
-CAMERA_MAPPINGS_STORAGE = "meraki_camera_mappings.json"
-
-
-async def _load_camera_mappings(hass: HomeAssistant) -> dict[str, dict[str, str]]:
-    """Load camera mappings from storage file."""
-    storage_path = Path(hass.config.path(".storage")) / CAMERA_MAPPINGS_STORAGE
-    if not storage_path.exists():
-        return {}
-    try:
-        async with aiofiles.open(storage_path) as f:
-            content = await f.read()
-            return json.loads(content) if content else {}
-    except (json.JSONDecodeError, OSError) as e:
-        _LOGGER.warning("Failed to load camera mappings: %s", e)
-        return {}
 
 
 async def async_setup_entry(
@@ -100,7 +82,7 @@ class MerakiCamera(CoordinatorEntity, Camera):  # type: ignore[type-arg]
         self._config_entry = config_entry
         self._device_serial = device["serial"]
         self._camera_service = camera_service
-        self._attr_unique_id = f"{self._device_serial}-camera"
+        self._attr_unique_id = f"{self._device_serial}{CAMERA_UNIQUE_ID_SUFFIX}"
         self._attr_name = format_entity_name(
             format_device_name(self.device_data, config_entry.options),
             "",
@@ -339,6 +321,7 @@ class MerakiCamera(CoordinatorEntity, Camera):  # type: ignore[type-arg]
         """Return the state attributes."""
         attrs: dict[str, Any] = {
             "snapshot_interval": self._snapshot_interval,
+            "serial": self._device_serial,
         }
 
         # Check if camera is linked to an external NVR

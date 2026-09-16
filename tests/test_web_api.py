@@ -26,6 +26,7 @@ from custom_components.meraki_ha.web_api import (
     handle_get_camera_snapshot,
     handle_get_camera_stream_url,
     handle_get_config,
+    handle_get_rtsp_url,
     handle_set_camera_mapping,
     handle_update_enabled_networks,
 )
@@ -131,8 +132,8 @@ class TestAsyncSetupApi:
         ) as mock_register:
             async_setup_api(hass)
 
-            # Verify all 8 commands are registered
-            assert mock_register.call_count == 8
+            # Verify all 9 commands are registered
+            assert mock_register.call_count == 9
 
             # Extract registered command names
             command_names = [call[0][1] for call in mock_register.call_args_list]
@@ -144,6 +145,7 @@ class TestAsyncSetupApi:
             assert "meraki_ha/get_camera_mappings" in command_names
             assert "meraki_ha/set_camera_mapping" in command_names
             assert "meraki_ha/get_available_cameras" in command_names
+            assert "meraki_ha/get_rtsp_url" in command_names
 
 
 class TestHandleGetConfig:
@@ -799,6 +801,71 @@ class TestHandleSetCameraMapping:
         assert result["success"] is True
         assert result["mappings"]["Q234-CAM1"] == "camera.test"
 
+    async def test_set_camera_mapping_via_entity_id(
+        self,
+        hass: HomeAssistant,
+        mock_connection: MagicMock,
+    ) -> None:
+        """Test Lovelace card-style pairing using meraki_camera_entity_id."""
+        entity = MagicMock()
+        entity.unique_id = "Q234-CAM2-camera"
+        entity.config_entry_id = "test_entry_id"
+        mock_registry = MagicMock()
+        mock_registry.async_get.return_value = entity
+        mock_registry.async_get_entity_id.return_value = None
+
+        msg = {
+            "id": 1,
+            "type": "meraki_ha/set_camera_mapping",
+            "meraki_camera_entity_id": "camera.meraki_office",
+            "linked_camera_entity_id": "camera.blue_iris_back",
+        }
+
+        with (
+            patch(
+                "custom_components.meraki_ha.web_api._load_camera_mappings",
+                return_value={},
+            ),
+            patch(
+                "custom_components.meraki_ha.web_api._save_camera_mappings",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.meraki_ha.web_api.er.async_get",
+                return_value=mock_registry,
+            ),
+            patch(
+                "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+                return_value=mock_registry,
+            ),
+        ):
+            await get_wrapped(handle_set_camera_mapping)(hass, mock_connection, msg)
+
+        mock_connection.send_result.assert_called_once()
+        result = mock_connection.send_result.call_args[0][1]
+        assert result["success"] is True
+        assert result["mappings"]["Q234-CAM2"] == "camera.blue_iris_back"
+
+    async def test_set_camera_mapping_requires_serial_or_entity(
+        self,
+        hass: HomeAssistant,
+        mock_connection: MagicMock,
+    ) -> None:
+        """Test pairing fails when neither serial nor entity ID is provided."""
+        msg = {
+            "id": 1,
+            "type": "meraki_ha/set_camera_mapping",
+            "linked_entity_id": "camera.blue_iris_back",
+        }
+
+        await get_wrapped(handle_set_camera_mapping)(hass, mock_connection, msg)
+
+        mock_connection.send_error.assert_called_once_with(
+            1,
+            "invalid_input",
+            "serial or meraki_camera_entity_id is required",
+        )
+
 
 class TestHandleGetAvailableCameras:
     """Tests for handle_get_available_cameras handler."""
@@ -940,3 +1007,90 @@ class TestHandleGetAvailableCameras:
         result = mock_connection.send_result.call_args[0][1]
         cameras = result["cameras"]
         assert cameras[0]["state"] == "recording"
+        assert cameras[0]["name"] == "Test Cam"
+        assert cameras[0]["friendly_name"] == "Test Cam"
+
+
+class TestHandleGetRtspUrl:
+    """Tests for handle_get_rtsp_url handler."""
+
+    async def test_get_rtsp_url_by_serial(
+        self,
+        hass: HomeAssistant,
+        mock_connection: MagicMock,
+        mock_coordinator: MagicMock,
+        setup_hass_data: None,
+    ) -> None:
+        """Test DeviceView-style RTSP lookup by serial."""
+        mock_coordinator.get_device.return_value = {
+            "serial": "Q234-CAM1",
+            "rtsp_url": "rtsp://192.168.1.100:9000/live",
+        }
+        msg = {
+            "id": 1,
+            "type": "meraki_ha/get_rtsp_url",
+            "config_entry_id": "test_entry_id",
+            "serial": "Q234-CAM1",
+        }
+
+        await get_wrapped(handle_get_rtsp_url)(hass, mock_connection, msg)
+
+        mock_connection.send_result.assert_called_once_with(
+            1, {"rtsp_url": "rtsp://192.168.1.100:9000/live"}
+        )
+
+    async def test_get_rtsp_url_by_entity_id(
+        self,
+        hass: HomeAssistant,
+        mock_connection: MagicMock,
+        mock_coordinator: MagicMock,
+        setup_hass_data: None,
+    ) -> None:
+        """Test Lovelace card-style RTSP lookup by entity ID."""
+        mock_coordinator.get_device.return_value = {
+            "serial": "Q234-CAM1",
+            "rtsp_url": "rtsp://192.168.1.100:9000/live",
+        }
+        entity = MagicMock()
+        entity.unique_id = "Q234-CAM1-camera"
+        entity.config_entry_id = "test_entry_id"
+        mock_registry = MagicMock()
+        mock_registry.async_get.return_value = entity
+
+        msg = {
+            "id": 1,
+            "type": "meraki_ha/get_rtsp_url",
+            "entity_id": "camera.meraki_office",
+        }
+
+        with patch(
+            "custom_components.meraki_ha.helpers.camera_mappings.er.async_get",
+            return_value=mock_registry,
+        ):
+            await get_wrapped(handle_get_rtsp_url)(hass, mock_connection, msg)
+
+        mock_connection.send_result.assert_called_once_with(
+            1, {"rtsp_url": "rtsp://192.168.1.100:9000/live"}
+        )
+
+    async def test_get_rtsp_url_missing(
+        self,
+        hass: HomeAssistant,
+        mock_connection: MagicMock,
+        mock_coordinator: MagicMock,
+        setup_hass_data: None,
+    ) -> None:
+        """Test RTSP lookup when the camera has no stream URL."""
+        mock_coordinator.get_device.return_value = {"serial": "Q234-CAM1"}
+        msg = {
+            "id": 1,
+            "type": "meraki_ha/get_rtsp_url",
+            "config_entry_id": "test_entry_id",
+            "serial": "Q234-CAM1",
+        }
+
+        await get_wrapped(handle_get_rtsp_url)(hass, mock_connection, msg)
+
+        mock_connection.send_error.assert_called_once_with(
+            1, "not_found", "RTSP URL not found for this device."
+        )

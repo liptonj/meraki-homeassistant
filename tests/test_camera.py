@@ -404,6 +404,7 @@ class TestMerakiCamera:
         assert "Linked to camera.blue_iris_front_door" in attrs["stream_status"]
         assert attrs["linked_camera_entity"] == "camera.blue_iris_front_door"
         assert attrs["stream_source"] == "linked_camera"
+        assert attrs["serial"] == MOCK_CAMERA_DEVICE["serial"]
 
     @pytest.mark.asyncio
     async def test_async_camera_image_offline(
