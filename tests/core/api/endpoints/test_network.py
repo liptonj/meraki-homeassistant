@@ -35,3 +35,25 @@ async def test_get_group_policies(network, mock_client):
     mock_client.dashboard.networks.getNetworkGroupPolicies.assert_called_once_with(
         networkId="net1"
     )
+
+
+async def test_get_network_clients_requests_large_pages(network, mock_client) -> None:
+    """Client lookups use max page size so Meraki is not paged 10 at a time."""
+    from custom_components.meraki_ha.const import (
+        NETWORK_CLIENTS_PAGE_SIZE,
+        NETWORK_CLIENTS_TIMESPAN,
+    )
+
+    mock_client.dashboard.networks.getNetworkClients = AsyncMock(
+        return_value=[{"id": "c1"}]
+    )
+
+    result = await network.get_network_clients("N_123")
+
+    assert result == [{"id": "c1"}]
+    mock_client.dashboard.networks.getNetworkClients.assert_called_once_with(
+        networkId="N_123",
+        total_pages="all",
+        perPage=NETWORK_CLIENTS_PAGE_SIZE,
+        timespan=NETWORK_CLIENTS_TIMESPAN,
+    )

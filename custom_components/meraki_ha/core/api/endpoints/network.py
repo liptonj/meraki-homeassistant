@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from meraki.exceptions import AsyncAPIError
 
 from ....async_logging import async_log_time
+from ....const import NETWORK_CLIENTS_PAGE_SIZE, NETWORK_CLIENTS_TIMESPAN
 from ....helpers.logging_helper import MerakiLoggers
 from ...errors import MerakiTrafficAnalysisError
 from ...utils.api_utils import (
@@ -37,8 +38,8 @@ class NetworkEndpoints:
         self._api_client = api_client
 
     @handle_meraki_errors
-    @async_timed_cache(timeout=60)
-    @async_log_time(slow_threshold=3.0)
+    @async_timed_cache(timeout=90)
+    @async_log_time(slow_threshold=10.0)
     async def get_network_clients(self, network_id: str) -> list[dict[str, Any]]:
         """
         Get all clients in a network.
@@ -55,7 +56,12 @@ class NetworkEndpoints:
         if self._api_client.dashboard is None:
             return []
         api = self._api_client.dashboard.networks
-        clients = await api.getNetworkClients(networkId=network_id, total_pages="all")
+        clients = await api.getNetworkClients(
+            networkId=network_id,
+            total_pages="all",
+            perPage=NETWORK_CLIENTS_PAGE_SIZE,
+            timespan=NETWORK_CLIENTS_TIMESPAN,
+        )
         validated = validate_response(clients)
         if not isinstance(validated, list):
             _LOGGER.warning("get_network_clients did not return a list.")

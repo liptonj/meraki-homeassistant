@@ -118,6 +118,7 @@ class PushApiManager:
         self._registration_errors: list[str] = []
         self._last_message_received: datetime | None = None
         self._message_count: int = 0
+        self._unavailable_reason: str | None = None
 
     @property
     def is_auto_register_enabled(self) -> bool:
@@ -134,6 +135,15 @@ class PushApiManager:
     @property
     def status(self) -> dict[str, Any]:
         """Return registration and health status for UI/diagnostics."""
+        if self._unavailable_reason == "not_enrolled":
+            return {
+                "status": "unavailable",
+                "message": ("Organization is not enrolled in the Push API beta"),
+                "available_topics": [],
+                "subscribed_topics": [],
+                "skipped_topics": list(self._skipped_topics),
+            }
+
         if self._registration_errors:
             return {
                 "status": "error",
@@ -229,6 +239,7 @@ class PushApiManager:
         self._registration_errors = []
         self._subscribed_topics = []
         self._skipped_topics = []
+        self._unavailable_reason = None
 
         try:
             webhook_url = self._get_webhook_url()
@@ -262,13 +273,12 @@ class PushApiManager:
             return False
 
         if not self._available_topics:
-            msg = (
-                "No Push API topics are available. The organization may not be "
-                "enrolled in the Push API beta."
+            self._unavailable_reason = "not_enrolled"
+            _LOGGER.info(
+                "Push API is not available for this organization "
+                "(not enrolled in the Push API beta). Continuing with polling."
             )
-            self._registration_errors.append(msg)
-            _LOGGER.warning(msg)
-            return False
+            return True
 
         try:
             http_server_id = await self._ensure_http_server(webhook_url, secret)
