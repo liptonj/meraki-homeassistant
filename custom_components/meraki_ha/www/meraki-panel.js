@@ -1994,7 +1994,7 @@ const Jr = ({
     (o) => o.via_device_id === (h == null ? void 0 : h.id)
   ), [f, C] = de.useState(null), [$, F] = de.useState(!1), [z, A] = de.useState(
     null
-  ), [K, J] = de.useState([]), [T, ie] = de.useState(""), [te, pe] = de.useState(!1), [ye, ge] = de.useState(
+  ), [K, J] = de.useState([]), [T, ie] = de.useState(""), [te, pe] = de.useState(!0), [ye, ge] = de.useState(
     null
   ), [k, R] = de.useState(!1), [q, H] = de.useState(!1), [ce, N] = de.useState(
     null

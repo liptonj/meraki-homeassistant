@@ -168,7 +168,7 @@ const MerakiCameraCard: React.FC<MerakiCameraCardProps> = ({ hass, config }) => 
     }
   };
 
-  const [showLinkPanel, setShowLinkPanel] = useState(false);
+  const [showLinkPanel, setShowLinkPanel] = useState(true);
   const [availableCameras, setAvailableCameras] = useState<{ entity_id: string; name: string }[]>([]);
   const [selectedCamera, setSelectedCamera] = useState<string>(config.linked_camera_id || '');
 

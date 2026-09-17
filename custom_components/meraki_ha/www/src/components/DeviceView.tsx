@@ -321,7 +321,7 @@ const DeviceViewComponent: React.FC<DeviceViewProps> = ({
     Array<{ entity_id: string; friendly_name: string }>
   >([]);
   const [linkedCameraId, setLinkedCameraId] = React.useState<string>('');
-  const [showCameraConfig, setShowCameraConfig] = React.useState(false);
+  const [showCameraConfig, setShowCameraConfig] = React.useState(true);
   const [linkedCameraUrl, setLinkedCameraUrl] = React.useState<string | null>(
     null
   );

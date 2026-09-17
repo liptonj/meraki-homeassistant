@@ -198,6 +198,12 @@ DEFAULT_DASHBOARD_STATUS_FILTER: Final = "all"
 DEFAULT_CAMERA_LINK_INTEGRATION: Final = ""
 """Default camera link integration (empty = show all cameras)."""
 
+CAMERA_LINK_NONE: Final = "Not linked"
+"""Select option used when an MV camera is not paired to another HA camera."""
+
+CAMERA_LINK_UNIQUE_ID_SUFFIX: Final = "-linked-camera"
+"""Suffix appended to the device serial for the Linked camera select unique ID."""
+
 CONF_TEMPERATURE_UNIT: Final = "temperature_unit"
 """Configuration key for temperature unit preference."""
 
@@ -561,6 +567,8 @@ PLATFORM_CAMERA: Final = "camera"
 """Represents the camera platform."""
 PLATFORM_NUMBER: Final = "number"
 """Represents the number platform."""
+PLATFORM_SELECT: Final = "select"
+"""Represents the select platform."""
 
 PLATFORMS: Final = [
     PLATFORM_SENSOR,
@@ -571,6 +579,7 @@ PLATFORMS: Final = [
     PLATFORM_CAMERA,
     PLATFORM_NUMBER,
     PLATFORM_DEVICE_TRACKER,
+    PLATFORM_SELECT,
 ]
 """List of platforms supported by the integration."""
 

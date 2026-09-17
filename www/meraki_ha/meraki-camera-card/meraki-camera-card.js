@@ -238,7 +238,7 @@ export class MerakiCameraCard extends MerakiCardBase {
     this._collapsed = false;
     this._streamUrl = null;
     this._streamType = null;
-    this._showLinkPanel = false;
+    this._showLinkPanel = true;
     this._availableCameras = [];
     this._selectedCamera = '';
   }

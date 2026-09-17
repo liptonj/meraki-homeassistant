@@ -10,11 +10,9 @@ from typing import Any
 import aiofiles
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
 from voluptuous import ALLOW_EXTRA, All, Optional, Required, Schema
 
 from .const import (
-    CAMERA_UNIQUE_ID_SUFFIX,
     CONF_CAMERA_LINK_INTEGRATION,
     CONF_DASHBOARD_DEVICE_TYPE_FILTER,
     CONF_DASHBOARD_STATUS_FILTER,
@@ -36,19 +34,13 @@ from .const import (
 from .core.errors import MerakiError
 from .core.timed_access_manager import TimedAccessManager
 from .helpers.camera_mappings import (
-    apply_camera_pairing,
-    clear_camera_pairing,
-    mapping_entity_id,
-    mapping_original_device_id,
+    async_set_camera_pairing,
+    list_linkable_cameras,
     mappings_as_entity_ids,
-    pairing_record,
     resolve_camera_identity,
 )
 from .helpers.camera_mappings import (
     load_camera_mappings as _load_camera_mappings,
-)
-from .helpers.camera_mappings import (
-    save_camera_mappings as _save_camera_mappings,
 )
 from .helpers.logging_helper import MerakiLoggers
 from .meraki_data_coordinator import MerakiDataCoordinator
@@ -214,36 +206,6 @@ def _device_rtsp_url(device: Mapping[str, Any] | None) -> str | None:
     if isinstance(settings_url, str) and settings_url.startswith("rtsp://"):
         return settings_url
     return None
-
-
-def _async_refresh_paired_camera(
-    hass: HomeAssistant,
-    config_entry_id: str,
-    serial: str,
-    linked_entity_id: str,
-) -> None:
-    """Update the Meraki camera entity after a pairing change."""
-    entity_registry = er.async_get(hass)
-    meraki_entity_id = entity_registry.async_get_entity_id(
-        "camera", DOMAIN, f"{serial}{CAMERA_UNIQUE_ID_SUFFIX}"
-    )
-    if not meraki_entity_id:
-        return
-    camera_component = hass.data.get("camera")
-    if camera_component is None:
-        return
-    camera_entity = camera_component.get_entity(meraki_entity_id)
-    if camera_entity is None:
-        return
-    camera_entity._cached_linked_entity = linked_entity_id or None
-    if hasattr(camera_entity, "async_write_ha_state"):
-        camera_entity.async_write_ha_state()
-    _LOGGER.debug(
-        "Refreshed camera pairing for %s -> %s (entry %s)",
-        serial,
-        linked_entity_id or "(removed)",
-        config_entry_id,
-    )
 
 
 @websocket_api.async_response
@@ -566,35 +528,13 @@ async def handle_set_camera_mapping(
         )
         return
 
-    # Load all mappings from storage
-    all_mappings = await _load_camera_mappings(hass)
-
-    # Get mappings for this config entry
-    mappings = dict(all_mappings.get(config_entry_id, {}))
-    previous = mappings.get(serial)
-    if previous is not None:
-        clear_camera_pairing(
-            hass,
-            serial,
-            mapping_entity_id(previous),
-            mapping_original_device_id(previous),
-        )
-
-    # Update or remove mapping
-    if linked_entity_id:
-        original_device_id = apply_camera_pairing(hass, serial, linked_entity_id)
-        mappings[serial] = pairing_record(linked_entity_id, original_device_id)
-    elif serial in mappings:
-        del mappings[serial]
-
-    # Save updated mappings to storage (not config entry - avoids reload!)
-    all_mappings[config_entry_id] = mappings
-    await _save_camera_mappings(hass, all_mappings)
-    _async_refresh_paired_camera(hass, config_entry_id, serial, linked_entity_id)
+    mappings = await async_set_camera_pairing(
+        hass, config_entry_id, serial, linked_entity_id
+    )
 
     connection.send_result(
         msg["id"],
-        {"success": True, "mappings": mappings_as_entity_ids(mappings)},
+        {"success": True, "mappings": mappings},
     )
 
 
@@ -615,52 +555,7 @@ async def handle_get_available_cameras(
                            (e.g., 'blue_iris', 'generic'). Empty string shows all.
     """
     integration_filter = msg.get("integration_filter", "").lower().strip()
-    camera_entities = []
-
-    # Get entity registry to look up integration/platform
-    entity_registry = er.async_get(hass)
-
-    # Get all camera entities from the state machine
-    for state in hass.states.async_all("camera"):
-        entity_id = state.entity_id
-        # Skip Meraki cameras (they have our domain prefix pattern)
-        if "meraki" in entity_id.lower():
-            continue
-
-        # If integration filter is set, check if entity belongs to that integration
-        if integration_filter:
-            # Normalize filter for flexible matching (blue_iris matches blueiris)
-            normalized_filter = integration_filter.replace("_", "").replace("-", "")
-            entity_entry = entity_registry.async_get(entity_id)
-            if entity_entry:
-                # Check platform (integration domain)
-                platform = entity_entry.platform.lower()
-                normalized_platform = platform.replace("_", "").replace("-", "")
-                filter_matches = (
-                    normalized_filter in normalized_platform
-                    or normalized_platform in normalized_filter
-                )
-                if not filter_matches:
-                    continue
-            else:
-                # No registry entry, try to match by entity_id pattern
-                normalized_entity = entity_id.lower().replace("_", "").replace("-", "")
-                if normalized_filter not in normalized_entity:
-                    continue
-
-        friendly_name = state.attributes.get("friendly_name", entity_id)
-        camera_entities.append(
-            {
-                "entity_id": entity_id,
-                "friendly_name": friendly_name,
-                "name": friendly_name,
-                "state": state.state,
-            }
-        )
-
-    # Sort by friendly name
-    camera_entities.sort(key=lambda x: x["friendly_name"].lower())
-
+    camera_entities = list_linkable_cameras(hass, integration_filter)
     connection.send_result(msg["id"], {"cameras": camera_entities})
 
 
