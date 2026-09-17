@@ -124,6 +124,60 @@ async def test_discover_entities_delegates_to_handler(
 
 
 @pytest.mark.asyncio
+async def test_discover_entities_skips_unregistered_devices(
+    mock_coordinator: MagicMock,
+    mock_config_entry: MagicMock,
+    mock_camera_service: AsyncMock,
+    mock_control_service: MagicMock,
+):
+    """Test devices without a network assignment are not turned into entities."""
+    registered = MOCK_DEVICE.copy()
+    unregistered = dict(MOCK_DEVICE)
+    unregistered["serial"] = "unregistered_serial"
+    unregistered.pop("networkId", None)
+    mock_coordinator.data = {
+        "devices": [registered, unregistered],
+        "networks": [],
+        "ssids": [],
+    }
+
+    mock_mr_handler_instance = MagicMock()
+    mock_mr_handler_instance.discover_entities = AsyncMock(
+        return_value=["registered_entity"]
+    )
+    MockMRHandler = MagicMock(return_value=mock_mr_handler_instance)
+    MockMRHandler.__name__ = "MRHandler"
+
+    with (
+        patch.dict(
+            "custom_components.meraki_ha.discovery.service.HANDLER_MAPPING",
+            {"MR": MockMRHandler},
+        ),
+        patch(
+            "custom_components.meraki_ha.discovery.handlers.network.NetworkHandler"
+        ) as MockNetworkHandler,
+        patch("custom_components.meraki_ha.discovery.handlers.ssid.SSIDHandler"),
+    ):
+        mock_network_handler_instance = MagicMock()
+        mock_network_handler_instance.discover_entities = AsyncMock(return_value=[])
+        MockNetworkHandler.create.return_value = mock_network_handler_instance
+
+        service = DeviceDiscoveryService(
+            coordinator=mock_coordinator,
+            config_entry=mock_config_entry,
+            meraki_client=MagicMock(),
+            camera_service=mock_camera_service,
+            control_service=mock_control_service,
+            network_control_service=MagicMock(),
+        )
+        entities = await service.discover_entities()
+
+    assert entities == ["registered_entity"]
+    MockMRHandler.assert_called_once()
+    assert MockMRHandler.call_args[0][1]["serial"] == "Q234-ABCD-5678"
+
+
+@pytest.mark.asyncio
 async def test_discover_entities_routes_cw_to_mr_handler(
     mock_coordinator: MagicMock,
     mock_config_entry: MagicMock,

@@ -75,6 +75,8 @@ class NetworkHandler(BaseHandler):
             return entities
 
         for network in networks:
+            if network.get("is_enabled") is False:
+                continue
             # Network clients sensor
             entities.append(
                 MerakiNetworkClientsSensor(

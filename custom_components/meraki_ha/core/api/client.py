@@ -43,6 +43,12 @@ from .endpoints.wireless import WirelessEndpoints
 _LOGGER = MerakiLoggers.API
 
 
+def _device_has_network_assignment(device: dict[str, Any]) -> bool:
+    """Return True when a device is assigned to a Meraki network."""
+    network_id = device.get("networkId")
+    return isinstance(network_id, str) and bool(network_id.strip())
+
+
 class MerakiAPIClient:
     """
     Facade for the Meraki Dashboard API client.
@@ -677,11 +683,14 @@ class MerakiAPIClient:
         if enabled_network_ids is not None:
             networks = [n for n in all_networks if n.get("id") in enabled_network_ids]
             devices = [
-                d for d in all_devices if d.get("networkId") in enabled_network_ids
+                d
+                for d in all_devices
+                if d.get("networkId") in enabled_network_ids
+                and _device_has_network_assignment(d)
             ]
         else:
             networks = all_networks
-            devices = all_devices
+            devices = [d for d in all_devices if _device_has_network_assignment(d)]
 
         detail_tasks = (
             self._build_detail_tasks(networks, devices) if fetch_ssids else {}

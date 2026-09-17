@@ -507,6 +507,49 @@ def test_filter_enabled_networks_with_filter(coordinator):
     assert len(data["ssids"]) == 1
 
 
+def test_filter_enabled_networks_drops_unregistered_devices(coordinator):
+    """Test devices with no network assignment are not imported."""
+    coordinator.config_entry.options = {"enabled_networks": ["N_123"]}
+    data = {
+        "networks": [
+            {"id": "N_123", "name": "Enabled"},
+        ],
+        "devices": [
+            {"serial": "assigned", "networkId": "N_123"},
+            {"serial": "unregistered", "networkId": None},
+            {"serial": "blank-network", "networkId": ""},
+            {"serial": "missing-network"},
+        ],
+        "ssids": [],
+    }
+
+    coordinator._filter_enabled_networks(data)
+
+    assert [device["serial"] for device in data["devices"]] == ["assigned"]
+
+
+def test_filter_enabled_networks_drops_unregistered_when_all_networks_enabled(
+    coordinator,
+):
+    """Test unassigned devices stay out even when every network is enabled."""
+    coordinator.config_entry.options = {}
+    data = {
+        "networks": [
+            {"id": "N_123", "name": "Enabled"},
+        ],
+        "devices": [
+            {"serial": "assigned", "networkId": "N_123"},
+            {"serial": "unregistered"},
+        ],
+        "ssids": [],
+    }
+
+    coordinator._filter_enabled_networks(data)
+
+    assert [device["serial"] for device in data["devices"]] == ["assigned"]
+    assert data["networks"][0]["is_enabled"] is True
+
+
 def test_get_enabled_network_ids_no_config(coordinator):
     """Test _get_enabled_network_ids returns None when no config."""
     coordinator.config_entry = None

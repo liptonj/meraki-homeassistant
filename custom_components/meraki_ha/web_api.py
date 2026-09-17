@@ -9,7 +9,7 @@ from typing import Any
 
 import aiofiles
 from homeassistant.components import websocket_api
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from voluptuous import ALLOW_EXTRA, All, Optional, Required, Schema
 
 from .const import (
@@ -65,6 +65,18 @@ def async_setup_api(hass: HomeAssistant) -> None:
         Schema(
             {
                 Required("type"): All(str, "meraki_ha/get_config"),
+                Required("config_entry_id"): str,
+            },
+            extra=ALLOW_EXTRA,
+        ),
+    )
+    websocket_api.async_register_command(
+        hass,
+        "meraki_ha/subscribe_meraki_data",
+        handle_subscribe_meraki_data,
+        Schema(
+            {
+                Required("type"): All(str, "meraki_ha/subscribe_meraki_data"),
                 Required("config_entry_id"): str,
             },
             extra=ALLOW_EXTRA,
@@ -208,38 +220,25 @@ def _device_rtsp_url(device: Mapping[str, Any] | None) -> str | None:
     return None
 
 
-@websocket_api.async_response
-async def handle_get_config(
+async def _async_frontend_payload(
     hass: HomeAssistant,
-    connection: websocket_api.ActiveConnection,
-    msg: dict[str, Any],
-) -> None:
-    """
-    Handle get_config command.
-
-    Args:
-    ----
-        hass: The Home Assistant instance.
-        connection: The WebSocket connection.
-        msg: The WebSocket message.
-
-    """
-    config_entry_id = msg["config_entry_id"]
+    config_entry_id: str,
+) -> dict[str, Any] | None:
+    """Build the panel payload including the enabled-network filter."""
     if config_entry_id not in hass.data[DOMAIN]:
-        connection.send_error(msg["id"], "not_found", "Config entry not found")
-        return
+        return None
 
     coordinator: MerakiDataCoordinator = hass.data[DOMAIN][config_entry_id][
         "coordinator"
     ]
     config_entry = hass.config_entries.async_get_entry(config_entry_id)
     if not config_entry:
-        connection.send_error(msg["id"], "not_found", "Config entry not found")
-        return
+        return None
+    coordinator_data = coordinator.data or {}
     enabled_networks = config_entry.options.get(CONF_ENABLED_NETWORKS)
     if enabled_networks is None:
         enabled_networks = [
-            n["id"] for n in coordinator.data.get("networks", []) if "id" in n
+            n["id"] for n in coordinator_data.get("networks", []) if "id" in n
         ]
 
     manifest_path = os.path.join(os.path.dirname(__file__), "manifest.json")
@@ -248,7 +247,6 @@ async def handle_get_config(
     manifest = json.loads(contents)
     version = manifest.get("version")
 
-    # Get dashboard settings from options
     dashboard_settings = {
         "dashboard_view_mode": config_entry.options.get(
             CONF_DASHBOARD_VIEW_MODE, DEFAULT_DASHBOARD_VIEW_MODE
@@ -267,7 +265,6 @@ async def handle_get_config(
         ),
     }
 
-    # Get refresh timing info - use coordinator's actual interval for accuracy
     scan_interval = (
         int(coordinator.update_interval.total_seconds())
         if coordinator.update_interval
@@ -279,7 +276,6 @@ async def handle_get_config(
         else None
     )
 
-    # Get MQTT status if enabled
     mqtt_data: dict[str, Any] = {
         "enabled": config_entry.options.get(CONF_ENABLE_MQTT, DEFAULT_ENABLE_MQTT),
     }
@@ -293,19 +289,73 @@ async def handle_get_config(
         if mqtt_relay_manager:
             mqtt_data["relay_destinations"] = mqtt_relay_manager.get_health_status()
 
-    connection.send_result(
-        msg["id"],
-        {
-            **coordinator.data,
-            "enabled_networks": enabled_networks,
-            "config_entry_id": config_entry_id,
-            "version": version,
-            "scan_interval": scan_interval,
-            "last_updated": last_updated,
-            "mqtt": mqtt_data,
-            **dashboard_settings,
-        },
-    )
+    return {
+        **coordinator_data,
+        "enabled_networks": enabled_networks,
+        "config_entry_id": config_entry_id,
+        "version": version,
+        "scan_interval": scan_interval,
+        "last_updated": last_updated,
+        "mqtt": mqtt_data,
+        **dashboard_settings,
+    }
+
+
+@websocket_api.async_response
+async def handle_get_config(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """
+    Handle get_config command.
+
+    Args:
+    ----
+        hass: The Home Assistant instance.
+        connection: The WebSocket connection.
+        msg: The WebSocket message.
+
+    """
+    payload = await _async_frontend_payload(hass, msg["config_entry_id"])
+    if payload is None:
+        connection.send_error(msg["id"], "not_found", "Config entry not found")
+        return
+    connection.send_result(msg["id"], payload)
+
+
+@websocket_api.async_response
+async def handle_subscribe_meraki_data(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Subscribe the panel to coordinator updates with network filtering."""
+    config_entry_id = msg["config_entry_id"]
+    payload = await _async_frontend_payload(hass, config_entry_id)
+    if payload is None:
+        connection.send_error(msg["id"], "not_found", "Config entry not found")
+        return
+
+    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][config_entry_id][
+        "coordinator"
+    ]
+
+    @callback
+    def forward_data() -> None:
+        """Push filtered coordinator data to the panel."""
+        hass.async_create_task(_async_forward_data())
+
+    async def _async_forward_data() -> None:
+        """Send the latest filtered payload as a websocket event."""
+        latest = await _async_frontend_payload(hass, config_entry_id)
+        if latest is None:
+            return
+        connection.send_message(websocket_api.event_message(msg["id"], latest))
+
+    connection.subscriptions[msg["id"]] = coordinator.async_add_listener(forward_data)
+    connection.send_result(msg["id"])
+    connection.send_message(websocket_api.event_message(msg["id"], payload))
 
 
 @websocket_api.async_response

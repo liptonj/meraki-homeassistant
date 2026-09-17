@@ -71,3 +71,39 @@ async def test_discover_entities_creates_network_sensors(
     # Verify network IDs
     assert client_sensors[0]._network_id == "N_1234"
     assert client_sensors[1]._network_id == "N_5678"
+
+
+@pytest.mark.asyncio
+async def test_discover_entities_skips_disabled_networks(
+    mock_network_control_service,
+):
+    """Test network entities are not created for disabled networks."""
+    coordinator = MagicMock()
+    coordinator.data = {
+        "networks": [
+            {
+                "id": "N_1234",
+                "name": "Enabled",
+                "productTypes": ["wireless"],
+                "is_enabled": True,
+            },
+            {
+                "id": "N_5678",
+                "name": "Disabled",
+                "productTypes": ["switch"],
+                "is_enabled": False,
+            },
+        ]
+    }
+    config_entry = MagicMock()
+    config_entry.options = {
+        "enable_network_sensors": True,
+        "enable_vlan_sensors": False,
+    }
+    handler = NetworkHandler(coordinator, config_entry, mock_network_control_service)
+
+    entities = await handler.discover_entities()
+
+    client_sensors = [e for e in entities if isinstance(e, MerakiNetworkClientsSensor)]
+    assert len(client_sensors) == 1
+    assert client_sensors[0]._network_id == "N_1234"

@@ -28,6 +28,7 @@ from custom_components.meraki_ha.web_api import (
     handle_get_config,
     handle_get_rtsp_url,
     handle_set_camera_mapping,
+    handle_subscribe_meraki_data,
     handle_update_enabled_networks,
 )
 
@@ -132,12 +133,13 @@ class TestAsyncSetupApi:
         ) as mock_register:
             async_setup_api(hass)
 
-            # Verify all 9 commands are registered
-            assert mock_register.call_count == 9
+            # Verify all commands are registered
+            assert mock_register.call_count == 10
 
             # Extract registered command names
             command_names = [call[0][1] for call in mock_register.call_args_list]
             assert "meraki_ha/get_config" in command_names
+            assert "meraki_ha/subscribe_meraki_data" in command_names
             assert "meraki_ha/get_camera_stream_url" in command_names
             assert "meraki_ha/get_camera_snapshot" in command_names
             assert "meraki_ha/update_enabled_networks" in command_names
@@ -189,6 +191,43 @@ class TestHandleGetConfig:
         assert result["config_entry_id"] == "test_entry_id"
         assert result["enabled_networks"] == ["N_12345"]
         assert result["version"] == "1.0.0"
+
+    async def test_subscribe_meraki_data_includes_enabled_networks(
+        self,
+        hass: HomeAssistant,
+        mock_connection: MagicMock,
+        mock_coordinator: MagicMock,
+        mock_config_entry_with_options: MockConfigEntry,
+    ) -> None:
+        """Test panel subscription includes the enabled-network filter."""
+        mock_config_entry_with_options.add_to_hass(hass)
+        hass.data[DOMAIN] = {
+            "test_entry_id": {
+                "coordinator": mock_coordinator,
+            }
+        }
+        mock_coordinator.async_add_listener = MagicMock(return_value=MagicMock())
+        mock_connection.subscriptions = {}
+
+        msg = {
+            "id": 7,
+            "type": "meraki_ha/subscribe_meraki_data",
+            "config_entry_id": "test_entry_id",
+        }
+        mock_manifest = json.dumps({"version": "1.0.0"})
+        with patch("aiofiles.open", create=True) as mock_aiofiles_open:
+            mock_file = AsyncMock()
+            mock_file.read = AsyncMock(return_value=mock_manifest)
+            mock_file.__aenter__ = AsyncMock(return_value=mock_file)
+            mock_file.__aexit__ = AsyncMock(return_value=None)
+            mock_aiofiles_open.return_value = mock_file
+            await get_wrapped(handle_subscribe_meraki_data)(hass, mock_connection, msg)
+
+        mock_connection.send_result.assert_called_once_with(7)
+        mock_connection.send_message.assert_called()
+        event = mock_connection.send_message.call_args[0][0]
+        assert event["id"] == 7
+        assert event["event"]["enabled_networks"] == ["N_12345"]
 
     async def test_get_config_entry_not_found(
         self,
