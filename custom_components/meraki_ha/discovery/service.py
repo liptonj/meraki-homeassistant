@@ -116,6 +116,13 @@ class DeviceDiscoveryService:
             _LOGGER.debug("Device processing (Device & Entity Model) is disabled.")
 
         for device in self._devices:
+            network_id = device.get("networkId")
+            if not isinstance(network_id, str) or not network_id.strip():
+                _LOGGER.debug(
+                    "Skipping unregistered device %s (no network assignment)",
+                    device.get("serial"),
+                )
+                continue
             model = device.get("model")
             if not model:
                 _LOGGER.warning(

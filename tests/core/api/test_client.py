@@ -571,6 +571,48 @@ class TestMerakiAPIClient:
         assert result["devices"][0]["serial"] == "ABC"
 
     @pytest.mark.asyncio
+    async def test_get_all_data_drops_unregistered_devices(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """Test claimed-but-unassigned devices are not returned."""
+        with (
+            patch.object(
+                api_client,
+                "_async_fetch_initial_data",
+                new=AsyncMock(
+                    return_value={
+                        "networks": [{"id": "N_123", "name": "Enabled"}],
+                        "devices": [
+                            {"serial": "ABC", "networkId": "N_123"},
+                            {"serial": "UNREG", "networkId": None},
+                            {"serial": "BLANK", "networkId": ""},
+                        ],
+                        "devices_availabilities": [],
+                        "appliance_uplink_statuses": [],
+                        "cellular_uplink_statuses": [],
+                        "sensor_readings": [],
+                    }
+                ),
+            ),
+            patch.object(
+                api_client,
+                "_async_fetch_network_clients",
+                new=AsyncMock(return_value=[]),
+            ),
+            patch.object(
+                api_client,
+                "_async_fetch_device_clients",
+                new=AsyncMock(return_value={}),
+            ),
+            patch.object(
+                api_client, "_build_detail_tasks", new=MagicMock(return_value={})
+            ),
+        ):
+            result = await api_client.get_all_data()
+
+        assert [device["serial"] for device in result["devices"]] == ["ABC"]
+
+    @pytest.mark.asyncio
     async def test_register_webhook(self, api_client: MerakiAPIClient) -> None:
         """Test register_webhook delegates to network endpoint."""
         mock_register = AsyncMock()
