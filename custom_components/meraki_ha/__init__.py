@@ -23,6 +23,7 @@ from .const import (
     CONF_MQTT_RELAY_DESTINATIONS,
     CONF_SCAN_INTERVAL,
     CONF_SCANNING_API_VALIDATOR,
+    CONF_SETUP_NOTIFICATION_SHOWN,
     CONF_WEB_UI_PORT,
     CONF_WEBHOOK_SHARED_SECRET,
     DATA_CLIENT,
@@ -83,6 +84,53 @@ _LOGGER = MerakiLoggers.MAIN
 async_register_webhook = (
     _async_register_webhook  # re-export for backward compatibility/tests
 )
+
+# Config entry data keys that are runtime/OAuth bookkeeping rather than
+# user configuration: changing one of these does NOT require tearing down
+# and re-setting-up the whole integration. Most notably, HA's
+# OAuth2Session refreshes the Meraki access token roughly hourly via
+# `async_update_entry(entry, data={..., "token": new_token})`, which used
+# to unconditionally reload the entire integration every time. See
+# `async_reload_entry` below.
+_RELOAD_IGNORED_DATA_KEYS = frozenset(
+    {
+        "token",
+        "webhook_id",
+        "secret",
+        CONF_SETUP_NOTIFICATION_SHOWN,
+    }
+)
+
+# Key under `hass.data[DOMAIN][entry.entry_id]` holding the options/data
+# snapshot taken at the end of the most recent successful
+# `async_setup_entry`, used by `async_reload_entry` to decide whether an
+# update actually requires a reload.
+_RELOAD_SNAPSHOT_KEY = "_reload_snapshot"
+
+
+def _relevant_reload_data(data: Any) -> dict[str, Any]:
+    """Return config entry `data` filtered to reload-relevant keys.
+
+    Excludes runtime/OAuth bookkeeping keys (see
+    `_RELOAD_IGNORED_DATA_KEYS`) that legitimately change without requiring
+    the integration to be reloaded.
+    """
+    return {k: v for k, v in dict(data).items() if k not in _RELOAD_IGNORED_DATA_KEYS}
+
+
+def _should_show_setup_notifications(entry: ConfigEntry) -> bool:
+    """Return True if the one-time setup notifications should be shown.
+
+    - Marker is `True`: already shown, never show again.
+    - Marker is `False`: this entry was freshly created by the config flow
+      and has not completed its first setup yet, show them now.
+    - Marker is absent entirely: this entry predates the marker (an
+      existing install upgrading to a version that introduced it), so it
+      is treated as already notified rather than shown the notifications
+      again.
+    """
+    marker = entry.data.get(CONF_SETUP_NOTIFICATION_SHOWN)
+    return marker is False
 
 
 def _create_scanning_api_handler(
@@ -578,6 +626,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _LOGGER.info("Dashboard auto-creation: %s", auto_create_dashboard)
 
+    # The two setup notifications below should only ever be shown once per
+    # config entry, on its first successful setup - not on every reload or
+    # HA restart. See `_should_show_setup_notifications` for the marker
+    # semantics.
+    notify_first_setup = _should_show_setup_notifications(entry)
+
     # Always register static path for cards
     _LOGGER.info("Registering static path for Meraki cards")
     try:
@@ -591,7 +645,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
     # Show dashboard setup instructions notification
-    if auto_create_dashboard:
+    if auto_create_dashboard and notify_first_setup:
         dashboard_id = f"meraki_{entry.entry_id[:8]}"
         await hass.services.async_call(
             "persistent_notification",
@@ -651,42 +705,56 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Send one-time notification about integration setup
     dashboard_id = f"meraki_{entry.entry_id[:8]}"
 
-    if auto_create_dashboard:
-        # Dashboard setup notification
-        notification_message = (
-            "Your Meraki integration is set up!\n\n"
-            "**Next: Create Your Dashboard**\n\n"
-            "A notification with step-by-step instructions has been created.\n"
-            "Follow it to set up your Meraki dashboard with custom cards.\n\n"
-            "Takes only 2 minutes! 🚀\n\n"
-            "[View Documentation]"
-            "(https://github.com/liptonj/meraki-homeassistant)"
-        )
-    else:
-        # Dashboard auto-creation was disabled
-        notification_message = (
-            f"Your Meraki integration is set up!\n\n"
-            f"**Create Dashboard:**\n\n"
-            f"1. Go to Developer Tools → Services\n"
-            f"2. Search for `{DOMAIN}.create_editable_dashboard`\n"
-            f"3. Leave all fields empty (auto-detects)\n"
-            f"4. Click **CALL SERVICE**\n\n"
-            f"This will create a fully editable dashboard with all your "
-            f"Meraki devices.\n\n"
-            f"[View Documentation]"
-            f"(https://github.com/liptonj/meraki-homeassistant)"
+    if notify_first_setup:
+        if auto_create_dashboard:
+            # Dashboard setup notification
+            notification_message = (
+                "Your Meraki integration is set up!\n\n"
+                "**Next: Create Your Dashboard**\n\n"
+                "A notification with step-by-step instructions has been "
+                "created.\n"
+                "Follow it to set up your Meraki dashboard with custom "
+                "cards.\n\n"
+                "Takes only 2 minutes! 🚀\n\n"
+                "[View Documentation]"
+                "(https://github.com/liptonj/meraki-homeassistant)"
+            )
+        else:
+            # Dashboard auto-creation was disabled
+            notification_message = (
+                f"Your Meraki integration is set up!\n\n"
+                f"**Create Dashboard:**\n\n"
+                f"1. Go to Developer Tools → Services\n"
+                f"2. Search for `{DOMAIN}.create_editable_dashboard`\n"
+                f"3. Leave all fields empty (auto-detects)\n"
+                f"4. Click **CALL SERVICE**\n\n"
+                f"This will create a fully editable dashboard with all your "
+                f"Meraki devices.\n\n"
+                f"[View Documentation]"
+                f"(https://github.com/liptonj/meraki-homeassistant)"
+            )
+
+        await hass.services.async_call(
+            "persistent_notification",
+            "create",
+            {
+                "title": "🚀 Meraki Integration Ready",
+                "message": notification_message,
+                "notification_id": f"meraki_ready_{entry.entry_id}",
+            },
+            blocking=False,
         )
 
-    await hass.services.async_call(
-        "persistent_notification",
-        "create",
-        {
-            "title": "🚀 Meraki Integration Ready",
-            "message": notification_message,
-            "notification_id": f"meraki_ready_{entry.entry_id}",
-        },
-        blocking=False,
-    )
+    # Persist the "already notified" marker so these notifications never
+    # show again for this entry, whether this was their first real showing
+    # or this entry predates the marker (an existing install). This runs
+    # before the update listener is registered below, so it does not
+    # itself trigger a reload.
+    if entry.data.get(CONF_SETUP_NOTIFICATION_SHOWN) is not True:
+        hass.config_entries.async_update_entry(
+            entry,
+            data={**entry.data, CONF_SETUP_NOTIFICATION_SHOWN: True},
+        )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await apply_stored_camera_pairings(hass, entry.entry_id)
@@ -864,13 +932,52 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 push_webhook_id,
             )
 
+    # Snapshot the reload-relevant options/data for the update listener to
+    # compare against. Taken last, right before the listener is attached, so
+    # it reflects everything this setup run just settled on (including the
+    # notification marker written above).
+    entry_data[_RELOAD_SNAPSHOT_KEY] = {
+        "options": dict(entry.options),
+        "data": _relevant_reload_data(entry.data),
+    }
+
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload the config entry when it has changed."""
+    """Reload the config entry only if something requiring re-setup changed.
+
+    HA's OAuth2Session refreshes the Meraki access token roughly hourly via
+    `async_update_entry(entry, data={..., "token": new_token})`, which fires
+    this listener. Reloading the whole integration on every token refresh
+    causes recurring entity unavailability and duplicate startup
+    notifications, so this only reloads when `entry.options` changed, or
+    `entry.data` changed outside of runtime/OAuth bookkeeping keys (see
+    `_RELOAD_IGNORED_DATA_KEYS`).
+
+    If no snapshot is available (unexpected state), reload to be safe.
+    """
+    entry_data = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
+    previous = entry_data.get(_RELOAD_SNAPSHOT_KEY)
+
+    if previous is not None:
+        unchanged = previous.get("options") == dict(entry.options) and previous.get(
+            "data"
+        ) == _relevant_reload_data(entry.data)
+        if unchanged:
+            _LOGGER.debug(
+                "Config entry %s updated with no reload-relevant changes "
+                "(likely an OAuth token refresh); skipping reload",
+                entry.entry_id[:8],
+            )
+            return
+
+    _LOGGER.info(
+        "Config entry %s changed in a way that requires a reload",
+        entry.entry_id[:8],
+    )
     await hass.config_entries.async_reload(entry.entry_id)
 
 

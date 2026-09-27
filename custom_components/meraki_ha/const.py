@@ -32,6 +32,18 @@ DEFAULT_AUTO_CREATE_DASHBOARD: Final = True
 DOMAIN: Final = "meraki_ha"
 """Domain for the component."""
 
+CONF_SETUP_NOTIFICATION_SHOWN: Final = "setup_notification_shown"
+"""Config entry data key marking that the one-time setup notifications
+(the "Meraki Integration Ready" / "Create Your Meraki Dashboard"
+persistent notifications) have already been shown for this entry.
+
+Set to ``False`` when a config entry is first created by the config flow,
+flipped to ``True`` the first time ``async_setup_entry`` shows the
+notifications. A config entry that predates this key entirely (an
+existing install upgrading to a version that introduced it) is treated as
+already notified rather than shown the notifications again.
+"""
+
 MANUFACTURER: Final = "Cisco Meraki"
 """Manufacturer for all Meraki devices."""
 

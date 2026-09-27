@@ -22,6 +22,7 @@ from .const import (
     CONF_INTEGRATION_TITLE,
     CONF_MERAKI_API_KEY,
     CONF_MERAKI_ORG_ID,
+    CONF_SETUP_NOTIFICATION_SHOWN,
     DOMAIN,
     OAUTH_SCOPES,
 )
@@ -163,9 +164,14 @@ class MerakiConfigFlow(
         """Handle the general settings step."""
         if user_input is not None:
             self.options.update(user_input)
+            # Mark this as a brand-new entry that has not shown its
+            # one-time setup notifications yet. An entry that predates
+            # this key (an existing install) simply won't have it, and
+            # is treated as already notified in async_setup_entry.
+            entry_data = {**self.data, CONF_SETUP_NOTIFICATION_SHOWN: False}
             return self.async_create_entry(
                 title=self.data.get("org_name", CONF_INTEGRATION_TITLE),
-                data=self.data,
+                data=entry_data,
                 options=self.options,
             )
 
