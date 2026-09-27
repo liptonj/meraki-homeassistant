@@ -37,6 +37,16 @@ _LOGGER = MerakiLoggers.MQTT
 RETRY_INTERVAL_SECONDS = 30
 MAX_RETRY_ATTEMPTS = 10
 
+# Once MAX_RETRY_ATTEMPTS is exhausted, a background reconnect is scheduled
+# with capped exponential backoff instead of hammering the broker (or the
+# log) once per queued message.
+RECONNECT_BACKOFF_INITIAL_SECONDS = float(RETRY_INTERVAL_SECONDS)
+RECONNECT_BACKOFF_MAX_SECONDS = 300.0  # 5 minutes
+
+# While disconnected, queued messages are dropped rather than retried; this
+# controls how often that's summarized in the log instead of once per drop.
+DROPPED_MESSAGE_SUMMARY_INTERVAL_SECONDS = 300.0  # 5 minutes
+
 
 class ConnectionStatus(Enum):
     """Connection status for relay destinations."""
@@ -111,6 +121,16 @@ class MqttRelayDestination:
         self._last_relay_time: datetime | None = None
         self._last_error: str | None = None
         self._last_error_time: datetime | None = None
+        # Background reconnect (after MAX_RETRY_ATTEMPTS is exhausted) and
+        # state-transition-only logging, so a long outage doesn't flood the
+        # log or leave the destination dead forever. See _handle_publish_error,
+        # _async_connect and _schedule_reconnect.
+        self._reconnect_task: asyncio.Task[None] | None = None
+        self._reconnect_backoff_seconds: float = RECONNECT_BACKOFF_INITIAL_SECONDS
+        self._gave_up_logged: bool = False
+        self._publish_error_logged: bool = False
+        self._dropped_while_disconnected: int = 0
+        self._last_dropped_summary_time: datetime | None = None
 
     @property
     def name(self) -> str:
@@ -182,6 +202,14 @@ class MqttRelayDestination:
         """Stop the relay destination and disconnect."""
         self._running = False
 
+        if self._reconnect_task:
+            self._reconnect_task.cancel()
+            try:
+                await self._reconnect_task
+            except asyncio.CancelledError:
+                pass
+            self._reconnect_task = None
+
         if self._publisher_task:
             self._publisher_task.cancel()
             try:
@@ -219,40 +247,59 @@ class MqttRelayDestination:
         await self._message_queue.put((topic, payload))
 
     async def _async_publisher_loop(self) -> None:
-        """Run the main loop for publishing messages."""
+        """Run the main loop for publishing messages.
+
+        Reconnection after MAX_RETRY_ATTEMPTS is exhausted is owned by a
+        separate backoff task (see `_schedule_reconnect`); this loop just
+        drops queued messages while that is pending, instead of retrying a
+        full connect cycle per message.
+        """
         while self._running:
             try:
-                await self._async_connect()
+                if self._status == ConnectionStatus.DISCONNECTED and (
+                    self._gave_up_logged
+                ):
+                    # A background reconnect (with backoff) already owns
+                    # retrying the connection; don't also try here.
+                    await self._async_drop_one_while_disconnected()
+                    continue
 
-                while self._running and self._client:
-                    try:
-                        # Wait for messages with timeout
-                        topic, payload = await asyncio.wait_for(
-                            self._message_queue.get(),
-                            timeout=30.0,
-                        )
-                        await self._client.publish(topic, payload)
-                        self._messages_relayed += 1
-                        self._last_relay_time = datetime.now()
-                        _LOGGER.debug(
-                            "Relayed message to '%s': %s (total: %d)",
-                            self._config.name,
-                            topic,
-                            self._messages_relayed,
-                        )
-                    except TimeoutError:
-                        # Keep connection alive
+                if self._status != ConnectionStatus.CONNECTED:
+                    connected = await self._async_connect()
+                    if not connected:
+                        # _async_connect already logged/scheduled the
+                        # background reconnect if it gave up.
                         continue
-                    except aiomqtt.MqttError as err:
-                        self._last_error = str(err)
-                        self._last_error_time = datetime.now()
-                        _LOGGER.warning(
-                            "MQTT error publishing to '%s': %s",
-                            self._config.name,
-                            err,
-                        )
-                        self._status = ConnectionStatus.ERROR
-                        break
+
+                try:
+                    # Wait for messages with timeout
+                    topic, payload = await asyncio.wait_for(
+                        self._message_queue.get(),
+                        timeout=30.0,
+                    )
+                except TimeoutError:
+                    # Keep connection alive
+                    continue
+
+                client = self._client
+                if client is None:
+                    # Lost the client between the status check and here
+                    # (e.g. a concurrent disconnect); loop back and
+                    # reconnect instead of publishing to nothing.
+                    continue
+                try:
+                    await client.publish(topic, payload)
+                    self._messages_relayed += 1
+                    self._last_relay_time = datetime.now()
+                    self._publish_error_logged = False
+                    _LOGGER.debug(
+                        "Relayed message to '%s': %s (total: %d)",
+                        self._config.name,
+                        topic,
+                        self._messages_relayed,
+                    )
+                except aiomqtt.MqttError as err:
+                    self._handle_publish_error(err)
 
             except asyncio.CancelledError:
                 break
@@ -265,15 +312,112 @@ class MqttRelayDestination:
                     err,
                 )
                 self._status = ConnectionStatus.ERROR
+                self._client = None
                 if self._running:
                     await asyncio.sleep(RETRY_INTERVAL_SECONDS)
 
-    async def _async_connect(self) -> None:
-        """Establish connection to the MQTT broker."""
-        if self._client and self._status == ConnectionStatus.CONNECTED:
+    def _handle_publish_error(self, err: Exception) -> None:
+        """Handle a publish failure.
+
+        Logs once per disconnection, not once per message, and marks the
+        destination disconnected so the loop reconnects instead of
+        retrying the same publish forever.
+        """
+        self._last_error = str(err)
+        self._last_error_time = datetime.now()
+        if not self._publish_error_logged:
+            _LOGGER.warning(
+                "MQTT error publishing to '%s': %s (further publish "
+                "failures will be dropped silently until reconnected)",
+                self._config.name,
+                err,
+            )
+            self._publish_error_logged = True
+        self._status = ConnectionStatus.ERROR
+        self._client = None
+
+    async def _async_drop_one_while_disconnected(self) -> None:
+        """Drop a single queued message while disconnected.
+
+        Logs only a periodic summary rather than one line per dropped
+        message, since a background reconnect (see `_schedule_reconnect`)
+        is already retrying the connection.
+        """
+        try:
+            topic, _payload = await asyncio.wait_for(
+                self._message_queue.get(),
+                timeout=5.0,
+            )
+        except TimeoutError:
             return
 
+        self._dropped_while_disconnected += 1
+        now = datetime.now()
+        if (
+            self._last_dropped_summary_time is None
+            or (now - self._last_dropped_summary_time).total_seconds()
+            >= DROPPED_MESSAGE_SUMMARY_INTERVAL_SECONDS
+        ):
+            _LOGGER.warning(
+                "Dropped %d message(s) to '%s' while disconnected "
+                "(most recent topic: %s)",
+                self._dropped_while_disconnected,
+                self._config.name,
+                topic,
+            )
+            self._last_dropped_summary_time = now
+            self._dropped_while_disconnected = 0
+
+    def _schedule_reconnect(self) -> None:
+        """Schedule a background reconnect with capped exponential backoff.
+
+        Runs as its own task so it doesn't block the event loop or the
+        publisher loop, and is cancelled in `async_stop`. A no-op if a
+        reconnect task is already in flight (including when called from
+        within that same task after a further failed attempt - it owns
+        retrying itself, see `_async_reconnect_later`).
+        """
+        if not self._running:
+            return
+        if self._reconnect_task and not self._reconnect_task.done():
+            return
+        self._reconnect_task = asyncio.create_task(self._async_reconnect_later())
+
+    async def _async_reconnect_later(self) -> None:
+        """Retry the connection with capped exponential backoff.
+
+        Keeps retrying (waiting out the backoff between attempts, doubling
+        it up to RECONNECT_BACKOFF_MAX_SECONDS) until it connects or the
+        destination is stopped, so a transient outage recovers on its own
+        without an integration reload.
+        """
+        while self._running and self._gave_up_logged:
+            backoff = self._reconnect_backoff_seconds
+            self._reconnect_backoff_seconds = min(
+                backoff * 2, RECONNECT_BACKOFF_MAX_SECONDS
+            )
+            await asyncio.sleep(backoff)
+            if not self._running:
+                return
+            if await self._async_connect():
+                return
+
+    async def _async_connect(self) -> bool:
+        """
+        Establish connection to the MQTT broker.
+
+        Returns
+        -------
+            True if connected (or already connected), False if
+            MAX_RETRY_ATTEMPTS was exhausted and a background reconnect
+            was scheduled instead.
+
+        """
+        if self._client and self._status == ConnectionStatus.CONNECTED:
+            return True
+
         self._status = ConnectionStatus.CONNECTING
+        self._retry_count = 0
 
         while self._running and self._retry_count < MAX_RETRY_ATTEMPTS:
             try:
@@ -293,13 +437,26 @@ class MqttRelayDestination:
                 await self._client.__aenter__()
                 self._status = ConnectionStatus.CONNECTED
                 self._retry_count = 0
-                _LOGGER.info(
-                    "Connected to relay destination '%s' at %s:%d",
-                    self._config.name,
-                    self._config.host,
-                    self._config.port,
-                )
-                return
+                self._reconnect_backoff_seconds = RECONNECT_BACKOFF_INITIAL_SECONDS
+                self._dropped_while_disconnected = 0
+                self._last_dropped_summary_time = None
+                self._publish_error_logged = False
+                if self._gave_up_logged:
+                    _LOGGER.info(
+                        "Reconnected to relay destination '%s' at %s:%d",
+                        self._config.name,
+                        self._config.host,
+                        self._config.port,
+                    )
+                else:
+                    _LOGGER.info(
+                        "Connected to relay destination '%s' at %s:%d",
+                        self._config.name,
+                        self._config.host,
+                        self._config.port,
+                    )
+                self._gave_up_logged = False
+                return True
 
             except Exception as err:
                 self._retry_count += 1
@@ -314,11 +471,22 @@ class MqttRelayDestination:
                 if self._running and self._retry_count < MAX_RETRY_ATTEMPTS:
                     await asyncio.sleep(RETRY_INTERVAL_SECONDS)
 
-        if self._retry_count >= MAX_RETRY_ATTEMPTS:
+        self._client = None
+        if not self._running:
+            # Stopping, not giving up - don't log/schedule a reconnect.
+            self._status = ConnectionStatus.DISCONNECTED
+            return False
+
+        self._status = ConnectionStatus.DISCONNECTED
+        if not self._gave_up_logged:
             _LOGGER.error(
-                "Max retry attempts reached for '%s'. Giving up.",
+                "Max retry attempts reached for '%s'. Giving up until "
+                "a background reconnect succeeds.",
                 self._config.name,
             )
+            self._gave_up_logged = True
+        self._schedule_reconnect()
+        return False
 
 
 class MqttRelayManager:
