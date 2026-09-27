@@ -9,7 +9,11 @@ from homeassistant.config_entries import SOURCE_REAUTH
 from homeassistant.data_entry_flow import AbortFlow
 
 from custom_components.meraki_ha.config_flow import MerakiConfigFlow
-from custom_components.meraki_ha.const import CONF_MERAKI_API_KEY, CONF_MERAKI_ORG_ID
+from custom_components.meraki_ha.const import (
+    CONF_MERAKI_API_KEY,
+    CONF_MERAKI_ORG_ID,
+    CONF_SETUP_NOTIFICATION_SHOWN,
+)
 from tests.const import MOCK_OAUTH_TOKEN
 
 
@@ -169,6 +173,10 @@ async def test_async_step_init_creates_entry() -> None:
 
     assert flow.options["scan_interval"] == 60
     mock_async_create_entry.assert_called_once()
+    # A freshly created entry must be marked as not-yet-notified so
+    # async_setup_entry shows the one-time setup notifications exactly once.
+    created_data = mock_async_create_entry.call_args.kwargs["data"]
+    assert created_data[CONF_SETUP_NOTIFICATION_SHOWN] is False
 
 
 @pytest.mark.asyncio
@@ -268,6 +276,39 @@ async def test_reauth_success_removes_api_key(mock_hass: MagicMock) -> None:
     assert CONF_MERAKI_API_KEY not in updated
     assert updated["token"] == MOCK_OAUTH_TOKEN
     assert updated[CONF_MERAKI_ORG_ID] == "123456"
+
+
+@pytest.mark.asyncio
+async def test_reauth_preserves_existing_notification_marker(
+    mock_hass: MagicMock,
+) -> None:
+    """Reauth must not reset the setup-notification marker on the entry."""
+    flow = MerakiConfigFlow()
+    flow.hass = mock_hass
+    flow.context = {"source": SOURCE_REAUTH}
+    reauth_entry = MagicMock()
+    reauth_entry.data = {
+        CONF_MERAKI_ORG_ID: "123456",
+        "org_name": "Test Org",
+        CONF_SETUP_NOTIFICATION_SHOWN: True,
+    }
+    object.__setattr__(flow, "_get_reauth_entry", MagicMock(return_value=reauth_entry))
+    object.__setattr__(
+        flow,
+        "async_update_reload_and_abort",
+        MagicMock(return_value={"type": "abort", "reason": "reauth_successful"}),
+    )
+
+    with patch(
+        "custom_components.meraki_ha.config_flow.async_list_organizations",
+        new=AsyncMock(return_value=[{"id": "123456", "name": "Test Org"}]),
+    ):
+        await flow.async_oauth_create_entry(
+            {"auth_implementation": "meraki_ha", "token": MOCK_OAUTH_TOKEN}
+        )
+
+    updated = flow.async_update_reload_and_abort.call_args.kwargs["data"]
+    assert updated[CONF_SETUP_NOTIFICATION_SHOWN] is True
 
 
 @pytest.mark.asyncio
