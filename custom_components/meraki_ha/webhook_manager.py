@@ -87,6 +87,11 @@ class WebhookManager:
         self._webhook_count: int = 0
         self._registration_errors: list[str] = []
 
+    @property
+    def _alerts_webhook_id(self) -> str:
+        """HA webhook ID the alerts handler is registered under."""
+        return f"{self.entry.entry_id}_alerts"
+
     def _get_enabled_networks(self) -> list[str]:
         """Get the list of enabled network IDs from config entry."""
         enabled = self.entry.options.get(CONF_ENABLED_NETWORKS, [])
@@ -182,7 +187,7 @@ class WebhookManager:
         custom_url = self.entry.options.get(CONF_WEBHOOK_EXTERNAL_URL)
         try:
             webhook_url = get_webhook_url(
-                self.hass, self.entry.entry_id, custom_url or None
+                self.hass, self._alerts_webhook_id, custom_url or None
             )
         except MerakiConnectionError as e:
             _LOGGER.error("Cannot determine webhook URL: %s", e)
@@ -368,7 +373,9 @@ class WebhookManager:
         """Get the webhook URL for Home Assistant."""
         custom_url = self.entry.options.get(CONF_WEBHOOK_EXTERNAL_URL)
         try:
-            return get_webhook_url(self.hass, self.entry.entry_id, custom_url or None)
+            return get_webhook_url(
+                self.hass, self._alerts_webhook_id, custom_url or None
+            )
         except Exception as e:
             _LOGGER.error("Could not determine Home Assistant webhook URL: %s", e)
             return None
