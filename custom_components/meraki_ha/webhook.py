@@ -528,24 +528,27 @@ async def async_handle_webhook(
         _LOGGER_ALERTS.warning("Received invalid JSON in webhook %s", webhook_id)
         return web.Response(status=400)
 
+    # HA webhook IDs are "{entry_id}_alerts"; derive the config entry ID from it.
+    entry_id = webhook_id.removesuffix("_alerts")
+
     # Differentiate between Scanning API and alerts webhook
     if "type" in data and "secret" in data:
-        return await _handle_scanning_api_data(hass, webhook_id, data)
+        return await _handle_scanning_api_data(hass, entry_id, data)
 
     # --- Alerts Webhook Handling ---
     _LOGGER_ALERTS.debug("Alerts webhook %s received: %s", webhook_id, data)
 
-    config_entry = hass.config_entries.async_get_entry(webhook_id)
+    config_entry = hass.config_entries.async_get_entry(entry_id)
     if not config_entry:
         _LOGGER_ALERTS.warning(
-            "Received webhook for unknown config entry: %s", webhook_id
+            "Received webhook for unknown config entry: %s", entry_id
         )
         return web.Response(status=404)
 
     if not await _validate_shared_secret(data.get("sharedSecret"), config_entry):
         return web.Response(status=401)
 
-    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][webhook_id]["coordinator"]
+    coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
     alert_type = data.get("alertType")
 
     if alert_type:

@@ -169,6 +169,7 @@ async def test_webhook_router_detects_scanning_api(
     hass: HomeAssistant, mock_config_entry, mock_coordinator
 ):
     """Test that webhook router correctly identifies and routes Scanning API data."""
+    mock_config_entry.entry_id = "entry1"
     mock_config_entry.options = {
         CONF_ENABLE_SCANNING_API: True,
         CONF_SCANNING_API_SECRET: "test_secret",
@@ -193,7 +194,7 @@ async def test_webhook_router_detects_scanning_api(
         }
     )
 
-    response = await async_handle_webhook(hass, mock_config_entry.entry_id, request)
+    response = await async_handle_webhook(hass, "entry1_alerts", request)
     assert response.status == 200
     mock_coordinator.async_handle_scanning_api_data.assert_called_once()
 

@@ -334,3 +334,41 @@ class TestAsyncHandleWebhook:
 
         # Should not raise, just log and ignore
         await async_handle_webhook(hass, "wh_123", mock_request)
+
+
+class TestAlertsWebhookIdRouting:
+    """Regression: HA registers alerts as '{entry_id}_alerts'."""
+
+    @pytest.mark.asyncio
+    async def test_alerts_suffix_resolves_config_entry(self) -> None:
+        """The '_alerts' suffix must be stripped to find entry and coordinator."""
+        coordinator = MagicMock()
+        config_entry = MagicMock()
+        config_entry.options = {"webhook_shared_secret": "secret"}
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {DOMAIN: {"entry1": {"coordinator": coordinator}}}
+        hass.config_entries.async_get_entry.return_value = config_entry
+        request = MagicMock(spec=web.Request)
+        request.json = AsyncMock(
+            return_value={"alertType": "unmapped", "sharedSecret": "secret"}
+        )
+
+        response = await async_handle_webhook(hass, "entry1_alerts", request)
+
+        hass.config_entries.async_get_entry.assert_called_once_with("entry1")
+        assert response.status == 200
+        coordinator.mark_webhook_received.assert_called_once()
+
+    def test_manager_url_uses_alerts_webhook_id(self) -> None:
+        """URL sent to Meraki must match the HA-registered webhook ID."""
+        from custom_components.meraki_ha.webhook_manager import WebhookManager
+
+        entry = MagicMock()
+        entry.entry_id = "entry1"
+        entry.options = {"webhook_external_url": "https://ha.example.com"}
+        manager = WebhookManager(MagicMock(), MagicMock(), entry)
+
+        assert (
+            manager._get_ha_webhook_url()
+            == "https://ha.example.com/api/webhook/entry1_alerts"
+        )
