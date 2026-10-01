@@ -182,6 +182,29 @@ class OrganizationEndpoints:
         return validated
 
     @handle_meraki_errors
+    async def get_devices_by_serials(self, serials: list[str]) -> list[dict[str, Any]]:
+        """
+        Get several devices in one org-level call, filtered by serial.
+
+        Returns
+        -------
+            A list of devices.
+
+        """
+        if self._api_client.dashboard is None or not serials:
+            return []
+        api = self._api_client.dashboard.organizations
+        devices = await api.getOrganizationDevices(
+            organizationId=self._api_client.organization_id,
+            serials=serials,
+            total_pages="all",
+        )
+        validated = validate_response(devices)
+        if not isinstance(validated, list):
+            return []
+        return validated
+
+    @handle_meraki_errors
     @async_timed_cache(timeout=3600)
     @async_log_time(slow_threshold=3.0)
     async def get_organizations(self) -> list[dict[str, Any]]:

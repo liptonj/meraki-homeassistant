@@ -35,6 +35,7 @@ from .endpoints.push import PushApiEndpoints
 from .endpoints.sensor import SensorEndpoints
 from .endpoints.switch import SwitchEndpoints
 from .endpoints.wireless import WirelessEndpoints
+from .action_batch import ActionBatchQueue
 from .rate_limiter import get_org_limiter, throttle_session
 
 # Use feature-specific logger - can be configured independently via:
@@ -131,6 +132,7 @@ class MerakiAPIClient:
         self.switch = SwitchEndpoints(self)
         self.wireless = WirelessEndpoints(self)
         self.sensor = SensorEndpoints(self)
+        self.action_batches = ActionBatchQueue(self)
 
         # Set to store network IDs that have failed traffic analysis
         self.traffic_analysis_failed_networks: set[str] = set()

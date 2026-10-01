@@ -158,3 +158,24 @@ class TestAutoSyncClient:
         await _maybe_auto_sync_client(mock_coordinator, "AA:BB:CC:DD:EE:FF", None)
 
         mock_coordinator.api.network.provision_network_clients.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_auto_sync_skips_unchanged_name(self, mock_coordinator):
+        """A client that reconnects with the same name is not provisioned again."""
+        from unittest.mock import AsyncMock, patch
+
+        from custom_components.meraki_ha.handlers import client_alerts
+
+        mock_coordinator.config_entry.options = {"sync_on_new_client": True}
+        mock_coordinator.api.network.provision_network_clients = AsyncMock()
+        client_alerts._SYNCED_CLIENT_NAMES.clear()
+
+        with patch(
+            "custom_components.meraki_ha.helpers.sync_helper.build_client_description",
+            return_value="Kitchen Speaker",
+        ):
+            await _maybe_auto_sync_client(mock_coordinator, "AA:BB:CC:DD:EE:01", "N_1")
+            await _maybe_auto_sync_client(mock_coordinator, "aa:bb:cc:dd:ee:01", "N_1")
+
+        mock_coordinator.api.network.provision_network_clients.assert_awaited_once()
+        client_alerts._SYNCED_CLIENT_NAMES.clear()

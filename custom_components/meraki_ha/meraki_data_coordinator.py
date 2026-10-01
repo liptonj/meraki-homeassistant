@@ -38,7 +38,11 @@ from .const import (
     WEBHOOK_SSID_SCAN_INTERVAL,
 )
 from .core.api.client import MerakiAPIClient as ApiClient
-from .core.errors import ApiClientCommunicationError, MerakiAuthenticationError
+from .core.errors import (
+    ApiClientCommunicationError,
+    MerakiAuthenticationError,
+    MerakiConnectionError,
+)
 from .helpers.logging_helper import MerakiLoggers
 from .types import MerakiDevice, MerakiNetwork
 
@@ -105,6 +109,9 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Debouncing: track pending refreshes to avoid duplicate API calls
         self._pending_refreshes: dict[str, datetime] = {}  # key -> scheduled time
         self._refresh_debounce_seconds: int = 5  # Minimum seconds between refreshes
+        # Device refreshes requested by alerts are coalesced into one API call
+        self._pending_device_serials: set[str] = set()
+        self._device_refresh_scheduled: bool = False
 
         # Event deduplication: track recently processed alert IDs
         self._processed_alert_ids: dict[str, datetime] = {}  # alertId -> processed time
@@ -1520,7 +1527,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             self._targeted_refresh_success_count += 1
                             return
             self._targeted_refresh_success_count += 1
-        except (ApiClientCommunicationError, TimeoutError, OSError) as e:
+        except (MerakiConnectionError, TimeoutError, OSError) as e:
             _LOGGER.error(
                 "Error during targeted client refresh for %s: %s", client_mac, e
             )
@@ -1531,29 +1538,50 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         serial: str,
         delay: int = WEBHOOK_DETAIL_REFRESH_DELAY,
     ) -> None:
-        """Fetch single device details after a webhook alert."""
-        await asyncio.sleep(delay)
+        """
+        Fetch device details after a webhook or Push alert.
+
+        Alerts tend to arrive in bursts (a switch reboot reports every port,
+        a site outage reports every AP). Serials requested while a refresh is
+        already waiting join that refresh, so a burst costs one API call.
+        """
+        self._pending_device_serials.add(serial)
+        if self._device_refresh_scheduled:
+            return
+        self._device_refresh_scheduled = True
+        try:
+            await asyncio.sleep(delay)
+        finally:
+            self._device_refresh_scheduled = False
+        serials = sorted(self._pending_device_serials)
+        self._pending_device_serials.clear()
+        if not serials:
+            return
 
         # Track metrics
         self._increment_targeted_refresh_count("device")
 
         try:
-            device = await self.api.devices.get_device(serial)
-            if device:
-                # Find and update the device in the coordinator data
-                if self.data and "devices" in self.data:
-                    for i, existing_device in enumerate(self.data["devices"]):
-                        if existing_device.get("serial") == serial:
-                            self.data["devices"][i] = device
-                            self.async_update_listeners()
-                            _LOGGER.info(
-                                "Targeted refresh successful for device %s", serial
-                            )
-                            self._targeted_refresh_success_count += 1
-                            return
+            if len(serials) == 1:
+                device = await self.api.devices.get_device(serials[0])
+                devices = [device] if device else []
+            else:
+                devices = await self.api.organization.get_devices_by_serials(serials)
+            by_serial = {d.get("serial"): d for d in devices if d}
+            if by_serial and self.data and "devices" in self.data:
+                updated = False
+                for i, existing_device in enumerate(self.data["devices"]):
+                    fresh = by_serial.get(existing_device.get("serial"))
+                    if fresh:
+                        # Keep the per-device details the full poll attaches
+                        self.data["devices"][i] = {**existing_device, **fresh}
+                        updated = True
+                if updated:
+                    self.async_update_listeners()
+                    _LOGGER.info("Targeted refresh successful for %s", serials)
             self._targeted_refresh_success_count += 1
-        except (ApiClientCommunicationError, TimeoutError, OSError) as e:
-            _LOGGER.error("Error during targeted device refresh for %s: %s", serial, e)
+        except (MerakiConnectionError, TimeoutError, OSError) as e:
+            _LOGGER.error("Error during targeted device refresh for %s: %s", serials, e)
             self._targeted_refresh_failure_count += 1
 
     async def _targeted_ssid_refresh(
@@ -1584,7 +1612,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         "Targeted SSID refresh successful for network %s", network_id
                     )
             self._targeted_refresh_success_count += 1
-        except (ApiClientCommunicationError, TimeoutError, OSError) as e:
+        except (MerakiConnectionError, TimeoutError, OSError) as e:
             _LOGGER.error(
                 "Error during targeted SSID refresh for network %s: %s", network_id, e
             )
@@ -1620,7 +1648,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                                     self._targeted_refresh_success_count += 1
                                     return
             self._targeted_refresh_success_count += 1
-        except (ApiClientCommunicationError, TimeoutError, OSError) as e:
+        except (MerakiConnectionError, TimeoutError, OSError) as e:
             _LOGGER.error(
                 "Error during targeted network refresh for %s: %s", network_id, e
             )

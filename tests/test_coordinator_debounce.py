@@ -255,3 +255,71 @@ class TestDebouncedRefresh:
         assert result is False
         # Should not create a new task
         task_mock.assert_not_called()
+
+
+class TestDeviceRefreshCoalescing:
+    """Alert bursts share one device refresh call."""
+
+    @staticmethod
+    def _coordinator():
+        from unittest.mock import AsyncMock
+
+        from custom_components.meraki_ha.meraki_data_coordinator import (
+            MerakiDataCoordinator,
+        )
+
+        coordinator = MagicMock(spec=MerakiDataCoordinator)
+        coordinator._pending_device_serials = set()
+        coordinator._device_refresh_scheduled = False
+        coordinator._targeted_refresh_success_count = 0
+        coordinator._targeted_refresh_failure_count = 0
+        coordinator.data = {
+            "devices": [
+                {"serial": "A", "status": "offline", "ports_statuses": [1]},
+                {"serial": "B", "status": "offline"},
+            ]
+        }
+        coordinator.api = MagicMock()
+        coordinator.api.devices.get_device = AsyncMock(
+            return_value={"serial": "A", "status": "online"}
+        )
+        coordinator.api.organization.get_devices_by_serials = AsyncMock(
+            return_value=[
+                {"serial": "A", "status": "online"},
+                {"serial": "B", "status": "online"},
+            ]
+        )
+        coordinator._targeted_device_refresh = (
+            MerakiDataCoordinator._targeted_device_refresh.__get__(
+                coordinator, MerakiDataCoordinator
+            )
+        )
+        return coordinator
+
+    async def test_burst_makes_one_org_call(self):
+        """Several serials within the delay are fetched together."""
+        import asyncio
+
+        coordinator = self._coordinator()
+        await asyncio.gather(
+            coordinator._targeted_device_refresh("A", delay=0),
+            coordinator._targeted_device_refresh("B", delay=0),
+            coordinator._targeted_device_refresh("A", delay=0),
+        )
+
+        coordinator.api.organization.get_devices_by_serials.assert_awaited_once_with(
+            ["A", "B"]
+        )
+        coordinator.api.devices.get_device.assert_not_awaited()
+        assert coordinator.data["devices"][0]["status"] == "online"
+        # Details attached by the full poll survive the refresh
+        assert coordinator.data["devices"][0]["ports_statuses"] == [1]
+        assert coordinator.data["devices"][1]["status"] == "online"
+
+    async def test_single_serial_uses_device_call(self):
+        """One serial keeps using the per-device endpoint."""
+        coordinator = self._coordinator()
+        await coordinator._targeted_device_refresh("A", delay=0)
+
+        coordinator.api.devices.get_device.assert_awaited_once_with("A")
+        coordinator.api.organization.get_devices_by_serials.assert_not_awaited()
