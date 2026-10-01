@@ -53,3 +53,36 @@ async def test_vehicle_count_sensor(mock_coordinator, mock_camera_service):
     # Assert
     assert sensor.native_value == 2
     assert sensor.extra_state_attributes["raw_data"] == [{"person": 5, "vehicle": 2}]
+
+
+def test_analytics_sensor_does_not_self_poll(mock_coordinator, mock_camera_service):
+    """Analytics sensors follow the coordinator rather than HA's 30s poll."""
+    sensor = MerakiPersonCountSensor(
+        mock_coordinator, MOCK_DEVICE.copy(), mock_camera_service
+    )
+    assert sensor.should_poll is False
+
+
+@pytest.mark.asyncio
+async def test_coordinator_update_refreshes_only_when_stale(
+    mock_coordinator, mock_camera_service
+):
+    """Coordinator ticks fetch analytics at most once per refresh interval."""
+    device = MOCK_DEVICE.copy()
+    mock_coordinator.data = {"devices": [device]}
+    sensor = MerakiPersonCountSensor(mock_coordinator, device, mock_camera_service)
+    sensor.hass = MagicMock()
+    sensor.async_write_ha_state = MagicMock()
+    scheduled = []
+    sensor.hass.async_create_background_task = MagicMock(
+        side_effect=lambda coro, name: scheduled.append(coro)
+    )
+
+    sensor._handle_coordinator_update()
+    assert len(scheduled) == 1
+    await scheduled.pop()
+    assert sensor.native_value == 5
+
+    sensor._handle_coordinator_update()
+    assert scheduled == []
+    assert mock_camera_service.get_analytics_data.await_count == 1
