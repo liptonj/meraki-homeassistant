@@ -157,7 +157,9 @@ CAMERA_STREAM_SOURCE_CLOUD: Final = "cloud"
 DEFAULT_CAMERA_STREAM_SOURCE: Final = "rtsp"
 """Default camera stream source."""
 
-DEFAULT_CAMERA_SNAPSHOT_INTERVAL: Final = 0
+DEFAULT_CAMERA_SNAPSHOT_INTERVAL: Final = 60
+# Every snapshot is a POST to the Meraki API, so never refresh faster than this.
+MIN_CAMERA_SNAPSHOT_INTERVAL: Final = 30
 """Default camera snapshot interval (0 = disabled)."""
 
 CONF_CAMERA_ENTITY_MAPPINGS: Final = "camera_entity_mappings"

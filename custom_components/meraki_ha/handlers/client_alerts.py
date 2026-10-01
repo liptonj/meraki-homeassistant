@@ -12,6 +12,10 @@ if TYPE_CHECKING:
 
 _LOGGER = MerakiLoggers.ALERTS
 
+# Names already pushed to Meraki, keyed by (network id, MAC), so a client
+# that reconnects does not cost another provision call for the same name.
+_SYNCED_CLIENT_NAMES: dict[tuple[str, str], str] = {}
+
 
 async def async_handle_client_alert(
     coordinator: MerakiDataCoordinator,
@@ -187,11 +191,17 @@ async def _maybe_auto_sync_client(
         _LOGGER.debug("No HA device found for MAC %s, skipping auto-sync", client_mac)
         return
 
+    sync_key = (network_id, client_mac.lower())
+    if _SYNCED_CLIENT_NAMES.get(sync_key) == description:
+        _LOGGER.debug("Client %s already synced as '%s'", client_mac, description)
+        return
+
     try:
         await coordinator.api.network.provision_network_clients(
             network_id,
             [{"mac": client_mac, "name": description}],
         )
+        _SYNCED_CLIENT_NAMES[sync_key] = description
         _LOGGER.info(
             "Auto-synced client %s with name '%s' to Meraki",
             client_mac,

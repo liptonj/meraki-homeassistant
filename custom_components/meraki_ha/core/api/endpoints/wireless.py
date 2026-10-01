@@ -8,6 +8,7 @@ from custom_components.meraki_ha.core.utils.api_utils import (
 )
 
 from ....helpers.logging_helper import MerakiLoggers
+from ..action_batch import submit_write
 from ..cache import async_timed_cache
 
 if TYPE_CHECKING:
@@ -223,10 +224,16 @@ class WirelessEndpoints:
         if self._api_client.dashboard is None:
             return {}
         api = self._api_client.dashboard.wireless
-        ssid = await api.updateNetworkWirelessSsid(
-            networkId=network_id,
-            number=number,
-            **kwargs,
+        ssid = await submit_write(
+            self._api_client,
+            f"/networks/{network_id}/wireless/ssids/{number}",
+            "update",
+            dict(kwargs),
+            lambda: api.updateNetworkWirelessSsid(
+                networkId=network_id,
+                number=number,
+                **kwargs,
+            ),
         )
         validated = validate_response(ssid)
         if not isinstance(validated, dict):

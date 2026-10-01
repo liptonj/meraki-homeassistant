@@ -14,6 +14,7 @@ from custom_components.meraki_ha.core.utils.api_utils import (
 
 from ....core.errors import MerakiVlansDisabledError
 from ....helpers.logging_helper import MerakiLoggers
+from ..action_batch import submit_write
 from ..cache import async_timed_cache
 
 if TYPE_CHECKING:
@@ -118,10 +119,17 @@ class ApplianceEndpoints:
         """
         if self._api_client.dashboard is None:
             return {}
-        vlan = await self._api_client.dashboard.appliance.updateNetworkApplianceVlan(
-            networkId=network_id,
-            vlanId=vlan_id,
-            **kwargs,
+        appliance = self._api_client.dashboard.appliance
+        vlan = await submit_write(
+            self._api_client,
+            f"/networks/{network_id}/appliance/vlans/{vlan_id}",
+            "update",
+            dict(kwargs),
+            lambda: appliance.updateNetworkApplianceVlan(
+                networkId=network_id,
+                vlanId=vlan_id,
+                **kwargs,
+            ),
         )
         validated = validate_response(vlan)
         if not isinstance(validated, dict):

@@ -1,6 +1,5 @@
 """API utility functions."""
 
-import asyncio
 import functools
 import inspect
 from collections.abc import Awaitable, Callable
@@ -17,6 +16,7 @@ from ..errors import (
     MerakiDeviceError,
     MerakiInformationalError,
     MerakiNetworkError,
+    MerakiRateLimitError,
     MerakiTrafficAnalysisError,
     MerakiVlansDisabledError,
 )
@@ -104,20 +104,14 @@ def handle_meraki_errors(
         except (APIError, AsyncAPIError) as err:
             _raise_if_informational_error(err)
 
-            # Check if this is a retry limit error (transient network issue)
-            if _is_retry_limit_error(err):
-                # Log at DEBUG level since this is handled gracefully.
-                # Transient network issues are common and the code degrades gracefully.
-                _LOGGER.debug(
-                    "API call %s reached retry limit (transient issue, returning "
-                    "empty result): %s",
-                    func.__name__,
-                    err,
+            # The SDK has already retried (honouring Retry-After). Raise rather
+            # than return an empty value: an empty device or SSID list would
+            # look like everything was removed.
+            if _is_retry_limit_error(err) or _is_rate_limit_error(err):
+                _LOGGER.warning(
+                    "API call %s gave up after retries: %s", func.__name__, err
                 )
-                # Return empty value for retry limit errors (graceful degradation)
-                if _is_list_return_type(func):
-                    return cast(T, [])
-                return cast(T, {})
+                raise MerakiRateLimitError(f"API retries exhausted: {err}") from err
 
             _LOGGER.error("Meraki API error: %s", err)
             if _is_auth_error(err):
@@ -128,11 +122,6 @@ def handle_meraki_errors(
                 raise MerakiDeviceError(f"Device error: {err}") from err
             elif _is_network_error(err):
                 raise MerakiNetworkError(f"Network error: {err}") from err
-            elif _is_rate_limit_error(err):
-                # Wait and retry for rate limit errors
-                _LOGGER.warning("Rate limit exceeded, retrying in 2 seconds...")
-                await asyncio.sleep(2)
-                return await wrapper(*args, **kwargs)
             else:
                 raise MerakiConnectionError(f"API error: {err}") from err
         except ClientError as err:

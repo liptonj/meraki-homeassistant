@@ -1,6 +1,7 @@
 """Tests for the main __init__.py module."""
 
 from collections.abc import Generator
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -10,17 +11,21 @@ from custom_components.meraki_ha import (
     _RELOAD_SNAPSHOT_KEY,
     _should_show_setup_notifications,
     async_reload_entry,
+    async_remove_entry,
     async_setup_entry,
     async_unload_entry,
 )
 from custom_components.meraki_ha.const import (
+    CONF_ENABLE_PUSH_API,
     CONF_ENABLE_SCANNING_API,
+    CONF_ENABLE_WEBHOOKS,
     CONF_MERAKI_ORG_ID,
     CONF_SCANNING_API_VALIDATOR,
     CONF_SETUP_NOTIFICATION_SHOWN,
     DATA_CLIENT,
     DOMAIN,
 )
+from custom_components.meraki_ha.services.push_api import push_iname
 from tests.const import MOCK_OAUTH_CONFIG_DATA
 
 
@@ -107,9 +112,6 @@ async def test_async_setup_entry_success(
             "custom_components.meraki_ha.MerakiRepository",
         ),
         patch(
-            "custom_components.meraki_ha.SwitchPortStatusCoordinator",
-        ) as mock_switch_port_coord,
-        patch(
             "custom_components.meraki_ha.CameraRepository",
         ),
         patch(
@@ -141,11 +143,6 @@ async def test_async_setup_entry_success(
         mock_discovery_instance = MagicMock()
         mock_discovery_instance.discover_entities = AsyncMock(return_value=[])
         mock_discovery.return_value = mock_discovery_instance
-
-        # Configure switch port coordinator mock
-        mock_spc_instance = MagicMock()
-        mock_spc_instance.async_refresh = AsyncMock()
-        mock_switch_port_coord.return_value = mock_spc_instance  # type: ignore[name-defined]
 
         result = await async_setup_entry(mock_hass, mock_config_entry)
 
@@ -211,9 +208,6 @@ async def test_async_setup_entry_existing_coordinator(
             "custom_components.meraki_ha.MerakiRepository",
         ),
         patch(
-            "custom_components.meraki_ha.SwitchPortStatusCoordinator",
-        ) as mock_switch_port_coord,
-        patch(
             "custom_components.meraki_ha.CameraRepository",
         ),
         patch(
@@ -245,11 +239,6 @@ async def test_async_setup_entry_existing_coordinator(
         mock_discovery_instance = MagicMock()
         mock_discovery_instance.discover_entities = AsyncMock(return_value=[])
         mock_discovery.return_value = mock_discovery_instance
-
-        # Configure switch port coordinator mock
-        mock_spc_instance = MagicMock()
-        mock_spc_instance.async_refresh = AsyncMock()
-        mock_switch_port_coord.return_value = mock_spc_instance
 
         result = await async_setup_entry(mock_hass, mock_config_entry)
 
@@ -323,6 +312,97 @@ async def test_async_unload_entry_no_web_server(
     assert result is True
 
 
+def _unload_entry_data() -> dict[str, Any]:
+    client = MagicMock()
+    client.async_close = AsyncMock()
+    push_manager = MagicMock()
+    push_manager.async_unregister = AsyncMock()
+    webhook_manager = MagicMock()
+    webhook_manager.async_unregister_webhooks = AsyncMock()
+    return {
+        DATA_CLIENT: client,
+        "push_api_manager": push_manager,
+        "webhook_manager": webhook_manager,
+        "webhook_id": "alerts-hook",
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("enabled", [True, False])
+async def test_unload_keeps_dashboard_registrations_while_enabled(
+    mock_hass: MagicMock,
+    mock_config_entry: MagicMock,
+    enabled: bool,
+) -> None:
+    """A reload keeps Push and alert registrations; disabling removes them."""
+    mock_config_entry.options = {
+        CONF_ENABLE_PUSH_API: enabled,
+        CONF_ENABLE_WEBHOOKS: enabled,
+    }
+    entry_data = _unload_entry_data()
+    mock_hass.data = {DOMAIN: {mock_config_entry.entry_id: entry_data}}
+
+    with (
+        patch("custom_components.meraki_ha.async_unregister_frontend"),
+        patch("custom_components.meraki_ha.ha_webhook.async_unregister"),
+    ):
+        assert await async_unload_entry(mock_hass, mock_config_entry)
+
+    push_calls = entry_data["push_api_manager"].async_unregister.await_count
+    hook_calls = entry_data["webhook_manager"].async_unregister_webhooks.await_count
+    assert push_calls == (0 if enabled else 1)
+    assert hook_calls == (0 if enabled else 1)
+    entry_data[DATA_CLIENT].async_close.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_remove_entry_deletes_registrations_by_name(
+    mock_hass: MagicMock,
+    mock_config_entry: MagicMock,
+    mock_oauth_session: MagicMock,
+) -> None:
+    """Removing the entry deletes only the registrations it named."""
+    prefix = push_iname(mock_config_entry.entry_id, "")
+    receiver = push_iname(mock_config_entry.entry_id, "receiver")
+    short_id = mock_config_entry.entry_id[:8]
+
+    client = MagicMock()
+    client.async_setup = AsyncMock()
+    client.async_close = AsyncMock()
+    client.push.get_push_profiles = AsyncMock(
+        return_value=[{"iname": f"{prefix}avail"}, {"iname": "other_profile"}]
+    )
+    client.push.get_receiver_profiles = AsyncMock(
+        return_value=[{"iname": receiver}, {"iname": "other_receiver"}]
+    )
+    client.push.get_http_servers = AsyncMock(
+        return_value=[
+            {"id": "s1", "name": f"Home Assistant Push API - {short_id}"},
+            {"id": "s2", "name": "Someone else"},
+        ]
+    )
+    client.push.delete_push_profile = AsyncMock()
+    client.push.delete_receiver_profile = AsyncMock()
+    client.push.delete_http_server = AsyncMock()
+    client.organization.get_organization_networks = AsyncMock(
+        return_value=[{"id": "N_1"}]
+    )
+    client.network.find_webhook_by_name = AsyncMock(return_value={"id": "w1"})
+    client.network.delete_webhook = AsyncMock()
+
+    with patch("custom_components.meraki_ha.MerakiAPIClient", return_value=client):
+        await async_remove_entry(mock_hass, mock_config_entry)
+
+    client.push.delete_push_profile.assert_awaited_once_with(f"{prefix}avail")
+    client.push.delete_receiver_profile.assert_awaited_once_with(receiver)
+    client.push.delete_http_server.assert_awaited_once_with("s1")
+    client.network.find_webhook_by_name.assert_awaited_once_with(
+        "N_1", f"Home Assistant - {short_id}"
+    )
+    client.network.delete_webhook.assert_awaited_once_with("N_1", "w1")
+    client.async_close.assert_awaited_once()
+
+
 # =============================================================================
 # Scanning API Webhook Registration Tests
 # =============================================================================
@@ -360,7 +440,6 @@ async def test_scanning_api_webhook_registered_when_enabled(
             return_value=mock_coordinator,
         ),
         patch("custom_components.meraki_ha.MerakiRepository"),
-        patch("custom_components.meraki_ha.SwitchPortStatusCoordinator") as mock_spc,
         patch("custom_components.meraki_ha.CameraRepository"),
         patch("custom_components.meraki_ha.CameraService"),
         patch("custom_components.meraki_ha.DeviceControlService"),
@@ -378,10 +457,6 @@ async def test_scanning_api_webhook_registered_when_enabled(
         mock_discovery_instance = MagicMock()
         mock_discovery_instance.discover_entities = AsyncMock(return_value=[])
         mock_discovery.return_value = mock_discovery_instance
-
-        mock_spc_instance = MagicMock()
-        mock_spc_instance.async_refresh = AsyncMock()
-        mock_spc.return_value = mock_spc_instance
 
         await async_setup_entry(mock_hass, mock_config_entry)
 
@@ -427,7 +502,6 @@ async def test_scanning_api_webhook_not_registered_when_disabled(
             return_value=mock_coordinator,
         ),
         patch("custom_components.meraki_ha.MerakiRepository"),
-        patch("custom_components.meraki_ha.SwitchPortStatusCoordinator") as mock_spc,
         patch("custom_components.meraki_ha.CameraRepository"),
         patch("custom_components.meraki_ha.CameraService"),
         patch("custom_components.meraki_ha.DeviceControlService"),
@@ -445,10 +519,6 @@ async def test_scanning_api_webhook_not_registered_when_disabled(
         mock_discovery_instance = MagicMock()
         mock_discovery_instance.discover_entities = AsyncMock(return_value=[])
         mock_discovery.return_value = mock_discovery_instance
-
-        mock_spc_instance = MagicMock()
-        mock_spc_instance.async_refresh = AsyncMock()
-        mock_spc.return_value = mock_spc_instance
 
         await async_setup_entry(mock_hass, mock_config_entry)
 
@@ -490,7 +560,6 @@ async def test_scanning_api_webhook_not_registered_without_validator(
             return_value=mock_coordinator,
         ),
         patch("custom_components.meraki_ha.MerakiRepository"),
-        patch("custom_components.meraki_ha.SwitchPortStatusCoordinator") as mock_spc,
         patch("custom_components.meraki_ha.CameraRepository"),
         patch("custom_components.meraki_ha.CameraService"),
         patch("custom_components.meraki_ha.DeviceControlService"),
@@ -509,10 +578,6 @@ async def test_scanning_api_webhook_not_registered_without_validator(
         mock_discovery_instance = MagicMock()
         mock_discovery_instance.discover_entities = AsyncMock(return_value=[])
         mock_discovery.return_value = mock_discovery_instance
-
-        mock_spc_instance = MagicMock()
-        mock_spc_instance.async_refresh = AsyncMock()
-        mock_spc.return_value = mock_spc_instance
 
         await async_setup_entry(mock_hass, mock_config_entry)
 
@@ -687,7 +752,6 @@ async def test_notifications_shown_once_on_first_setup(
             return_value=mock_coordinator,
         ),
         patch("custom_components.meraki_ha.MerakiRepository"),
-        patch("custom_components.meraki_ha.SwitchPortStatusCoordinator") as mock_spc,
         patch("custom_components.meraki_ha.CameraRepository"),
         patch("custom_components.meraki_ha.CameraService"),
         patch("custom_components.meraki_ha.DeviceControlService"),
@@ -702,10 +766,6 @@ async def test_notifications_shown_once_on_first_setup(
         mock_discovery_instance = MagicMock()
         mock_discovery_instance.discover_entities = AsyncMock(return_value=[])
         mock_discovery.return_value = mock_discovery_instance
-
-        mock_spc_instance = MagicMock()
-        mock_spc_instance.async_refresh = AsyncMock()
-        mock_spc.return_value = mock_spc_instance
 
         await async_setup_entry(mock_hass, mock_entry)
 
@@ -755,7 +815,6 @@ async def test_notifications_not_shown_for_existing_install(
             return_value=mock_coordinator,
         ),
         patch("custom_components.meraki_ha.MerakiRepository"),
-        patch("custom_components.meraki_ha.SwitchPortStatusCoordinator") as mock_spc,
         patch("custom_components.meraki_ha.CameraRepository"),
         patch("custom_components.meraki_ha.CameraService"),
         patch("custom_components.meraki_ha.DeviceControlService"),
@@ -770,10 +829,6 @@ async def test_notifications_not_shown_for_existing_install(
         mock_discovery_instance = MagicMock()
         mock_discovery_instance.discover_entities = AsyncMock(return_value=[])
         mock_discovery.return_value = mock_discovery_instance
-
-        mock_spc_instance = MagicMock()
-        mock_spc_instance.async_refresh = AsyncMock()
-        mock_spc.return_value = mock_spc_instance
 
         await async_setup_entry(mock_hass, mock_config_entry)
 

@@ -182,7 +182,7 @@
           "camera_link_integration": "Intégration de Liaison de Caméra"
         },
         "data_description": {
-          "camera_snapshot_interval": "Fréquence d'actualisation des captures de caméra sur le tableau de bord (0 = uniquement à la demande). Le streaming de caméra utilise RTSP et nécessite l'activation du serveur RTSP dans le tableau de bord Meraki.",
+          "camera_snapshot_interval": "Fréquence d'actualisation des captures de caméra sur le tableau de bord (minimum 30). Le streaming de caméra utilise RTSP et nécessite l'activation du serveur RTSP dans le tableau de bord Meraki.",
           "camera_link_integration": "Sélectionnez une intégration pour filtrer les caméras affichées lors de la liaison des caméras Meraki. Choisissez 'Toutes les Caméras' pour voir toutes les entités de caméra disponibles."
         }
       },

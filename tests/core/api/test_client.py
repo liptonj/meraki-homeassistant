@@ -78,6 +78,24 @@ class TestMerakiAPIClient:
             await api_client.async_close()
 
     @pytest.mark.asyncio
+    async def test_async_setup_throttles_sdk_session(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """The SDK session is rate limited with the org's shared bucket."""
+        with (
+            patch("meraki.aio.AsyncDashboardAPI") as mock_dashboard,
+            patch(
+                "custom_components.meraki_ha.core.api.client.throttle_session"
+            ) as throttle,
+        ):
+            mock_dashboard.return_value.__aenter__.return_value = mock_dashboard
+            await api_client.async_setup()
+
+            throttle.assert_called_once()
+            assert throttle.call_args.args[0] is mock_dashboard.return_value
+            await api_client.async_close()
+
+    @pytest.mark.asyncio
     async def test_ensure_token_valid_updates_bearer_header(
         self, mock_hass: MagicMock
     ) -> None:
@@ -239,25 +257,60 @@ class TestMerakiAPIClient:
         assert clients[0]["networkId"] == "N_123"
         api_client.network.get_network_clients.assert_called_once_with("N_123")
 
-    @pytest.mark.asyncio
-    async def test_async_fetch_device_clients(
-        self, api_client: MerakiAPIClient
-    ) -> None:
-        """Test _async_fetch_device_clients fetches clients per device."""
-        api_client.devices.get_device_clients = AsyncMock(
-            return_value=[{"id": "client1", "mac": "00:11:22:33:44:55"}]
-        )
-
-        devices = [
-            {"serial": "ABC-123", "productType": "switch"},
-            {"serial": "DEF-456", "productType": "camera"},  # Should skip
+    def test_group_clients_by_device(self) -> None:
+        """Per-device clients come from the network client list."""
+        clients = [
+            {"mac": "a", "recentDeviceSerial": "ABC-123", "status": "Online"},
+            {"mac": "b", "recentDeviceSerial": "ABC-123", "status": "Online"},
+            {"mac": "c", "recentDeviceSerial": "ABC-123", "status": "Offline"},
+            {"mac": "d", "recentDeviceSerial": None, "status": "Online"},
+            {"mac": "e", "recentDeviceSerial": "DEF-456", "status": "Online"},
         ]
 
-        clients_by_serial = await api_client._async_fetch_device_clients(devices)
+        grouped = MerakiAPIClient._group_clients_by_device(clients)
 
-        assert "ABC-123" in clients_by_serial
-        assert len(clients_by_serial["ABC-123"]) == 1
-        assert "DEF-456" not in clients_by_serial
+        assert [c["mac"] for c in grouped["ABC-123"]] == ["a", "b"]
+        assert [c["mac"] for c in grouped["DEF-456"]] == ["e"]
+        assert len(grouped) == 2
+
+    @pytest.mark.asyncio
+    async def test_get_all_data_makes_no_per_device_client_calls(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """get_all_data never calls getDeviceClients."""
+        api_client.devices.get_device_clients = AsyncMock()
+        with (
+            patch.object(
+                api_client,
+                "_async_fetch_initial_data",
+                new=AsyncMock(
+                    return_value={
+                        "networks": [{"id": "N_1", "name": "Net"}],
+                        "devices": [
+                            {
+                                "serial": "SW-1",
+                                "productType": "switch",
+                                "networkId": "N_1",
+                            }
+                        ],
+                    }
+                ),
+            ),
+            patch.object(
+                api_client,
+                "_async_fetch_network_clients",
+                new=AsyncMock(
+                    return_value=[{"recentDeviceSerial": "SW-1", "status": "Online"}]
+                ),
+            ),
+            patch.object(
+                api_client, "_build_detail_tasks", new=MagicMock(return_value={})
+            ),
+        ):
+            result = await api_client.get_all_data()
+
+        api_client.devices.get_device_clients.assert_not_called()
+        assert len(result["clients_by_serial"]["SW-1"]) == 1
 
     def test_build_detail_tasks_wireless(self, api_client: MerakiAPIClient) -> None:
         """Test _build_detail_tasks for wireless networks."""
@@ -469,9 +522,10 @@ class TestMerakiAPIClient:
         """Test _process_detailed_data uses previous data on failure."""
         detail_data: dict = {}  # No new data
         networks: list = [{"id": "N_123", "name": "Test"}]
+        # Same shape get_all_data stores in coordinator data
         previous_data = {
-            "ssids_N_123": [{"name": "Previous SSID", "number": 0}],
-            "traffic_N_123": {"bytes": 1000},
+            "ssids": [{"name": "Previous SSID", "number": 0, "networkId": "N_123"}],
+            "appliance_traffic": {"N_123": {"bytes": 1000}},
         }
 
         result = api_client._process_detailed_data(
@@ -507,11 +561,6 @@ class TestMerakiAPIClient:
                 api_client,
                 "_async_fetch_network_clients",
                 new=AsyncMock(return_value=[]),
-            ),
-            patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
             ),
             patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
@@ -555,11 +604,6 @@ class TestMerakiAPIClient:
                 new=AsyncMock(return_value=[]),
             ),
             patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
-            ),
-            patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
             ),
         ):
@@ -598,11 +642,6 @@ class TestMerakiAPIClient:
                 api_client,
                 "_async_fetch_network_clients",
                 new=AsyncMock(return_value=[]),
-            ),
-            patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
             ),
             patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
@@ -704,11 +743,6 @@ class TestMerakiAPIClient:
                 new=AsyncMock(return_value=[]),
             ),
             patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
-            ),
-            patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
             ),
         ):
@@ -767,11 +801,6 @@ class TestMerakiAPIClient:
                 new=AsyncMock(return_value=[]),
             ),
             patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
-            ),
-            patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
             ),
         ):
@@ -821,11 +850,6 @@ class TestMerakiAPIClient:
                 api_client,
                 "_async_fetch_network_clients",
                 new=AsyncMock(return_value=[]),
-            ),
-            patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
             ),
             patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
@@ -892,3 +916,89 @@ class TestMerakiAPIClient:
 
         # Appliance uplink should be absent (exception)
         assert "appliance_uplink_statuses" not in processed
+
+
+class TestPartialPollsKeepData:
+    """Polls that skip a data tier must not wipe what that tier holds."""
+
+    PREVIOUS = {
+        "networks": [{"id": "N_1", "name": "Net", "productTypes": ["wireless"]}],
+        "devices": [
+            {
+                "serial": "SW-1",
+                "productType": "switch",
+                "networkId": "N_1",
+                "ports_statuses": [{"portId": "1"}],
+            }
+        ],
+        "ssids": [{"number": 0, "name": "Home", "networkId": "N_1"}],
+        "vlans": {"N_1": [{"id": 10}]},
+        "l3_firewall_rules": {"N_1": {"rules": [1]}},
+        "wireless_settings": {"N_1": {"ipv6BridgeEnabled": False}},
+    }
+
+    @pytest.mark.asyncio
+    async def test_client_only_tick_keeps_ssids_vlans_and_rules(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """A clients-only poll leaves SSIDs, VLANs and rules untouched."""
+        with (
+            patch.object(
+                api_client,
+                "_async_fetch_network_clients",
+                new=AsyncMock(return_value=[]),
+            ),
+        ):
+            result = await api_client.get_all_data(
+                previous_data=dict(self.PREVIOUS),
+                fetch_networks=False,
+                fetch_devices=False,
+                fetch_clients=True,
+                fetch_ssids=False,
+            )
+
+        assert result["ssids"] == self.PREVIOUS["ssids"]
+        assert result["vlans"] == self.PREVIOUS["vlans"]
+        assert result["l3_firewall_rules"] == self.PREVIOUS["l3_firewall_rules"]
+        assert result["wireless_settings"] == self.PREVIOUS["wireless_settings"]
+
+    @pytest.mark.asyncio
+    async def test_device_tick_keeps_device_details(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """Freshly fetched devices keep last poll's port statuses."""
+        with patch.object(
+            api_client,
+            "_async_fetch_initial_data",
+            new=AsyncMock(
+                return_value={
+                    "devices": [
+                        {"serial": "SW-1", "productType": "switch", "networkId": "N_1"}
+                    ]
+                }
+            ),
+        ):
+            result = await api_client.get_all_data(
+                previous_data=dict(self.PREVIOUS),
+                fetch_networks=False,
+                fetch_devices=True,
+                fetch_clients=False,
+                fetch_ssids=False,
+            )
+
+        assert result["devices"][0]["ports_statuses"] == [{"portId": "1"}]
+
+    def test_failed_network_detail_falls_back_to_previous(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """A network whose detail fetch failed keeps its previous values."""
+        processed = api_client._process_detailed_data(
+            {"ssids_N_1": Exception("boom"), "vlans_N_1": Exception("boom")},
+            self.PREVIOUS["networks"],
+            [],
+            dict(self.PREVIOUS),
+        )
+
+        assert processed["ssids"] == self.PREVIOUS["ssids"]
+        assert processed["vlans"] == {"N_1": [{"id": 10}]}
+        assert processed["wireless_settings"] == {"N_1": {"ipv6BridgeEnabled": False}}

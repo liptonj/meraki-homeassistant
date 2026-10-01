@@ -25,6 +25,7 @@ from ...core.errors import (
 )
 from ...helpers.logging_helper import MerakiLoggers
 from ...types import MerakiDevice, MerakiNetwork
+from .action_batch import ActionBatchQueue
 from .endpoints.appliance import ApplianceEndpoints
 from .endpoints.camera import CameraEndpoints
 from .endpoints.cellular import CellularEndpoint
@@ -35,6 +36,7 @@ from .endpoints.push import PushApiEndpoints
 from .endpoints.sensor import SensorEndpoints
 from .endpoints.switch import SwitchEndpoints
 from .endpoints.wireless import WirelessEndpoints
+from .rate_limiter import get_org_limiter, throttle_session
 
 # Use feature-specific logger - can be configured independently via:
 # logger:
@@ -47,6 +49,40 @@ def _device_has_network_assignment(device: dict[str, Any]) -> bool:
     """Return True when a device is assigned to a Meraki network."""
     network_id = device.get("networkId")
     return isinstance(network_id, str) and bool(network_id.strip())
+
+
+# Per-device fields filled by detail fetches; kept when a poll skips them
+_DEVICE_DETAIL_KEYS = (
+    "video_settings",
+    "rtsp_url",
+    "sense_settings",
+    "ports_statuses",
+    "dynamicDns",
+)
+
+
+def _previous_for_network(
+    previous_data: dict[str, Any], key: str, network_id: str
+) -> Any:
+    """Return the previous per-network value stored under an aggregate key."""
+    by_network = previous_data.get(key)
+    if isinstance(by_network, dict):
+        return by_network.get(network_id)
+    return None
+
+
+def _carry_device_details(
+    devices: list[MerakiDevice], previous_devices: list[MerakiDevice]
+) -> None:
+    """Copy detail fields from the previous poll onto freshly fetched devices."""
+    previous_by_serial = {d.get("serial"): d for d in previous_devices}
+    for device in devices:
+        previous = previous_by_serial.get(device.get("serial"))
+        if not previous:
+            continue
+        for key in _DEVICE_DETAIL_KEYS:
+            if key not in device and key in previous:
+                device[key] = previous[key]  # type: ignore[literal-required]
 
 
 class MerakiAPIClient:
@@ -96,6 +132,7 @@ class MerakiAPIClient:
         self.switch = SwitchEndpoints(self)
         self.wireless = WirelessEndpoints(self)
         self.sensor = SensorEndpoints(self)
+        self.action_batches = ActionBatchQueue(self)
 
         # Set to store network IDs that have failed traffic analysis
         self.traffic_analysis_failed_networks: set[str] = set()
@@ -118,6 +155,7 @@ class MerakiAPIClient:
             nginx_429_retry_wait_time=2,
         )
         self.dashboard = await self._api_session.__aenter__()
+        throttle_session(self._api_session, get_org_limiter(self._org_id))
         self._apply_access_token(self._api_key)
 
     def _apply_access_token(self, access_token: str) -> None:
@@ -340,35 +378,29 @@ class MerakiAPIClient:
                 clients.extend(result)
         return clients
 
-    async def _async_fetch_device_clients(
-        self,
-        devices: list[MerakiDevice],
+    @staticmethod
+    def _group_clients_by_device(
+        clients: list[dict[str, Any]],
     ) -> dict[str, list[dict[str, Any]]]:
         """
-        Fetch client data for each device.
+        Group online clients by the device they last connected through.
+
+        This replaces a getDeviceClients call per device: the network client
+        list already carries recentDeviceSerial for every client.
 
         Args:
-            devices: A list of devices to fetch clients for.
+            clients: Clients from getNetworkClients.
 
         Returns
         -------
-            A dictionary of clients by device serial.
+            A dictionary of online clients by device serial.
 
         """
-        client_tasks = {
-            device["serial"]: self._run_with_semaphore(
-                self.devices.get_device_clients(device["serial"]),
-            )
-            for device in devices
-            if device.get("productType")
-            in ["wireless", "appliance", "switch", "cellularGateway"]
-        }
-        results = await asyncio.gather(*client_tasks.values(), return_exceptions=True)
         clients_by_serial: dict[str, list[dict[str, Any]]] = {}
-        for i, serial in enumerate(client_tasks.keys()):
-            result = results[i]
-            if isinstance(result, list):
-                clients_by_serial[serial] = result
+        for client in clients:
+            serial = client.get("recentDeviceSerial")
+            if serial and client.get("status") == "Online":
+                clients_by_serial.setdefault(serial, []).append(client)
         return clients_by_serial
 
     def _build_detail_tasks(
@@ -499,8 +531,12 @@ class MerakiAPIClient:
                     if "unconfigured ssid" not in ssid.get("name", "").lower():
                         ssid["networkId"] = network["id"]
                         ssids.append(ssid)
-            elif previous_data and network_ssids_key in previous_data:
-                ssids.extend(previous_data[network_ssids_key])
+            else:
+                ssids.extend(
+                    ssid
+                    for ssid in previous_data.get("ssids", [])
+                    if ssid.get("networkId") == network["id"]
+                )
 
             network_traffic_key = f"traffic_{network['id']}"
             network_traffic = detail_data.get(network_traffic_key)
@@ -518,8 +554,12 @@ class MerakiAPIClient:
                 }
             elif isinstance(network_traffic, dict):
                 appliance_traffic[network["id"]] = network_traffic
-            elif previous_data and network_traffic_key in previous_data:
-                appliance_traffic[network["id"]] = previous_data[network_traffic_key]
+            elif (
+                previous := _previous_for_network(
+                    previous_data, "appliance_traffic", network["id"]
+                )
+            ) is not None:
+                appliance_traffic[network["id"]] = previous
 
             network_vlans_key = f"vlans_{network['id']}"
             network_vlans = detail_data.get(network_vlans_key)
@@ -527,60 +567,76 @@ class MerakiAPIClient:
                 vlan_by_network[network["id"]] = []
             elif isinstance(network_vlans, list):
                 vlan_by_network[network["id"]] = network_vlans
-            elif previous_data and network_vlans_key in previous_data:
-                vlan_by_network[network["id"]] = previous_data[network_vlans_key]
+            elif (
+                previous := _previous_for_network(previous_data, "vlans", network["id"])
+            ) is not None:
+                vlan_by_network[network["id"]] = previous
 
             l3_firewall_rules_key = f"l3_firewall_rules_{network['id']}"
             l3_firewall_rules = detail_data.get(l3_firewall_rules_key)
             if isinstance(l3_firewall_rules, dict):
                 l3_firewall_rules_by_network[network["id"]] = l3_firewall_rules
-            elif previous_data and l3_firewall_rules_key in previous_data:
-                l3_firewall_rules_by_network[network["id"]] = previous_data[
-                    l3_firewall_rules_key
-                ]
+            elif (
+                previous := _previous_for_network(
+                    previous_data, "l3_firewall_rules", network["id"]
+                )
+            ) is not None:
+                l3_firewall_rules_by_network[network["id"]] = previous
 
             traffic_shaping_key = f"traffic_shaping_{network['id']}"
             traffic_shaping = detail_data.get(traffic_shaping_key)
             if isinstance(traffic_shaping, dict):
                 traffic_shaping_by_network[network["id"]] = traffic_shaping
-            elif previous_data and traffic_shaping_key in previous_data:
-                traffic_shaping_by_network[network["id"]] = previous_data[
-                    traffic_shaping_key
-                ]
+            elif (
+                previous := _previous_for_network(
+                    previous_data, "traffic_shaping", network["id"]
+                )
+            ) is not None:
+                traffic_shaping_by_network[network["id"]] = previous
 
             vpn_status_key = f"vpn_status_{network['id']}"
             vpn_status = detail_data.get(vpn_status_key)
             if isinstance(vpn_status, dict):
                 vpn_status_by_network[network["id"]] = vpn_status
-            elif previous_data and vpn_status_key in previous_data:
-                vpn_status_by_network[network["id"]] = previous_data[vpn_status_key]
+            elif (
+                previous := _previous_for_network(
+                    previous_data, "vpn_status", network["id"]
+                )
+            ) is not None:
+                vpn_status_by_network[network["id"]] = previous
 
             network_rf_profiles_key = f"rf_profiles_{network['id']}"
             network_rf_profiles = detail_data.get(network_rf_profiles_key)
             if isinstance(network_rf_profiles, list):
                 rf_profiles_by_network[network["id"]] = network_rf_profiles
-            elif previous_data and network_rf_profiles_key in previous_data:
-                rf_profiles_by_network[network["id"]] = previous_data[
-                    network_rf_profiles_key
-                ]
+            elif (
+                previous := _previous_for_network(
+                    previous_data, "rf_profiles", network["id"]
+                )
+            ) is not None:
+                rf_profiles_by_network[network["id"]] = previous
 
             content_filtering_key = f"content_filtering_{network['id']}"
             content_filtering = detail_data.get(content_filtering_key)
             if isinstance(content_filtering, dict):
                 content_filtering_by_network[network["id"]] = content_filtering
-            elif previous_data and content_filtering_key in previous_data:
-                content_filtering_by_network[network["id"]] = previous_data[
-                    content_filtering_key
-                ]
+            elif (
+                previous := _previous_for_network(
+                    previous_data, "content_filtering", network["id"]
+                )
+            ) is not None:
+                content_filtering_by_network[network["id"]] = previous
 
             wireless_settings_key = f"wireless_settings_{network['id']}"
             wireless_settings = detail_data.get(wireless_settings_key)
             if isinstance(wireless_settings, dict):
                 wireless_settings_by_network[network["id"]] = wireless_settings
-            elif previous_data and wireless_settings_key in previous_data:
-                wireless_settings_by_network[network["id"]] = previous_data[
-                    wireless_settings_key
-                ]
+            elif (
+                previous := _previous_for_network(
+                    previous_data, "wireless_settings", network["id"]
+                )
+            ) is not None:
+                wireless_settings_by_network[network["id"]] = previous
 
         for device in devices:
             product_type = device.get("productType")
@@ -703,8 +759,6 @@ class MerakiAPIClient:
         if fetch_clients:
             gather_tasks.append(self._async_fetch_network_clients(networks))
             task_names.append("network_clients")
-            gather_tasks.append(self._async_fetch_device_clients(devices))
-            task_names.append("device_clients")
 
         if detail_tasks:
             gather_tasks.append(
@@ -718,18 +772,24 @@ class MerakiAPIClient:
         # Map results back to named variables
         results_map = dict(zip(task_names, results, strict=True))
         network_clients = results_map.get("network_clients")
-        device_clients = results_map.get("device_clients")
         detail_results = results_map.get("detail_results")
 
         detail_data: dict[str, Any] = {}
         if detail_results and isinstance(detail_results, list):
             detail_data = dict(zip(detail_tasks.keys(), detail_results, strict=True))
-        processed_detailed_data = self._process_detailed_data(
-            detail_data,
-            networks,
-            devices,
-            previous_data,
+        # Only replace per-network detail when it was fetched this poll.
+        # Otherwise the previous SSIDs, VLANs and rules stay as they were.
+        processed_detailed_data = (
+            self._process_detailed_data(
+                detail_data,
+                networks,
+                devices,
+                previous_data,
+            )
+            if detail_tasks
+            else {}
         )
+        _carry_device_details(devices, previous_data.get("devices", []))
 
         # Start with previous data and update with new data
         merged_data = previous_data.copy()
@@ -746,12 +806,9 @@ class MerakiAPIClient:
             },
         )
         if fetch_clients:
-            merged_data["clients"] = (
-                network_clients if isinstance(network_clients, list) else []
-            )
-            merged_data["clients_by_serial"] = (
-                device_clients if isinstance(device_clients, dict) else {}
-            )
+            clients = network_clients if isinstance(network_clients, list) else []
+            merged_data["clients"] = clients
+            merged_data["clients_by_serial"] = self._group_clients_by_device(clients)
 
         # Ensure the 'devices' key reflects any filtering that was done
         merged_data["devices"] = devices

@@ -9,6 +9,7 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 
 from ..const import DATA_CLIENT, DOMAIN
+from ..core.api.action_batch import submit_write
 from ..helpers.logging_helper import MerakiLoggers
 from ..meraki_data_coordinator import MerakiDataCoordinator
 
@@ -164,14 +165,20 @@ async def ws_get_switch_ports(
         connection.send_error(msg["id"], "not_found", "Config entry not found.")
         return
 
-    switch_port_coordinator = hass.data[DOMAIN][entry_id].get("switch_port_coordinator")
-    if not switch_port_coordinator or not switch_port_coordinator.last_update_success:
+    # Port statuses come from the main poll; no extra API calls are made here.
+    coordinator = hass.data[DOMAIN][entry_id].get("coordinator")
+    if not coordinator or not coordinator.data:
         connection.send_error(
-            msg["id"], "coordinator_not_ready", "Switch port coordinator is not ready."
+            msg["id"], "coordinator_not_ready", "Coordinator is not ready."
         )
         return
 
-    connection.send_result(msg["id"], switch_port_coordinator.data)
+    ports = [
+        {**port, "serial": device.get("serial")}
+        for device in coordinator.data.get("devices", [])
+        for port in device.get("ports_statuses") or []
+    ]
+    connection.send_result(msg["id"], ports)
 
 
 @websocket_api.websocket_command(
@@ -359,10 +366,17 @@ async def ws_set_switch_port(
     enabled = msg["enabled"]
 
     try:
-        result = await api_client.dashboard.switch.updateDeviceSwitchPort(
-            serial=serial,
-            portId=port_id,
-            enabled=enabled,
+        switch_api = api_client.dashboard.switch
+        result = await submit_write(
+            api_client,
+            f"/devices/{serial}/switch/ports/{port_id}",
+            "update",
+            {"enabled": enabled},
+            lambda: switch_api.updateDeviceSwitchPort(
+                serial=serial,
+                portId=port_id,
+                enabled=enabled,
+            ),
         )
         _LOGGER.info("Switch port %s on %s set to enabled=%s", port_id, serial, enabled)
         connection.send_result(msg["id"], _sanitize_result(result))

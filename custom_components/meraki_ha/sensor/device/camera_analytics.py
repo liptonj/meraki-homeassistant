@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
@@ -20,13 +21,16 @@ if TYPE_CHECKING:
 
 _LOGGER = MerakiLoggers.CAMERA
 
+# Each refresh is one API call per sensor; object counts don't need more.
+ANALYTICS_REFRESH_INTERVAL = 300
+
 
 class MerakiAnalyticsSensor(CoordinatorEntity, SensorEntity):  # type: ignore[type-arg]
     """Base class for Meraki analytics sensors."""
 
     coordinator: MerakiDataCoordinator
-    # Enable polling so async_update() is called in addition to coordinator updates
-    _attr_should_poll = True
+    # Refreshed from coordinator updates, throttled to ANALYTICS_REFRESH_INTERVAL
+    _attr_should_poll = False
 
     def __init__(
         self,
@@ -43,6 +47,8 @@ class MerakiAnalyticsSensor(CoordinatorEntity, SensorEntity):  # type: ignore[ty
         self._attr_unique_id = f"{self._device['serial']}-{object_type}-count"
         self._attr_name = f"{self._device['name']} {object_type.capitalize()} Count"
         self._analytics_data: dict[str, Any] = {}
+        self._last_analytics_fetch: float = 0
+        self._analytics_fetch_pending = False
 
     @property
     def device_info(self) -> DeviceInfo | None:
@@ -67,7 +73,34 @@ class MerakiAnalyticsSensor(CoordinatorEntity, SensorEntity):  # type: ignore[ty
         current_data = self._get_current_device_data()
         if current_data:
             self._device = current_data
+        self._schedule_analytics_refresh()
         self.async_write_ha_state()
+
+    def _schedule_analytics_refresh(self) -> None:
+        """Fetch analytics in the background if the last fetch is stale."""
+        if self._analytics_fetch_pending:
+            return
+        if time.monotonic() - self._last_analytics_fetch < ANALYTICS_REFRESH_INTERVAL:
+            return
+        self._analytics_fetch_pending = True
+        self.hass.async_create_background_task(
+            self._async_refresh_analytics(),
+            name=f"meraki_analytics_{self._attr_unique_id}",
+        )
+
+    async def _async_refresh_analytics(self) -> None:
+        """Fetch analytics and write the new state."""
+        try:
+            await self.async_update()
+        finally:
+            self._analytics_fetch_pending = False
+        if self.entity_id:
+            self.async_write_ha_state()
+
+    async def async_added_to_hass(self) -> None:
+        """Fetch analytics once when the entity is added."""
+        await super().async_added_to_hass()
+        self._schedule_analytics_refresh()
 
     @property
     def available(self) -> bool:
@@ -91,6 +124,7 @@ class MerakiAnalyticsSensor(CoordinatorEntity, SensorEntity):  # type: ignore[ty
     async def async_update(self) -> None:
         """Update the sensor."""
         serial = self._device["serial"]
+        self._last_analytics_fetch = time.monotonic()
         try:
             analytics_data = await self._camera_service.get_analytics_data(
                 serial, self._object_type

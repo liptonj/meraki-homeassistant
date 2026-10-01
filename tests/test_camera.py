@@ -1,5 +1,6 @@
 """Tests for the Meraki camera module."""
 
+import asyncio
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -16,6 +17,7 @@ from custom_components.meraki_ha.const import (
     CONF_CAMERA_SNAPSHOT_INTERVAL,
     DEFAULT_CAMERA_SNAPSHOT_INTERVAL,
     DOMAIN,
+    MIN_CAMERA_SNAPSHOT_INTERVAL,
 )
 from custom_components.meraki_ha.types import MerakiDevice
 
@@ -573,3 +575,100 @@ class TestMerakiCamera:
             MOCK_CAMERA_DEVICE["serial"], False
         )
         mock_coordinator.async_request_refresh.assert_called_once()
+
+
+class TestSnapshotRateLimiting:
+    """Snapshot requests must not hammer the Meraki API."""
+
+    def _camera(
+        self,
+        coordinator: MagicMock,
+        entry: MagicMock,
+        service: AsyncMock,
+        hass: MagicMock,
+    ) -> MerakiCamera:
+        camera = MerakiCamera(coordinator, entry, MOCK_CAMERA_DEVICE, service)
+        camera.hass = hass
+        return camera
+
+    def test_default_interval_is_sixty_seconds(self) -> None:
+        """The default caches snapshots for a minute."""
+        assert DEFAULT_CAMERA_SNAPSHOT_INTERVAL == 60
+
+    def test_interval_below_floor_is_clamped(
+        self,
+        mock_coordinator: MagicMock,
+        mock_config_entry: MagicMock,
+        mock_camera_service: AsyncMock,
+        mock_hass: MagicMock,
+    ) -> None:
+        """Zero (the old 'on demand' value) no longer disables caching."""
+        mock_config_entry.options = {CONF_CAMERA_SNAPSHOT_INTERVAL: 0}
+        camera = self._camera(
+            mock_coordinator, mock_config_entry, mock_camera_service, mock_hass
+        )
+        assert camera._snapshot_interval == MIN_CAMERA_SNAPSHOT_INTERVAL
+
+    @pytest.mark.asyncio
+    async def test_concurrent_requests_share_one_fetch(
+        self,
+        mock_coordinator: MagicMock,
+        mock_config_entry: MagicMock,
+        mock_camera_service: AsyncMock,
+        mock_hass: MagicMock,
+    ) -> None:
+        """Several viewers asking at once cause a single API call."""
+        camera = self._camera(
+            mock_coordinator, mock_config_entry, mock_camera_service, mock_hass
+        )
+
+        async def slow_fetch() -> bytes:
+            await asyncio.sleep(0.01)
+            return b"img"
+
+        with (
+            patch.object(
+                camera,
+                "_get_linked_camera_entity",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+            patch.object(camera, "_fetch_snapshot", side_effect=slow_fetch) as fetch,
+        ):
+            results = await asyncio.gather(
+                *(camera.async_camera_image() for _ in range(5))
+            )
+
+        assert results == [b"img"] * 5
+        assert fetch.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_failed_fetch_is_not_retried_within_interval(
+        self,
+        mock_coordinator: MagicMock,
+        mock_config_entry: MagicMock,
+        mock_camera_service: AsyncMock,
+        mock_hass: MagicMock,
+    ) -> None:
+        """A failed snapshot waits for the interval before trying again."""
+        camera = self._camera(
+            mock_coordinator, mock_config_entry, mock_camera_service, mock_hass
+        )
+        with (
+            patch.object(
+                camera,
+                "_get_linked_camera_entity",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+            patch.object(
+                camera,
+                "_fetch_snapshot",
+                new_callable=AsyncMock,
+                return_value=None,
+            ) as fetch,
+        ):
+            assert await camera.async_camera_image() is None
+            assert await camera.async_camera_image() is None
+
+        assert fetch.call_count == 1

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import secrets
 from collections.abc import Awaitable, Callable
-from datetime import timedelta
 from typing import Any
 
 from homeassistant.components import webhook as ha_webhook
@@ -21,7 +20,6 @@ from .const import (
     CONF_ENABLE_WEBHOOKS,
     CONF_MERAKI_ORG_ID,
     CONF_MQTT_RELAY_DESTINATIONS,
-    CONF_SCAN_INTERVAL,
     CONF_SCANNING_API_VALIDATOR,
     CONF_SETUP_NOTIFICATION_SHOWN,
     CONF_WEB_UI_PORT,
@@ -35,17 +33,12 @@ from .const import (
     DEFAULT_ENABLE_WEB_UI,
     DEFAULT_ENABLE_WEBHOOKS,
     DEFAULT_MQTT_RELAY_DESTINATIONS,
-    DEFAULT_SCAN_INTERVAL,
     DEFAULT_SCANNING_API_VALIDATOR,
     DEFAULT_WEB_UI_PORT,
     DOMAIN,
     PLATFORMS,
 )
 from .core.api.client import MerakiAPIClient
-from .core.coordinators.ssid_firewall_coordinator import SsidFirewallCoordinator
-from .core.coordinators.switch_port_status_coordinator import (
-    SwitchPortStatusCoordinator,
-)
 from .core.repositories.camera_repository import CameraRepository
 from .core.repository import MerakiRepository
 from .core.timed_access_manager import TimedAccessManager
@@ -66,7 +59,7 @@ from .services.mqtt_relay import MqttRelayManager
 from .services.mqtt_service import MerakiMqttService
 from .services.network_control_service import NetworkControlService
 from .services.panel_diagnostics import async_register_diagnostic_service
-from .services.push_api import PushApiManager
+from .services.push_api import PushApiManager, push_iname
 from .web_api import async_setup_api
 from .web_server import MerakiWebServer
 from .webhook import (
@@ -373,15 +366,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "Meraki now requires OAuth2. Reauthenticate this integration."
         ) from err
 
-    try:
-        scan_interval = int(
-            entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        )
-        if scan_interval <= 0:
-            scan_interval = DEFAULT_SCAN_INTERVAL
-    except (ValueError, TypeError):
-        scan_interval = DEFAULT_SCAN_INTERVAL
-
     if "coordinator" not in entry_data:
         # pylint: disable-next=import-outside-toplevel
         from .meraki_data_coordinator import MerakiDataCoordinator
@@ -394,7 +378,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Let ConfigEntryNotReady propagate to signal HA to retry setup
         await entry_data["coordinator"].async_config_entry_first_refresh()
     else:
-        entry_data["coordinator"].update_interval = timedelta(seconds=scan_interval)
         await entry_data["coordinator"].async_refresh()
     coordinator = entry_data["coordinator"]
 
@@ -421,35 +404,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if "meraki_repository" not in entry_data:
         entry_data["meraki_repository"] = MerakiRepository(api_client)
     meraki_repository = entry_data["meraki_repository"]
-
-    # Create switch port status coordinator
-    switch_port_coordinator = SwitchPortStatusCoordinator(
-        hass=hass,
-        repository=meraki_repository,
-        main_coordinator=coordinator,
-        config_entry=entry,
-    )
-    await switch_port_coordinator.async_refresh()
-    entry_data["switch_port_coordinator"] = switch_port_coordinator
-
-    # Create content filtering and firewall coordinators
-    entry_data["ssid_firewall_coordinators"] = {}
-    if coordinator.data:
-        # Create per-SSID coordinators
-        for ssid in coordinator.data.get("ssids", []):
-            if "networkId" in ssid and "number" in ssid:
-                # L7 Firewall Coordinator
-                ssid_fw_coordinator = SsidFirewallCoordinator(
-                    hass=hass,
-                    api_client=api_client,
-                    scan_interval=scan_interval,
-                    network_id=ssid["networkId"],
-                    ssid_number=ssid["number"],
-                )
-                await ssid_fw_coordinator.async_refresh()
-                entry_data["ssid_firewall_coordinators"][
-                    f"{ssid['networkId']}_{ssid['number']}"
-                ] = ssid_fw_coordinator
 
     # Start the web server if enabled
     if entry.options.get(CONF_ENABLE_WEB_UI, DEFAULT_ENABLE_WEB_UI):
@@ -985,7 +939,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a Meraki config entry."""
     entry_data = hass.data[DOMAIN].get(entry.entry_id)
     if entry_data:
-        if "push_api_manager" in entry_data:
+        # Dashboard registrations (Push API receiver, alert HTTP servers) are
+        # reused by name on the next setup, so a reload keeps them. They are
+        # removed here only when the feature was switched off, and by
+        # async_remove_entry when the integration is deleted.
+        push_enabled = entry.options.get(CONF_ENABLE_PUSH_API, DEFAULT_ENABLE_PUSH_API)
+        webhooks_enabled = entry.options.get(
+            CONF_ENABLE_WEBHOOKS, DEFAULT_ENABLE_WEBHOOKS
+        )
+        if "push_api_manager" in entry_data and not push_enabled:
             await entry_data["push_api_manager"].async_unregister()
         if "push_webhook_id" in entry_data:
             try:
@@ -999,11 +961,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     "Push API webhook already unregistered: %s",
                     entry_data["push_webhook_id"],
                 )
-
-        if DATA_CLIENT in entry_data:
-            client = entry_data[DATA_CLIENT]
-            await client.async_close()
-            _LOGGER.debug("Meraki API client session closed")
 
         # Stop MQTT service and relay manager
         if "mqtt_service" in entry_data:
@@ -1042,11 +999,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 _LOGGER.info("Unregistered alerts webhook: %s", webhook_id)
             except ValueError:
                 _LOGGER.debug("Alerts webhook already unregistered: %s", webhook_id)
-            api_client = entry_data[DATA_CLIENT]
-            if "webhook_manager" in entry_data:
-                await entry_data["webhook_manager"].async_unregister_webhooks()
-            else:
-                await async_unregister_webhook(hass, entry.entry_id, api_client)
+            if not webhooks_enabled:
+                api_client = entry_data[DATA_CLIENT]
+                if "webhook_manager" in entry_data:
+                    await entry_data["webhook_manager"].async_unregister_webhooks()
+                else:
+                    await async_unregister_webhook(hass, entry.entry_id, api_client)
+
+        if DATA_CLIENT in entry_data:
+            await entry_data[DATA_CLIENT].async_close()
+            _LOGGER.debug("Meraki API client session closed")
 
         # Clean up dashboard config if it exists
         entry_data.pop("dashboard_config", None)
@@ -1062,3 +1024,70 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 hass.data.pop(DOMAIN)
 
     return unload_ok
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Delete the Dashboard registrations this entry made, by their names."""
+    try:
+        oauth_session = await async_create_oauth_session(hass, entry)
+        await oauth_session.async_ensure_token_valid()
+        client = MerakiAPIClient(
+            hass,
+            api_key=oauth_session.token["access_token"],
+            org_id=entry.data[CONF_MERAKI_ORG_ID],
+            oauth_session=oauth_session,
+        )
+        await client.async_setup()
+    except Exception as err:  # noqa: BLE001 - removal must not fail
+        _LOGGER.warning("Could not clean up Meraki Dashboard registrations: %s", err)
+        return
+
+    try:
+        await _async_remove_push_registrations(client, entry.entry_id)
+        await _async_remove_alert_servers(client, entry.entry_id)
+    finally:
+        await client.async_close()
+
+
+async def _async_remove_push_registrations(
+    client: MerakiAPIClient, entry_id: str
+) -> None:
+    """Delete this entry's Push API profiles, receiver, and HTTP server."""
+    prefix = push_iname(entry_id, "")
+    receiver = push_iname(entry_id, "receiver")
+    try:
+        for profile in await client.push.get_push_profiles():
+            iname = profile.get("iname")
+            if isinstance(iname, str) and iname.startswith(prefix):
+                await client.push.delete_push_profile(iname)
+        for profile in await client.push.get_receiver_profiles():
+            if profile.get("iname") == receiver:
+                await client.push.delete_receiver_profile(receiver)
+        server_name = f"Home Assistant Push API - {entry_id[:8]}"
+        for server in await client.push.get_http_servers():
+            if server.get("name") == server_name and server.get("id"):
+                await client.push.delete_http_server(server["id"])
+    except Exception as err:  # noqa: BLE001 - best effort
+        _LOGGER.warning("Could not remove Push API registrations: %s", err)
+
+
+async def _async_remove_alert_servers(client: MerakiAPIClient, entry_id: str) -> None:
+    """Delete this entry's alert webhook HTTP server from each network."""
+    name = f"Home Assistant - {entry_id[:8]}"
+    try:
+        networks = await client.organization.get_organization_networks()
+    except Exception as err:  # noqa: BLE001 - best effort
+        _LOGGER.warning("Could not list networks to remove webhooks: %s", err)
+        return
+    for network in networks:
+        network_id = network.get("id")
+        if not network_id:
+            continue
+        try:
+            server = await client.network.find_webhook_by_name(network_id, name)
+            if server and server.get("id"):
+                await client.network.delete_webhook(network_id, server["id"])
+        except Exception as err:  # noqa: BLE001 - best effort
+            _LOGGER.warning(
+                "Could not remove webhook from network %s: %s", network_id, err
+            )
