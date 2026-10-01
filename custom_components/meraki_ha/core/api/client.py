@@ -340,35 +340,29 @@ class MerakiAPIClient:
                 clients.extend(result)
         return clients
 
-    async def _async_fetch_device_clients(
-        self,
-        devices: list[MerakiDevice],
+    @staticmethod
+    def _group_clients_by_device(
+        clients: list[dict[str, Any]],
     ) -> dict[str, list[dict[str, Any]]]:
         """
-        Fetch client data for each device.
+        Group online clients by the device they last connected through.
+
+        This replaces a getDeviceClients call per device: the network client
+        list already carries recentDeviceSerial for every client.
 
         Args:
-            devices: A list of devices to fetch clients for.
+            clients: Clients from getNetworkClients.
 
         Returns
         -------
-            A dictionary of clients by device serial.
+            A dictionary of online clients by device serial.
 
         """
-        client_tasks = {
-            device["serial"]: self._run_with_semaphore(
-                self.devices.get_device_clients(device["serial"]),
-            )
-            for device in devices
-            if device.get("productType")
-            in ["wireless", "appliance", "switch", "cellularGateway"]
-        }
-        results = await asyncio.gather(*client_tasks.values(), return_exceptions=True)
         clients_by_serial: dict[str, list[dict[str, Any]]] = {}
-        for i, serial in enumerate(client_tasks.keys()):
-            result = results[i]
-            if isinstance(result, list):
-                clients_by_serial[serial] = result
+        for client in clients:
+            serial = client.get("recentDeviceSerial")
+            if serial and client.get("status") == "Online":
+                clients_by_serial.setdefault(serial, []).append(client)
         return clients_by_serial
 
     def _build_detail_tasks(
@@ -703,8 +697,6 @@ class MerakiAPIClient:
         if fetch_clients:
             gather_tasks.append(self._async_fetch_network_clients(networks))
             task_names.append("network_clients")
-            gather_tasks.append(self._async_fetch_device_clients(devices))
-            task_names.append("device_clients")
 
         if detail_tasks:
             gather_tasks.append(
@@ -718,7 +710,6 @@ class MerakiAPIClient:
         # Map results back to named variables
         results_map = dict(zip(task_names, results, strict=True))
         network_clients = results_map.get("network_clients")
-        device_clients = results_map.get("device_clients")
         detail_results = results_map.get("detail_results")
 
         detail_data: dict[str, Any] = {}
@@ -746,12 +737,9 @@ class MerakiAPIClient:
             },
         )
         if fetch_clients:
-            merged_data["clients"] = (
-                network_clients if isinstance(network_clients, list) else []
-            )
-            merged_data["clients_by_serial"] = (
-                device_clients if isinstance(device_clients, dict) else {}
-            )
+            clients = network_clients if isinstance(network_clients, list) else []
+            merged_data["clients"] = clients
+            merged_data["clients_by_serial"] = self._group_clients_by_device(clients)
 
         # Ensure the 'devices' key reflects any filtering that was done
         merged_data["devices"] = devices

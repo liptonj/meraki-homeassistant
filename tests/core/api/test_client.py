@@ -239,25 +239,58 @@ class TestMerakiAPIClient:
         assert clients[0]["networkId"] == "N_123"
         api_client.network.get_network_clients.assert_called_once_with("N_123")
 
-    @pytest.mark.asyncio
-    async def test_async_fetch_device_clients(
-        self, api_client: MerakiAPIClient
-    ) -> None:
-        """Test _async_fetch_device_clients fetches clients per device."""
-        api_client.devices.get_device_clients = AsyncMock(
-            return_value=[{"id": "client1", "mac": "00:11:22:33:44:55"}]
-        )
-
-        devices = [
-            {"serial": "ABC-123", "productType": "switch"},
-            {"serial": "DEF-456", "productType": "camera"},  # Should skip
+    def test_group_clients_by_device(self) -> None:
+        """Per-device clients come from the network client list."""
+        clients = [
+            {"mac": "a", "recentDeviceSerial": "ABC-123", "status": "Online"},
+            {"mac": "b", "recentDeviceSerial": "ABC-123", "status": "Online"},
+            {"mac": "c", "recentDeviceSerial": "ABC-123", "status": "Offline"},
+            {"mac": "d", "recentDeviceSerial": None, "status": "Online"},
+            {"mac": "e", "recentDeviceSerial": "DEF-456", "status": "Online"},
         ]
 
-        clients_by_serial = await api_client._async_fetch_device_clients(devices)
+        grouped = MerakiAPIClient._group_clients_by_device(clients)
 
-        assert "ABC-123" in clients_by_serial
-        assert len(clients_by_serial["ABC-123"]) == 1
-        assert "DEF-456" not in clients_by_serial
+        assert [c["mac"] for c in grouped["ABC-123"]] == ["a", "b"]
+        assert [c["mac"] for c in grouped["DEF-456"]] == ["e"]
+        assert len(grouped) == 2
+
+    @pytest.mark.asyncio
+    async def test_get_all_data_makes_no_per_device_client_calls(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """get_all_data never calls getDeviceClients."""
+        api_client.devices.get_device_clients = AsyncMock()
+        with (
+            patch.object(
+                api_client,
+                "_async_fetch_initial_data",
+                new=AsyncMock(
+                    return_value={
+                        "networks": [{"id": "N_1", "name": "Net"}],
+                        "devices": [
+                            {"serial": "SW-1", "productType": "switch", "networkId": "N_1"}
+                        ],
+                    }
+                ),
+            ),
+            patch.object(
+                api_client,
+                "_async_fetch_network_clients",
+                new=AsyncMock(
+                    return_value=[
+                        {"recentDeviceSerial": "SW-1", "status": "Online"}
+                    ]
+                ),
+            ),
+            patch.object(
+                api_client, "_build_detail_tasks", new=MagicMock(return_value={})
+            ),
+        ):
+            result = await api_client.get_all_data()
+
+        api_client.devices.get_device_clients.assert_not_called()
+        assert len(result["clients_by_serial"]["SW-1"]) == 1
 
     def test_build_detail_tasks_wireless(self, api_client: MerakiAPIClient) -> None:
         """Test _build_detail_tasks for wireless networks."""
@@ -509,11 +542,6 @@ class TestMerakiAPIClient:
                 new=AsyncMock(return_value=[]),
             ),
             patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
-            ),
-            patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
             ),
         ):
@@ -555,11 +583,6 @@ class TestMerakiAPIClient:
                 new=AsyncMock(return_value=[]),
             ),
             patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
-            ),
-            patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
             ),
         ):
@@ -598,11 +621,6 @@ class TestMerakiAPIClient:
                 api_client,
                 "_async_fetch_network_clients",
                 new=AsyncMock(return_value=[]),
-            ),
-            patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
             ),
             patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
@@ -704,11 +722,6 @@ class TestMerakiAPIClient:
                 new=AsyncMock(return_value=[]),
             ),
             patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
-            ),
-            patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
             ),
         ):
@@ -767,11 +780,6 @@ class TestMerakiAPIClient:
                 new=AsyncMock(return_value=[]),
             ),
             patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
-            ),
-            patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
             ),
         ):
@@ -821,11 +829,6 @@ class TestMerakiAPIClient:
                 api_client,
                 "_async_fetch_network_clients",
                 new=AsyncMock(return_value=[]),
-            ),
-            patch.object(
-                api_client,
-                "_async_fetch_device_clients",
-                new=AsyncMock(return_value={}),
             ),
             patch.object(
                 api_client, "_build_detail_tasks", new=MagicMock(return_value={})
