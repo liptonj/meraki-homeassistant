@@ -520,9 +520,10 @@ class TestMerakiAPIClient:
         """Test _process_detailed_data uses previous data on failure."""
         detail_data: dict = {}  # No new data
         networks: list = [{"id": "N_123", "name": "Test"}]
+        # Same shape get_all_data stores in coordinator data
         previous_data = {
-            "ssids_N_123": [{"name": "Previous SSID", "number": 0}],
-            "traffic_N_123": {"bytes": 1000},
+            "ssids": [{"name": "Previous SSID", "number": 0, "networkId": "N_123"}],
+            "appliance_traffic": {"N_123": {"bytes": 1000}},
         }
 
         result = api_client._process_detailed_data(
@@ -913,3 +914,87 @@ class TestMerakiAPIClient:
 
         # Appliance uplink should be absent (exception)
         assert "appliance_uplink_statuses" not in processed
+
+
+class TestPartialPollsKeepData:
+    """Polls that skip a data tier must not wipe what that tier holds."""
+
+    PREVIOUS = {
+        "networks": [{"id": "N_1", "name": "Net", "productTypes": ["wireless"]}],
+        "devices": [
+            {
+                "serial": "SW-1",
+                "productType": "switch",
+                "networkId": "N_1",
+                "ports_statuses": [{"portId": "1"}],
+            }
+        ],
+        "ssids": [{"number": 0, "name": "Home", "networkId": "N_1"}],
+        "vlans": {"N_1": [{"id": 10}]},
+        "l3_firewall_rules": {"N_1": {"rules": [1]}},
+        "wireless_settings": {"N_1": {"ipv6BridgeEnabled": False}},
+    }
+
+    @pytest.mark.asyncio
+    async def test_client_only_tick_keeps_ssids_vlans_and_rules(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """A clients-only poll leaves SSIDs, VLANs and rules untouched."""
+        with (
+            patch.object(
+                api_client, "_async_fetch_network_clients", new=AsyncMock(return_value=[])
+            ),
+        ):
+            result = await api_client.get_all_data(
+                previous_data=dict(self.PREVIOUS),
+                fetch_networks=False,
+                fetch_devices=False,
+                fetch_clients=True,
+                fetch_ssids=False,
+            )
+
+        assert result["ssids"] == self.PREVIOUS["ssids"]
+        assert result["vlans"] == self.PREVIOUS["vlans"]
+        assert result["l3_firewall_rules"] == self.PREVIOUS["l3_firewall_rules"]
+        assert result["wireless_settings"] == self.PREVIOUS["wireless_settings"]
+
+    @pytest.mark.asyncio
+    async def test_device_tick_keeps_device_details(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """Freshly fetched devices keep last poll's port statuses."""
+        with patch.object(
+            api_client,
+            "_async_fetch_initial_data",
+            new=AsyncMock(
+                return_value={
+                    "devices": [
+                        {"serial": "SW-1", "productType": "switch", "networkId": "N_1"}
+                    ]
+                }
+            ),
+        ):
+            result = await api_client.get_all_data(
+                previous_data=dict(self.PREVIOUS),
+                fetch_networks=False,
+                fetch_devices=True,
+                fetch_clients=False,
+                fetch_ssids=False,
+            )
+
+        assert result["devices"][0]["ports_statuses"] == [{"portId": "1"}]
+
+    def test_failed_network_detail_falls_back_to_previous(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """A network whose detail fetch failed keeps its previous values."""
+        processed = api_client._process_detailed_data(
+            {"ssids_N_1": Exception("boom"), "vlans_N_1": Exception("boom")},
+            self.PREVIOUS["networks"],
+            [],
+            dict(self.PREVIOUS),
+        )
+
+        assert processed["ssids"] == self.PREVIOUS["ssids"]
+        assert processed["vlans"] == {"N_1": [{"id": 10}]}
+        assert processed["wireless_settings"] == {"N_1": {"ipv6BridgeEnabled": False}}
