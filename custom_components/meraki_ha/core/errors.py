@@ -16,6 +16,12 @@ class MerakiConnectionError(MerakiError):
     pass
 
 
+class MerakiRateLimitError(MerakiConnectionError):
+    """The API kept rate limiting or failing after the SDK's retries."""
+
+    pass
+
+
 class ApiClientCommunicationError(MerakiConnectionError):
     """Error to indicate an API communication problem."""
 

@@ -13,6 +13,7 @@ from custom_components.meraki_ha.core.errors import (
     MerakiConnectionError,
     MerakiDeviceError,
     MerakiNetworkError,
+    MerakiRateLimitError,
 )
 from custom_components.meraki_ha.core.utils.api_utils import (
     _is_list_return_type,
@@ -223,3 +224,26 @@ async def test_handle_meraki_errors_with_future_annotations():
     result_dict = await decorated_func_dict_return()
     assert result_dict == {}, f"Expected {{}}, got {result_dict}"
     assert isinstance(result_dict, dict)
+
+
+@handle_meraki_errors
+async def dummy_list_call_retry_limit() -> list[str]:
+    """Call a dummy list API whose retries ran out."""
+    raise APIError(
+        {"tags": ["test"], "operation": "test"},
+        MockResponse(500, "Reached retry limit", {"errors": ["Reached retry limit"]}),
+    )
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_error_raises_without_retrying():
+    """A 429 after the SDK's retries raises once instead of looping forever."""
+    with pytest.raises(MerakiRateLimitError):
+        await dummy_api_call_rate_limit_error()
+
+
+@pytest.mark.asyncio
+async def test_retry_limit_does_not_return_empty_list():
+    """Exhausted retries must not look like an empty device list."""
+    with pytest.raises(MerakiRateLimitError):
+        await dummy_list_call_retry_limit()

@@ -35,6 +35,7 @@ from .endpoints.push import PushApiEndpoints
 from .endpoints.sensor import SensorEndpoints
 from .endpoints.switch import SwitchEndpoints
 from .endpoints.wireless import WirelessEndpoints
+from .rate_limiter import get_org_limiter, throttle_session
 
 # Use feature-specific logger - can be configured independently via:
 # logger:
@@ -118,6 +119,7 @@ class MerakiAPIClient:
             nginx_429_retry_wait_time=2,
         )
         self.dashboard = await self._api_session.__aenter__()
+        throttle_session(self._api_session, get_org_limiter(self._org_id))
         self._apply_access_token(self._api_key)
 
     def _apply_access_token(self, access_token: str) -> None:

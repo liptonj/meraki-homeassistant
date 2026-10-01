@@ -78,6 +78,24 @@ class TestMerakiAPIClient:
             await api_client.async_close()
 
     @pytest.mark.asyncio
+    async def test_async_setup_throttles_sdk_session(
+        self, api_client: MerakiAPIClient
+    ) -> None:
+        """The SDK session is rate limited with the org's shared bucket."""
+        with (
+            patch("meraki.aio.AsyncDashboardAPI") as mock_dashboard,
+            patch(
+                "custom_components.meraki_ha.core.api.client.throttle_session"
+            ) as throttle,
+        ):
+            mock_dashboard.return_value.__aenter__.return_value = mock_dashboard
+            await api_client.async_setup()
+
+            throttle.assert_called_once()
+            assert throttle.call_args.args[0] is mock_dashboard.return_value
+            await api_client.async_close()
+
+    @pytest.mark.asyncio
     async def test_ensure_token_valid_updates_bearer_header(
         self, mock_hass: MagicMock
     ) -> None:
