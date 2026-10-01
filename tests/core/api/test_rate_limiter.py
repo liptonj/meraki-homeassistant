@@ -1,6 +1,7 @@
 """Tests for the per-organization rate limiter."""
 
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import AsyncMock
 
 import pytest
@@ -70,8 +71,8 @@ async def test_throttle_session_wraps_every_request() -> None:
     api_session = SimpleNamespace(_session=SimpleNamespace(_req_session=req_session))
     limiter = SimpleNamespace(acquire=AsyncMock())
 
-    throttle_session(api_session, limiter)
-    throttle_session(api_session, limiter)  # idempotent
+    throttle_session(api_session, cast(TokenBucket, limiter))
+    throttle_session(api_session, cast(TokenBucket, limiter))  # idempotent
     result = await req_session.request("GET", "https://x", params={"a": 1})
 
     assert result == "response"
