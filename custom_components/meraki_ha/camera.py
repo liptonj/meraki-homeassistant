@@ -17,6 +17,7 @@ from .const import (
     CAMERA_UNIQUE_ID_SUFFIX,
     CONF_CAMERA_SNAPSHOT_INTERVAL,
     DEFAULT_CAMERA_SNAPSHOT_INTERVAL,
+    MIN_CAMERA_SNAPSHOT_INTERVAL,
     DOMAIN,
     ENTITY_CHUNK_DELAY,
     ENTITY_CHUNK_SIZE,
@@ -93,6 +94,8 @@ class MerakiCamera(CoordinatorEntity, Camera):  # type: ignore[type-arg]
         # Snapshot caching for configurable refresh interval
         self._cached_snapshot: bytes | None = None
         self._snapshot_timestamp: float = 0
+        # Serialises fetches so simultaneous viewers share one API call
+        self._snapshot_lock = asyncio.Lock()
         # Cached linked camera entity for sync property access
         self._cached_linked_entity: str | None = None
 
@@ -107,11 +110,12 @@ class MerakiCamera(CoordinatorEntity, Camera):  # type: ignore[type-arg]
         """Return the configured snapshot refresh interval in seconds."""
         if self._config_entry is None:
             return DEFAULT_CAMERA_SNAPSHOT_INTERVAL
-        return int(
+        configured = int(
             self._config_entry.options.get(
                 CONF_CAMERA_SNAPSHOT_INTERVAL, DEFAULT_CAMERA_SNAPSHOT_INTERVAL
             )
         )
+        return max(configured, MIN_CAMERA_SNAPSHOT_INTERVAL)
 
     @property
     def device_info(self) -> DeviceInfo | None:
@@ -152,12 +156,11 @@ class MerakiCamera(CoordinatorEntity, Camera):  # type: ignore[type-arg]
                 _LOGGER.debug("Skipping snapshot for offline camera: %s", self.name)
                 return self._cached_snapshot  # Return cached image if available
 
-            # Check if we should use the cached snapshot based on refresh interval
-            interval = self._snapshot_interval
-            current_time = time.time()
-
-            if interval > 0 and self._cached_snapshot is not None:
-                elapsed = current_time - self._snapshot_timestamp
+            async with self._snapshot_lock:
+                # Within the interval, serve the cache. The timestamp also
+                # records failed attempts, so failures are not retried early.
+                interval = self._snapshot_interval
+                elapsed = time.time() - self._snapshot_timestamp
                 if elapsed < interval:
                     _LOGGER.debug(
                         "Returning cached snapshot for %s (%.0fs old, interval=%ds)",
@@ -167,16 +170,13 @@ class MerakiCamera(CoordinatorEntity, Camera):  # type: ignore[type-arg]
                     )
                     return self._cached_snapshot
 
-            # Fetch a new snapshot
-            snapshot = await self._fetch_snapshot()
+                self._snapshot_timestamp = time.time()
+                snapshot = await self._fetch_snapshot()
+                if snapshot is not None:
+                    self._cached_snapshot = snapshot
 
-            # Cache the snapshot if we got one
-            if snapshot is not None:
-                self._cached_snapshot = snapshot
-                self._snapshot_timestamp = current_time
-
-            # Return the new snapshot, or cached one if fetch failed
-            return snapshot if snapshot is not None else self._cached_snapshot
+                # Return the new snapshot, or cached one if fetch failed
+                return snapshot if snapshot is not None else self._cached_snapshot
         except (aiohttp.ClientError, TimeoutError, OSError) as e:
             _LOGGER.warning("Error fetching camera image for %s: %s", self.name, e)
             return self._cached_snapshot

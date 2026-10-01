@@ -305,7 +305,7 @@
           "camera_link_integration": "Camera Link Integration"
         },
         "data_description": {
-          "camera_snapshot_interval": "How often to refresh camera snapshots on the dashboard (0 = only on demand). Camera streaming uses RTSP and requires the RTSP server to be enabled in the Meraki Dashboard.",
+          "camera_snapshot_interval": "How often to refresh camera snapshots on the dashboard (minimum 30, values below are raised to 30). Camera streaming uses RTSP and requires the RTSP server to be enabled in the Meraki Dashboard.",
           "camera_link_integration": "Select an integration to filter which cameras are shown when linking Meraki cameras. Choose 'All Cameras' to see all available camera entities."
         }
       },
@@ -390,7 +390,7 @@
           "enable_web_ui": "Enable the self-hosted web interface for advanced controls.",
           "web_ui_port": "The port for the self-hosted web interface.",
           "hide_unconfigured_ssids": "Hide SSIDs that are not fully configured.",
-          "camera_snapshot_interval": "How often to refresh camera snapshots on the dashboard (0 = only on demand)."
+          "camera_snapshot_interval": "How often to refresh camera snapshots on the dashboard (minimum 30, values below are raised to 30)."
         }
       },
       "advanced": {
