@@ -17,10 +17,10 @@ from .const import (
     CAMERA_UNIQUE_ID_SUFFIX,
     CONF_CAMERA_SNAPSHOT_INTERVAL,
     DEFAULT_CAMERA_SNAPSHOT_INTERVAL,
-    MIN_CAMERA_SNAPSHOT_INTERVAL,
     DOMAIN,
     ENTITY_CHUNK_DELAY,
     ENTITY_CHUNK_SIZE,
+    MIN_CAMERA_SNAPSHOT_INTERVAL,
 )
 from .core.utils.naming_utils import format_device_name
 from .helpers.camera_mappings import load_camera_mappings as _load_camera_mappings

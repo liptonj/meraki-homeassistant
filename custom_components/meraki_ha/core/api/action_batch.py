@@ -65,7 +65,8 @@ class ActionBatchQueue:
 
         Args:
         ----
-            resource: The action's resource path, e.g. "/devices/{serial}/switch/ports/1".
+            resource: The action's resource path,
+                e.g. "/devices/{serial}/switch/ports/1".
             operation: The action's operation, e.g. "update".
             body: The action's body.
             direct: Makes the equivalent single request, used when the write

@@ -287,7 +287,11 @@ class TestMerakiAPIClient:
                     return_value={
                         "networks": [{"id": "N_1", "name": "Net"}],
                         "devices": [
-                            {"serial": "SW-1", "productType": "switch", "networkId": "N_1"}
+                            {
+                                "serial": "SW-1",
+                                "productType": "switch",
+                                "networkId": "N_1",
+                            }
                         ],
                     }
                 ),
@@ -296,9 +300,7 @@ class TestMerakiAPIClient:
                 api_client,
                 "_async_fetch_network_clients",
                 new=AsyncMock(
-                    return_value=[
-                        {"recentDeviceSerial": "SW-1", "status": "Online"}
-                    ]
+                    return_value=[{"recentDeviceSerial": "SW-1", "status": "Online"}]
                 ),
             ),
             patch.object(
@@ -942,7 +944,9 @@ class TestPartialPollsKeepData:
         """A clients-only poll leaves SSIDs, VLANs and rules untouched."""
         with (
             patch.object(
-                api_client, "_async_fetch_network_clients", new=AsyncMock(return_value=[])
+                api_client,
+                "_async_fetch_network_clients",
+                new=AsyncMock(return_value=[]),
             ),
         ):
             result = await api_client.get_all_data(

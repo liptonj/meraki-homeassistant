@@ -255,8 +255,8 @@ class MerakiConfigFlow(
 
         if user_input is not None:
             new_options = {**entry.options, **user_input}
+            # The entry's update listener reloads it when the options change.
             self.hass.config_entries.async_update_entry(entry, options=new_options)
-            await self.hass.config_entries.async_reload(entry.entry_id)
             return self.async_abort(reason="reconfigure_successful")
 
         network_options = []

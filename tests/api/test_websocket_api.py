@@ -26,7 +26,13 @@ def mock_coordinator():
     coordinator = AsyncMock()
     coordinator.last_update_success = True
     coordinator.data = {
-        "devices": [{"serial": "123", "name": "Test Device"}],
+        "devices": [
+            {
+                "serial": "123",
+                "name": "Test Device",
+                "ports_statuses": [{"portId": "1"}],
+            }
+        ],
         "clients": [
             {
                 "mac": "aa:bb:cc:dd:ee:ff",
@@ -63,9 +69,6 @@ def mock_hass(hass: HomeAssistant, mock_coordinator, mock_api_client):
     hass.data[DOMAIN] = {
         CONFIG_ENTRY_ID: {
             "coordinator": mock_coordinator,
-            "switch_port_coordinator": AsyncMock(
-                last_update_success=True, data=[{"portId": "1"}]
-            ),
             DATA_CLIENT: mock_api_client,
         }
     }
@@ -145,7 +148,7 @@ async def test_ws_get_switch_ports(hass_ws_client, mock_hass):
     )
     msg = await client.receive_json()
     assert msg["success"]
-    assert msg["result"][0]["portId"] == "1"
+    assert msg["result"] == [{"portId": "1", "serial": "123"}]
 
 
 async def test_ws_subscribe_updates(hass_ws_client, mock_hass):

@@ -633,9 +633,7 @@ class TestSnapshotRateLimiting:
                 new_callable=AsyncMock,
                 return_value=None,
             ),
-            patch.object(
-                camera, "_fetch_snapshot", side_effect=slow_fetch
-            ) as fetch,
+            patch.object(camera, "_fetch_snapshot", side_effect=slow_fetch) as fetch,
         ):
             results = await asyncio.gather(
                 *(camera.async_camera_image() for _ in range(5))

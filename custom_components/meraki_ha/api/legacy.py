@@ -165,14 +165,20 @@ async def ws_get_switch_ports(
         connection.send_error(msg["id"], "not_found", "Config entry not found.")
         return
 
-    switch_port_coordinator = hass.data[DOMAIN][entry_id].get("switch_port_coordinator")
-    if not switch_port_coordinator or not switch_port_coordinator.last_update_success:
+    # Port statuses come from the main poll; no extra API calls are made here.
+    coordinator = hass.data[DOMAIN][entry_id].get("coordinator")
+    if not coordinator or not coordinator.data:
         connection.send_error(
-            msg["id"], "coordinator_not_ready", "Switch port coordinator is not ready."
+            msg["id"], "coordinator_not_ready", "Coordinator is not ready."
         )
         return
 
-    connection.send_result(msg["id"], switch_port_coordinator.data)
+    ports = [
+        {**port, "serial": device.get("serial")}
+        for device in coordinator.data.get("devices", [])
+        for port in device.get("ports_statuses") or []
+    ]
+    connection.send_result(msg["id"], ports)
 
 
 @websocket_api.websocket_command(

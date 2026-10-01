@@ -39,7 +39,6 @@ from .const import (
 )
 from .core.api.client import MerakiAPIClient as ApiClient
 from .core.errors import (
-    ApiClientCommunicationError,
     MerakiAuthenticationError,
     MerakiConnectionError,
 )
@@ -51,6 +50,10 @@ from .types import MerakiDevice, MerakiNetwork
 #   logs:
 #     custom_components.meraki_ha.coordinator: warning
 _LOGGER = MerakiLoggers.COORDINATOR
+
+# A tier that falls due a moment after a tick is fetched on that tick instead
+# of waiting for the next one.
+_TICK_SLACK = timedelta(seconds=5)
 
 
 def _registry_entity_is_hidden(entity: Any) -> bool:
@@ -1124,19 +1127,19 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Determine which data to fetch
         fetch_networks = (
             self.last_network_update is None
-            or (now - self.last_network_update) > network_interval
+            or (now - self.last_network_update) >= network_interval - _TICK_SLACK
         )
         fetch_devices = (
             self.last_device_update is None
-            or (now - self.last_device_update) > device_interval
+            or (now - self.last_device_update) >= device_interval - _TICK_SLACK
         )
         fetch_clients = (
             self.last_client_update is None
-            or (now - self.last_client_update) > client_interval
+            or (now - self.last_client_update) >= client_interval - _TICK_SLACK
         )
         fetch_ssids = (
             self.last_ssid_update is None
-            or (now - self.last_ssid_update) > ssid_interval
+            or (now - self.last_ssid_update) >= ssid_interval - _TICK_SLACK
         )
 
         if not any([fetch_networks, fetch_devices, fetch_clients, fetch_ssids]):
@@ -1225,7 +1228,7 @@ class MerakiDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise
         except MerakiAuthenticationError as err:
             raise ConfigEntryAuthFailed("Meraki OAuth authentication failed") from err
-        except ApiClientCommunicationError as err:
+        except MerakiConnectionError as err:
             if self.last_successful_data:
                 _LOGGER.warning(
                     "Could not connect to Meraki API, using stale data. Error: %s",

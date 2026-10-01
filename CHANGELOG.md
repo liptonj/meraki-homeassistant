@@ -2,6 +2,15 @@
 
 ### Bug Fixes
 
+- **api:** Stop over-using the Meraki Dashboard API rate limit
+  - Every request is limited to 5 per second per organization, and 429s keep the last data instead of making entities unavailable
+  - Camera snapshots are cached (30 s minimum) and camera analytics refresh every 5 minutes
+  - Per-device client lists come from the one network client list
+  - Bursts of alerts and Push events refresh their devices in one call
+  - Writes that arrive together (switch ports, SSIDs, VLANs) go out as one action batch
+  - Switch port and SSID firewall data come from the main poll, without their own polling
+  - A reload keeps the webhook and Push API registrations; they are deleted when the feature is switched off or the integration is removed
+  - Reconfiguring reloads the integration once instead of twice
 - **auth:** Match Cisco's token POST exactly (HTTP Basic, form body, registered redirect URI) and log Hydra `error_hint` on `invalid_client`
 
 - **auth:** Send RFC 6749 HTTP Basic on the Meraki token request so `invalid_client` / 401 Unauthorized no longer fails Add hub

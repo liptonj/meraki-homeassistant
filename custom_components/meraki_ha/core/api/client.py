@@ -25,6 +25,7 @@ from ...core.errors import (
 )
 from ...helpers.logging_helper import MerakiLoggers
 from ...types import MerakiDevice, MerakiNetwork
+from .action_batch import ActionBatchQueue
 from .endpoints.appliance import ApplianceEndpoints
 from .endpoints.camera import CameraEndpoints
 from .endpoints.cellular import CellularEndpoint
@@ -35,7 +36,6 @@ from .endpoints.push import PushApiEndpoints
 from .endpoints.sensor import SensorEndpoints
 from .endpoints.switch import SwitchEndpoints
 from .endpoints.wireless import WirelessEndpoints
-from .action_batch import ActionBatchQueue
 from .rate_limiter import get_org_limiter, throttle_session
 
 # Use feature-specific logger - can be configured independently via:
@@ -555,7 +555,9 @@ class MerakiAPIClient:
             elif isinstance(network_traffic, dict):
                 appliance_traffic[network["id"]] = network_traffic
             elif (
-                previous := _previous_for_network(previous_data, "appliance_traffic", network["id"])
+                previous := _previous_for_network(
+                    previous_data, "appliance_traffic", network["id"]
+                )
             ) is not None:
                 appliance_traffic[network["id"]] = previous
 
@@ -575,7 +577,9 @@ class MerakiAPIClient:
             if isinstance(l3_firewall_rules, dict):
                 l3_firewall_rules_by_network[network["id"]] = l3_firewall_rules
             elif (
-                previous := _previous_for_network(previous_data, "l3_firewall_rules", network["id"])
+                previous := _previous_for_network(
+                    previous_data, "l3_firewall_rules", network["id"]
+                )
             ) is not None:
                 l3_firewall_rules_by_network[network["id"]] = previous
 
@@ -584,7 +588,9 @@ class MerakiAPIClient:
             if isinstance(traffic_shaping, dict):
                 traffic_shaping_by_network[network["id"]] = traffic_shaping
             elif (
-                previous := _previous_for_network(previous_data, "traffic_shaping", network["id"])
+                previous := _previous_for_network(
+                    previous_data, "traffic_shaping", network["id"]
+                )
             ) is not None:
                 traffic_shaping_by_network[network["id"]] = previous
 
@@ -593,7 +599,9 @@ class MerakiAPIClient:
             if isinstance(vpn_status, dict):
                 vpn_status_by_network[network["id"]] = vpn_status
             elif (
-                previous := _previous_for_network(previous_data, "vpn_status", network["id"])
+                previous := _previous_for_network(
+                    previous_data, "vpn_status", network["id"]
+                )
             ) is not None:
                 vpn_status_by_network[network["id"]] = previous
 
@@ -602,7 +610,9 @@ class MerakiAPIClient:
             if isinstance(network_rf_profiles, list):
                 rf_profiles_by_network[network["id"]] = network_rf_profiles
             elif (
-                previous := _previous_for_network(previous_data, "rf_profiles", network["id"])
+                previous := _previous_for_network(
+                    previous_data, "rf_profiles", network["id"]
+                )
             ) is not None:
                 rf_profiles_by_network[network["id"]] = previous
 
@@ -611,7 +621,9 @@ class MerakiAPIClient:
             if isinstance(content_filtering, dict):
                 content_filtering_by_network[network["id"]] = content_filtering
             elif (
-                previous := _previous_for_network(previous_data, "content_filtering", network["id"])
+                previous := _previous_for_network(
+                    previous_data, "content_filtering", network["id"]
+                )
             ) is not None:
                 content_filtering_by_network[network["id"]] = previous
 
@@ -620,7 +632,9 @@ class MerakiAPIClient:
             if isinstance(wireless_settings, dict):
                 wireless_settings_by_network[network["id"]] = wireless_settings
             elif (
-                previous := _previous_for_network(previous_data, "wireless_settings", network["id"])
+                previous := _previous_for_network(
+                    previous_data, "wireless_settings", network["id"]
+                )
             ) is not None:
                 wireless_settings_by_network[network["id"]] = previous
 
