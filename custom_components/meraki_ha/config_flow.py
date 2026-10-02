@@ -73,7 +73,7 @@ class MerakiConfigFlow(
                 self.hass, access_token
             )
         except Exception:
-            _LOGGER.exception("Failed to list Meraki organizations after OAuth")
+            _LOGGER.error("Failed to list Meraki organizations after OAuth")
             return self.async_abort(reason="cannot_connect")
 
         if not self._organizations:
@@ -196,10 +196,9 @@ class MerakiConfigFlow(
                         for network in networks
                         if network.get("id")
                     ]
-            except Exception as err:
+            except Exception:
                 _LOGGER.warning(
-                    "Failed to fetch networks for config flow: %s",
-                    err,
+                    "Failed to fetch networks for config flow",
                 )
             finally:
                 await api_client.async_close()

@@ -1426,15 +1426,15 @@ wheels = [
 
 [[package]]
 name = "meraki"
-version = "4.5.0b2"
+version = "4.5.0b4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/92/01/4f5276d75f54039c5f20086cd537be186b2e30f24f63be41d0959a45f929/meraki-4.5.0b2.tar.gz", hash = "sha256:19e3bc5131fa903f97931df9d27144001e82bda3b6addd5adfac2778f3a2364f", size = 543878, upload-time = "2026-09-16T14:26:25.802Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1c/6d/4074dfac8002a63dcbcde3e2868e87ac0bf496bf0676b1e59fe0a05ba333/meraki-4.5.0b4.tar.gz", hash = "sha256:59d6331824885cdf5c2b6434a1c19d3c0f6c2f612597516d06a5c3043132d5a4", size = 549175, upload-time = "2026-09-30T14:29:11.753Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b3/e2/37ba3e007657bfdf76c34f764317272e89a4990739fbc17f24e363f29b3f/meraki-4.5.0b2-py3-none-any.whl", hash = "sha256:ac674c5e0a93d547123d15bc6982902b966b69f1b8f6826b4825d7585ee05153", size = 605446, upload-time = "2026-09-16T14:26:24.026Z" },
+    { url = "https://files.pythonhosted.org/packages/30/aa/8200fff29360051d524a18a81e2d741b6945deaa65b98ea351c508991d39/meraki-4.5.0b4-py3-none-any.whl", hash = "sha256:85ba26e38e08ac389ddb774ed5242b5c2eda45e40252a4d5f011ffdba8ac1da0", size = 609775, upload-time = "2026-09-30T14:29:09.563Z" },
 ]
 
 [[package]]
@@ -1479,7 +1479,7 @@ requires-dist = [
     { name = "bandit", extras = ["toml"], marker = "extra == 'dev'", specifier = "==1.9.4" },
     { name = "codecov", marker = "extra == 'dev'" },
     { name = "homeassistant", marker = "extra == 'dev'", specifier = "==2026.9.1" },
-    { name = "meraki", marker = "extra == 'dev'", specifier = "==4.5.0b2" },
+    { name = "meraki", marker = "extra == 'dev'", specifier = "==4.5.0b4" },
     { name = "mypy", marker = "extra == 'dev'", specifier = "==1.11.0" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = "==2.7.3" },
     { name = "playwright", specifier = ">=1.57.0" },

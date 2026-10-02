@@ -9,6 +9,7 @@ from typing import Any
 
 import aiofiles
 from homeassistant.components import websocket_api
+from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.core import HomeAssistant, callback
 from voluptuous import ALLOW_EXTRA, All, Optional, Required, Schema
 
@@ -30,6 +31,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TEMPERATURE_UNIT,
     DOMAIN,
+    SECRET_REDACTION_KEYS,
 )
 from .core.errors import MerakiError
 from .core.timed_access_manager import TimedAccessManager
@@ -289,16 +291,19 @@ async def _async_frontend_payload(
         if mqtt_relay_manager:
             mqtt_data["relay_destinations"] = mqtt_relay_manager.get_health_status()
 
-    return {
-        **coordinator_data,
-        "enabled_networks": enabled_networks,
-        "config_entry_id": config_entry_id,
-        "version": version,
-        "scan_interval": scan_interval,
-        "last_updated": last_updated,
-        "mqtt": mqtt_data,
-        **dashboard_settings,
-    }
+    return async_redact_data(
+        {
+            **coordinator_data,
+            "enabled_networks": enabled_networks,
+            "config_entry_id": config_entry_id,
+            "version": version,
+            "scan_interval": scan_interval,
+            "last_updated": last_updated,
+            "mqtt": mqtt_data,
+            **dashboard_settings,
+        },
+        SECRET_REDACTION_KEYS,
+    )
 
 
 @websocket_api.async_response
@@ -497,6 +502,11 @@ async def handle_create_timed_access_key(
         connection.send_error(msg["id"], "not_found", "Config entry not found")
         return
 
+    if connection.user is None or not connection.user.is_admin:
+        connection.send_error(
+            msg["id"], "unauthorized", "Administrator access required"
+        )
+        return
     api_client = hass.data[DOMAIN][config_entry_id][DATA_CLIENT]
     manager = TimedAccessManager(api_client)
 

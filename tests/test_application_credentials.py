@@ -100,8 +100,10 @@ async def test_token_request_uses_http_basic() -> None:
 
 
 @pytest.mark.asyncio
-async def test_token_request_logs_error_hint_and_raises() -> None:
-    """Test failed token exchange logs Hydra hint and does not leak the secret."""
+async def test_token_request_does_not_log_reflected_credentials(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Exclude reflected secrets in error bodies and authentication headers."""
     credential = ClientCredential("client-id", "client-secret")
     impl = MerakiOAuth2Implementation(
         MagicMock(),
@@ -111,12 +113,12 @@ async def test_token_request_logs_error_hint_and_raises() -> None:
     )
     mock_resp = MagicMock()
     mock_resp.status = 401
-    mock_resp.headers = {"WWW-Authenticate": "Basic"}
+    mock_resp.headers = {"WWW-Authenticate": "Basic client-secret abc refresh-secret"}
     mock_resp.json = AsyncMock(
         return_value={
-            "error": "invalid_client",
-            "error_description": "bad secret",
-            "error_hint": "client_secret_basic required",
+            "error": "client-secret",
+            "error_description": "abc refresh-secret",
+            "error_hint": "client-secret",
         }
     )
     mock_resp.raise_for_status = MagicMock(side_effect=Exception("401"))
@@ -131,3 +133,8 @@ async def test_token_request_logs_error_hint_and_raises() -> None:
         pytest.raises(Exception, match="401"),
     ):
         await impl._token_request({"grant_type": "authorization_code", "code": "abc"})
+
+    assert "HTTP 401" in caplog.text
+    for secret in ("client-secret", "abc", "refresh-secret"):
+        assert secret not in caplog.text
+    mock_resp.json.assert_not_awaited()

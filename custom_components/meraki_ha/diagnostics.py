@@ -8,16 +8,10 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_ENABLE_MQTT, CONF_ENABLE_PUSH_API, DOMAIN
+from .const import CONF_ENABLE_MQTT, CONF_ENABLE_PUSH_API, DOMAIN, SECRET_REDACTION_KEYS
 from .meraki_data_coordinator import MerakiDataCoordinator
 
-TO_REDACT = {
-    "access_token",
-    "refresh_token",
-    "meraki_api_key",
-    "client_secret",
-    "client_id",
-}
+TO_REDACT = SECRET_REDACTION_KEYS
 
 
 async def async_get_config_entry_diagnostics(
@@ -70,4 +64,6 @@ async def async_get_config_entry_diagnostics(
     if push_manager:
         diagnostics["push_api"]["status"] = push_manager.status
 
-    return diagnostics
+    # Redact the entire response, including SSID/RADIUS data and relay status,
+    # without modifying the live coordinator's configuration.
+    return async_redact_data(diagnostics, TO_REDACT)

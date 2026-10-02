@@ -1,5 +1,6 @@
 """Tests for the diagnostics module."""
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -7,6 +8,45 @@ import pytest
 from custom_components.meraki_ha.const import DOMAIN
 from custom_components.meraki_ha.diagnostics import async_get_config_entry_diagnostics
 from tests.const import MOCK_ALL_DATA
+
+
+@pytest.mark.asyncio
+async def test_diagnostics_redacts_nested_wifi_and_relay_secrets(
+    mock_hass: MagicMock,
+    mock_config_entry_for_diagnostics: MagicMock,
+) -> None:
+    """Remove secrets from all sections without mutating runtime data."""
+    secret_fields = {
+        "psk": "fixture-wifi-key",
+        "passphrase": "fixture-device-key",
+        "secret": "fixture-radius-key",
+        "password": "fixture-relay-password",
+        "api_key": "fixture-api-key",
+        "Authorization": "Bearer fixture-token",
+        "radiusSecret": "fixture-radius-legacy",
+    }
+    coordinator = MagicMock()
+    coordinator.data = {"ssids": [{"name": "Residents", **secret_fields}]}
+    relay = MagicMock()
+    relay.get_health_status.return_value = {"nested": dict(secret_fields)}
+    mock_config_entry_for_diagnostics.options = {"enable_mqtt": True}
+    mock_hass.data = {
+        DOMAIN: {
+            mock_config_entry_for_diagnostics.entry_id: {
+                "coordinator": coordinator,
+                "mqtt_relay_manager": relay,
+            }
+        }
+    }
+
+    result = await async_get_config_entry_diagnostics(
+        mock_hass, mock_config_entry_for_diagnostics
+    )
+    exported = json.dumps(result)
+    for key, value in secret_fields.items():
+        assert value not in exported
+        assert coordinator.data["ssids"][0][key] == value
+    assert result["coordinator_data"]["ssids"][0]["name"] == "Residents"
 
 
 @pytest.fixture
@@ -74,7 +114,9 @@ async def test_async_get_config_entry_diagnostics(
     assert token["refresh_token"] != "secret-refresh"
 
     # Verify coordinator data
-    assert result["coordinator_data"] == MOCK_ALL_DATA
+    assert result["coordinator_data"]["networks"] == MOCK_ALL_DATA["networks"]
+    assert result["coordinator_data"]["devices"] == MOCK_ALL_DATA["devices"]
+    assert result["coordinator_data"]["ssids"][0]["psk"] == "**REDACTED**"
 
 
 @pytest.mark.asyncio

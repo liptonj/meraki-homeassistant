@@ -5,7 +5,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from aiohttp import ClientResponseError
+from aiohttp import ClientResponseError, web
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from custom_components.meraki_ha.core.api.client import MerakiAPIClient
@@ -122,8 +122,85 @@ class TestMerakiAPIClient:
         await client.async_ensure_token_valid()
 
         assert client._api_key == "new-access-token"
-        assert rest_session._headers["Authorization"] == "Bearer new-access-token"
         assert req_session.headers["Authorization"] == "Bearer new-access-token"
+        assert rest_session._headers["Authorization"] == "Bearer new-access-token"
+
+    @pytest.mark.asyncio
+    async def test_real_sdk_sends_refreshed_token(
+        self, mock_hass: MagicMock, socket_enabled: None
+    ) -> None:
+        """Verify SDK 4.5.0b4 sends updated credentials to a loopback fixture."""
+        headers: list[str] = []
+
+        async def respond(request: web.Request) -> web.Response:
+            headers.append(request.headers["Authorization"])
+            return web.json_response([])
+
+        app = web.Application()
+        app.router.add_get("/api/v1/organizations/fixture-org/networks", respond)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "127.0.0.1", 0)
+        await site.start()
+        port = runner.addresses[0][1]
+
+        oauth = MagicMock()
+        oauth.async_ensure_token_valid = AsyncMock()
+        oauth.token = {"access_token": "fixture-new-token"}
+        client = MerakiAPIClient(
+            mock_hass,
+            "fixture-old-token",
+            "fixture-org",
+            base_url=f"http://127.0.0.1:{port}/api/v1",
+            oauth_session=oauth,
+        )
+        try:
+            await client.async_setup()
+            try:
+                assert client.dashboard is not None
+                await client.dashboard.organizations.getOrganizationNetworks(
+                    "fixture-org"
+                )
+                await client.async_ensure_token_valid()
+                await client.dashboard.organizations.getOrganizationNetworks(
+                    "fixture-org"
+                )
+            finally:
+                await client.async_close()
+        finally:
+            await runner.cleanup()
+
+        assert headers == ["Bearer fixture-old-token", "Bearer fixture-new-token"]
+
+    @pytest.mark.asyncio
+    async def test_missing_sdk_transport_fails_closed(
+        self, mock_hass: MagicMock
+    ) -> None:
+        """Do not silently retain a stale token with an incompatible SDK."""
+        client = MerakiAPIClient(mock_hass, "old-token", "fixture-org")
+        client._api_session = MagicMock()
+        client._api_session._session._req_session = None
+        with pytest.raises(ConfigEntryAuthFailed):
+            client._apply_access_token("new-token")
+        assert client._api_key == "old-token"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("token", [None, "", 123])
+    async def test_refresh_without_a_token_fails_closed(
+        self,
+        mock_hass: MagicMock,
+        token: object,
+    ) -> None:
+        """Reject missing or malformed refreshed credentials."""
+        oauth = MagicMock()
+        oauth.async_ensure_token_valid = AsyncMock()
+        oauth.token = {"access_token": token}
+        client = MerakiAPIClient(
+            mock_hass, "old-token", "fixture-org", oauth_session=oauth
+        )
+        with pytest.raises(ConfigEntryAuthFailed):
+            await client.async_ensure_token_valid()
+        assert client._api_key == "old-token"
 
     @pytest.mark.asyncio
     async def test_ensure_token_valid_401_raises_auth_failed(

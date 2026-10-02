@@ -6,9 +6,10 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
+from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.core import HomeAssistant, callback
 
-from ..const import DATA_CLIENT, DOMAIN
+from ..const import DATA_CLIENT, DOMAIN, SECRET_REDACTION_KEYS
 from ..core.api.action_batch import submit_write
 from ..helpers.logging_helper import MerakiLoggers
 from ..meraki_data_coordinator import MerakiDataCoordinator
@@ -63,11 +64,14 @@ async def ws_get_overview(
 
     connection.send_result(
         msg["id"],
-        {
-            "devices": coordinator.data.get("devices", []),
-            "clients": coordinator.data.get("clients", []),
-            "ssids": coordinator.data.get("ssids", []),
-        },
+        async_redact_data(
+            {
+                "devices": coordinator.data.get("devices", []),
+                "clients": coordinator.data.get("clients", []),
+                "ssids": coordinator.data.get("ssids", []),
+            },
+            SECRET_REDACTION_KEYS,
+        ),
     )
 
 
@@ -97,7 +101,9 @@ async def ws_get_device(
         None,
     )
     if device:
-        connection.send_result(msg["id"], device)
+        connection.send_result(
+            msg["id"], async_redact_data(device, SECRET_REDACTION_KEYS)
+        )
     else:
         connection.send_error(msg["id"], "not_found", "Device not found.")
 
@@ -146,7 +152,7 @@ async def ws_get_ssids(
         return
     coordinator: MerakiDataCoordinator = hass.data[DOMAIN][entry_id]["coordinator"]
     ssids = coordinator.data.get("ssids", [])
-    connection.send_result(msg["id"], ssids)
+    connection.send_result(msg["id"], async_redact_data(ssids, SECRET_REDACTION_KEYS))
 
 
 @websocket_api.websocket_command(
@@ -203,7 +209,9 @@ async def ws_subscribe_updates(
     def forward_data() -> None:
         """Forward data to client."""
         connection.send_message(
-            websocket_api.event_message(msg["id"], coordinator.data)
+            websocket_api.event_message(
+                msg["id"], async_redact_data(coordinator.data, SECRET_REDACTION_KEYS)
+            )
         )
 
     remove_listener = coordinator.async_add_listener(forward_data)

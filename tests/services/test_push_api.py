@@ -196,7 +196,9 @@ async def test_availability_item_updates_device() -> None:
     """Availability items update device status immediately."""
     coordinator = MagicMock()
     coordinator.hass = MagicMock()
-    coordinator.hass.async_create_task = MagicMock()
+    coordinator.hass.async_create_task = MagicMock(
+        side_effect=lambda coro: coro.close()
+    )
     coordinator._targeted_device_refresh = AsyncMock()
 
     await async_handle_push_message(
@@ -217,7 +219,9 @@ async def test_config_change_item_refreshes_ssid() -> None:
     """SSID configuration changes trigger a targeted SSID refresh."""
     coordinator = MagicMock()
     coordinator.hass = MagicMock()
-    coordinator.hass.async_create_task = MagicMock()
+    coordinator.hass.async_create_task = MagicMock(
+        side_effect=lambda coro: coro.close()
+    )
     coordinator._targeted_ssid_refresh = AsyncMock()
 
     await async_handle_push_message(
