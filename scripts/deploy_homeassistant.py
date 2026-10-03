@@ -188,6 +188,10 @@ class HomeAssistant:
         for _ in range(20):
             entries = await self.rest("/api/config/config_entries/entry?domain=step_ca_scep")
             if len(entries) == 1 and entries[0].get("state") == "loaded":
+                options = await self.websocket({"type": "step_ca_scep/ipsk/options", "network_id": ""})
+                if not isinstance(options, dict) or not isinstance(options.get("networks"), list):
+                    raise DeploymentError("Step CA returned invalid iPSK options")
+                print("Verified live iPSK options request; wireless network count:", len(options["networks"]))
                 print("Verified Step CA companion loaded")
                 return
             if len(entries) > 1:

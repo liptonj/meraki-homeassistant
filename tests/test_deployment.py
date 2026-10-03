@@ -122,17 +122,35 @@ async def test_companion_verification_completes_only_addon_discovery() -> None:
         ]
     )
     client.websocket = AsyncMock(
-        return_value=[
-            {
-                "handler": "step_ca_scep",
-                "flow_id": "abc123",
-                "context": {"source": "hassio"},
-            }
+        side_effect=[
+            [
+                {
+                    "handler": "step_ca_scep",
+                    "flow_id": "abc123",
+                    "context": {"source": "hassio"},
+                }
+            ],
+            {"networks": []},
         ]
     )
     with patch("asyncio.sleep", new_callable=AsyncMock), patch("builtins.print"):
         await client.verify_step_ca_companion()
     client.rest.assert_any_await("/api/config/config_entries/flow/abc123", "POST", {})
+    client.websocket.assert_any_await(
+        {"type": "step_ca_scep/ipsk/options", "network_id": ""}
+    )
+
+
+@pytest.mark.asyncio
+async def test_loaded_companion_with_failed_options_is_not_a_verified_deployment() -> (
+    None
+):
+    """A loaded integration must also accept the exact options request on the wire."""
+    client = HomeAssistant("https://ha.example.org", "fixture", MagicMock())
+    client.rest = AsyncMock(return_value=[{"state": "loaded"}])
+    client.websocket = AsyncMock(side_effect=DeploymentError("invalid_format"))
+    with pytest.raises(DeploymentError, match="invalid_format"):
+        await client.verify_step_ca_companion()
 
 
 @pytest.mark.asyncio
