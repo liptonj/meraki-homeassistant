@@ -101,9 +101,58 @@ async def test_meraki_mismatch_is_a_failed_deployment() -> None:
 async def test_inspection_does_not_issue_mutations() -> None:
     """Inspection only fetches public status metadata."""
     client = HomeAssistant("https://ha.example.org", "fixture", MagicMock())
-    client.rest = AsyncMock(side_effect=[{"version": "2026.10"}, [meraki_state()]])
+    client.rest = AsyncMock(side_effect=[{"version": "2026.10"}, [], [meraki_state()]])
     client.supervisor = AsyncMock(return_value={"addons": []})
     with patch("builtins.print"):
         await client.inspect()
     assert all(len(call.args) == 1 for call in client.rest.call_args_list)
     client.supervisor.assert_awaited_once_with("/addons")
+
+
+@pytest.mark.asyncio
+async def test_companion_verification_completes_only_addon_discovery() -> None:
+    """Complete the existing Supervisor confirmation and verify actual loading."""
+    client = HomeAssistant("https://ha.example.org", "fixture", MagicMock())
+    client.rest = AsyncMock(
+        side_effect=[
+            [],
+            {"type": "form", "step_id": "hassio_confirm"},
+            {"type": "create_entry"},
+            [{"state": "loaded"}],
+        ]
+    )
+    client.websocket = AsyncMock(
+        return_value=[
+            {
+                "handler": "step_ca_scep",
+                "flow_id": "abc123",
+                "context": {"source": "hassio"},
+            }
+        ]
+    )
+    with patch("asyncio.sleep", new_callable=AsyncMock), patch("builtins.print"):
+        await client.verify_step_ca_companion()
+    client.rest.assert_any_await("/api/config/config_entries/flow/abc123", "POST", {})
+
+
+@pytest.mark.asyncio
+async def test_companion_verification_rejects_broken_entry_and_user_flow() -> None:
+    """Fail a broken import without accepting arbitrary configuration flows."""
+    client = HomeAssistant("https://ha.example.org", "fixture", MagicMock())
+    for entries in ([{"state": "setup_error"}], []):
+        client.rest = AsyncMock(return_value=entries)
+        client.websocket = AsyncMock(
+            return_value=[
+                {
+                    "handler": "step_ca_scep",
+                    "flow_id": "abc123",
+                    "context": {"source": "user"},
+                }
+            ]
+        )
+        with (
+            patch("asyncio.sleep", new_callable=AsyncMock),
+            pytest.raises(DeploymentError, match="did not load"),
+        ):
+            await client.verify_step_ca_companion()
+        assert all(len(call.args) == 1 for call in client.rest.call_args_list)

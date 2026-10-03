@@ -78,6 +78,10 @@ class HomeAssistant:
 
     async def supervisor(self, endpoint: str, method: str = "get", data: Any = None,
                          timeout: int = 120) -> Any:
+        return await self.websocket({"type": "supervisor/api", "endpoint": endpoint,
+                                     "method": method, "data": data or {}, "timeout": timeout}, timeout)
+
+    async def websocket(self, command: dict[str, Any], timeout: int = 120) -> Any:
         ws_url = self.base.replace("https://", "wss://", 1).replace("http://", "ws://", 1) + "/api/websocket"
         try:
             async with asyncio.timeout(timeout + 20):
@@ -87,17 +91,16 @@ class HomeAssistant:
                     await socket.send_json({"type": "auth", "access_token": self.token})
                     if (await socket.receive_json()).get("type") != "auth_ok":
                         raise DeploymentError("Home Assistant authentication failed")
-                    await socket.send_json({"id": 1, "type": "supervisor/api", "endpoint": endpoint,
-                                            "method": method, "data": data or {}, "timeout": timeout})
+                    await socket.send_json({"id": 1, **command})
                     for _ in range(50):
                         result = await socket.receive_json()
                         if result.get("id") == 1:
                             if not result.get("success"):
-                                raise DeploymentError("Supervisor operation failed; check its local logs")
+                                raise DeploymentError("Home Assistant operation failed; check its local logs")
                             return result.get("result", {})
-                    raise DeploymentError("Supervisor returned no matching result")
+                    raise DeploymentError("Home Assistant returned no matching result")
         except (aiohttp.ClientError, TimeoutError, ValueError):
-            raise DeploymentError("Supervisor connection failed; response details withheld") from None
+            raise DeploymentError("Home Assistant connection failed; response details withheld") from None
 
     async def wait_job(self, result: dict[str, Any]) -> None:
         job_id = result.get("job_id")
@@ -135,6 +138,10 @@ class HomeAssistant:
     async def inspect(self) -> None:
         config = await self.rest("/api/config")
         print("Core version:", config.get("version", "unknown"))
+        entries = await self.rest("/api/config/config_entries/entry")
+        print("Relevant integrations:", json.dumps([{key: row.get(key) for key in
+                ("domain", "state", "disabled_by")}
+                for row in entries if row.get("domain") in ("meraki_ha", "step_ca_scep")]))
         states = await self.rest("/api/states")
         updates = [{"entity_id": row["entity_id"],
                     **{key: row.get("attributes", {}).get(key) for key in
@@ -168,6 +175,32 @@ class HomeAssistant:
         if str(state.get("attributes", {}).get("installed_version", "")).removeprefix("v") != expected:
             raise DeploymentError("Meraki installed version differs from the requested version")
         print("Verified installed Meraki integration:", expected)
+
+    async def verify_step_ca_companion(self) -> None:
+        for _ in range(20):
+            entries = await self.rest("/api/config/config_entries/entry?domain=step_ca_scep")
+            if len(entries) == 1 and entries[0].get("state") == "loaded":
+                print("Verified Step CA companion loaded")
+                return
+            if len(entries) > 1:
+                raise DeploymentError("Expected one Step CA companion configuration")
+            if not entries:
+                flows = await self.websocket({"type": "config_entries/flow/progress"})
+                candidates = [flow for flow in flows if flow.get("handler") == "step_ca_scep"
+                              and flow.get("context", {}).get("source") == "hassio"]
+                if len(candidates) == 1:
+                    flow_id = candidates[0].get("flow_id", "")
+                    if not re.fullmatch(r"[a-zA-Z0-9-]+", flow_id):
+                        raise DeploymentError("Unexpected Step CA discovery identifier")
+                    path = "/api/config/config_entries/flow/" + flow_id
+                    form = await self.rest(path)
+                    if form.get("type") == "form" and form.get("step_id") == "hassio_confirm":
+                        result = await self.rest(path, "POST", {})
+                        if result.get("type") != "create_entry":
+                            raise DeploymentError("Step CA discovery could not be completed")
+                        print("Completed Step CA add-on discovery")
+            await asyncio.sleep(3)
+        raise DeploymentError("Step CA companion did not load; inspect its integration status")
 
     async def deploy_step_ca(self, expected: str) -> None:
         expected = version(expected)
@@ -206,6 +239,7 @@ class HomeAssistant:
         if info.get("state") != "started" or info.get("version") != expected:
             raise DeploymentError("Step CA did not stay started on the requested version")
         await self.restart()
+        await self.verify_step_ca_companion()
         print("Verified installed/running Step CA:", expected, "Core restarted")
 
 
