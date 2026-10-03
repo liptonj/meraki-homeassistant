@@ -17,7 +17,7 @@
   "loggers": ["meraki_ha"],
   "quality_scale": "gold",
   "requirements": [
-    "meraki==4.5.0b2",
+    "meraki==4.5.0b4",
     "diskcache==5.6.3",
     "aiofiles",
     "aiomqtt>=2.0.0"

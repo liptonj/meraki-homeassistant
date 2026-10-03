@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import traceback
 from typing import Any
 
 import pytest
@@ -104,6 +105,27 @@ async def test_handle_meraki_errors():
         await dummy_api_call_client_error()
     with pytest.raises(MerakiConnectionError):
         await dummy_api_call_generic_error()
+
+
+@pytest.mark.asyncio
+async def test_api_error_does_not_expose_reflected_secrets(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Keep provider bodies out of persistent logs and chained tracebacks."""
+    secret = "fixture-reflected-passphrase"
+
+    @handle_meraki_errors
+    async def rejected_request() -> dict[str, Any]:
+        raise APIError(
+            {"tags": ["wireless"], "operation": "createIdentityPsk"},
+            MockResponse(400, "Bad Request", {"errors": [secret]}),
+        )
+
+    with pytest.raises(MerakiConnectionError) as raised:
+        await rejected_request()
+
+    assert secret not in caplog.text
+    assert secret not in "".join(traceback.format_exception(raised.value))
 
 
 @handle_meraki_errors
@@ -247,3 +269,25 @@ async def test_retry_limit_does_not_return_empty_list():
     """Exhausted retries must not look like an empty device list."""
     with pytest.raises(MerakiRateLimitError):
         await dummy_list_call_retry_limit()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "status,reason", [(429, "Rate limit"), (500, "Reached retry limit")]
+)
+async def test_exhausted_retries_hide_provider_secrets(status, reason, caplog):
+    """Keep upstream retry behavior without exposing reflected credentials."""
+
+    @handle_meraki_errors
+    async def call() -> list[str]:
+        raise APIError(
+            {"tags": ["test"], "operation": "test"},
+            MockResponse(status, reason, {"errors": [reason + " fixture-secret"]}),
+        )
+
+    with pytest.raises(MerakiRateLimitError) as caught:
+        await call()
+    visible_trace = "".join(traceback.format_exception(caught.value))
+    assert "fixture-secret" not in str(caught.value)
+    assert "fixture-secret" not in visible_trace
+    assert "fixture-secret" not in caplog.text

@@ -191,6 +191,8 @@ class TestHandleGetConfig:
         assert result["config_entry_id"] == "test_entry_id"
         assert result["enabled_networks"] == ["N_12345"]
         assert result["version"] == "1.0.0"
+        assert result["ssids"][0]["psk"] == "**REDACTED**"
+        assert mock_coordinator.data["ssids"][0]["psk"] == "password"
 
     async def test_subscribe_meraki_data_includes_enabled_networks(
         self,
@@ -228,6 +230,7 @@ class TestHandleGetConfig:
         event = mock_connection.send_message.call_args[0][0]
         assert event["id"] == 7
         assert event["event"]["enabled_networks"] == ["N_12345"]
+        assert event["event"]["ssids"][0]["psk"] == "**REDACTED**"
 
     async def test_get_config_entry_not_found(
         self,
@@ -525,6 +528,26 @@ class TestHandleUpdateEnabledNetworks:
 
 class TestHandleCreateTimedAccessKey:
     """Tests for handle_create_timed_access_key handler."""
+
+    @pytest.mark.parametrize("signed_in", [False, True])
+    async def test_regular_user_cannot_create_or_reveal_a_key(
+        self,
+        hass: HomeAssistant,
+        mock_connection: MagicMock,
+        setup_hass_data: None,
+        signed_in: bool,
+    ) -> None:
+        """Only administrators may provision a key and receive its password."""
+        mock_connection.user = MagicMock(is_admin=False) if signed_in else None
+        with patch("custom_components.meraki_ha.web_api.TimedAccessManager") as manager:
+            await get_wrapped(handle_create_timed_access_key)(
+                hass, mock_connection, {"id": 5, "config_entry_id": "test_entry_id"}
+            )
+        manager.assert_not_called()
+        mock_connection.send_result.assert_not_called()
+        mock_connection.send_error.assert_called_once_with(
+            5, "unauthorized", "Administrator access required"
+        )
 
     async def test_create_timed_access_key_success(
         self,

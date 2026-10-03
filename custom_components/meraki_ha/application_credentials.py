@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from json import JSONDecodeError
 from typing import Any, cast
 
-from aiohttp import ClientError, encode_basic_auth
+from aiohttp import encode_basic_auth
 from homeassistant.components.application_credentials import (
     AuthImplementation,
     AuthorizationServer,
@@ -60,15 +59,6 @@ class MerakiOAuth2Implementation(AuthImplementation):
         request_data.pop("client_id", None)
         request_data.pop("client_secret", None)
 
-        _LOGGER.debug(
-            "Meraki token request grant_type=%s fields=%s "
-            "client_id_len=%s client_secret_len=%s",
-            request_data.get("grant_type"),
-            sorted(request_data),
-            len(self.client_id or ""),
-            len(self.client_secret or ""),
-        )
-
         resp = await session.post(
             self.token_url,
             data=request_data,
@@ -78,20 +68,9 @@ class MerakiOAuth2Implementation(AuthImplementation):
             },
         )
         if resp.status >= 400:
-            try:
-                error_response = await resp.json()
-            except (ClientError, JSONDecodeError):
-                error_response = {}
-            error_code = error_response.get("error", "unknown")
-            error_description = error_response.get("error_description", "unknown error")
-            error_hint = error_response.get("error_hint")
-            _LOGGER.error(
-                "Meraki token request failed (%s): %s hint=%s www_authenticate=%s",
-                error_code,
-                error_description,
-                error_hint,
-                resp.headers.get("WWW-Authenticate"),
-            )
+            # Provider bodies and WWW-Authenticate may echo submitted secrets.
+            # Only the HTTP status is safe to write to persistent logs.
+            _LOGGER.error("Meraki token request failed (HTTP %s)", resp.status)
         resp.raise_for_status()
         return cast(dict[str, Any], await resp.json())
 

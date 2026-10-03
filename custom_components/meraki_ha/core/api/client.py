@@ -160,19 +160,18 @@ class MerakiAPIClient:
 
     def _apply_access_token(self, access_token: str) -> None:
         """Update the SDK session so Dashboard calls use the current Bearer token."""
-        self._api_key = access_token
-        header_value = f"Bearer {access_token}"
         rest_session = getattr(self._api_session, "_session", None)
         if rest_session is None:
             return
+        # The pinned beta SDK uses aiohttp. Update the persistent connection,
+        # then the SDK's backing headers, before accepting the refreshed token.
+        http_client = getattr(rest_session, "_req_session", None)
+        if http_client is None:
+            raise ConfigEntryAuthFailed("Meraki SDK token refresh is unavailable")
+        http_client.headers["Authorization"] = f"Bearer {access_token}"
+        rest_session._headers["Authorization"] = f"Bearer {access_token}"
         rest_session._api_key = str(access_token)
-        headers = getattr(rest_session, "_headers", None)
-        if isinstance(headers, dict):
-            headers["Authorization"] = header_value
-        req_session = getattr(rest_session, "_req_session", None)
-        req_headers = getattr(req_session, "headers", None) if req_session else None
-        if req_headers is not None:
-            req_headers["Authorization"] = header_value
+        self._api_key = access_token
 
     async def async_ensure_token_valid(self) -> None:
         """Refresh the OAuth access token if it is expired and update the SDK."""
@@ -186,7 +185,9 @@ class MerakiAPIClient:
                     "Meraki OAuth token refresh failed"
                 ) from err
             raise
-        new_token = str(self._oauth_session.token["access_token"])
+        new_token = self._oauth_session.token.get("access_token")
+        if not isinstance(new_token, str) or not new_token:
+            raise ConfigEntryAuthFailed("Meraki OAuth access token is missing")
         if new_token != self._api_key:
             self._apply_access_token(new_token)
 

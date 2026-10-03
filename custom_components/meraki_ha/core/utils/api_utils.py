@@ -93,9 +93,9 @@ def handle_meraki_errors(
             return await func(*args, **kwargs)
         except (JSONDecodeError, MerakiConnectionError) as err:
             _LOGGER.warning(
-                "API call %s failed with an empty or invalid response: %s",
+                "API call %s failed with an empty or invalid response (%s)",
                 func.__name__,
-                err,
+                type(err).__name__,
             )
             # Inspect the wrapped function's return type to return a safe empty value
             if _is_list_return_type(func):
@@ -109,32 +109,39 @@ def handle_meraki_errors(
             # look like everything was removed.
             if _is_retry_limit_error(err) or _is_rate_limit_error(err):
                 _LOGGER.warning(
-                    "API call %s gave up after retries: %s", func.__name__, err
+                    "API call %s gave up after retries (%s)",
+                    func.__name__,
+                    type(err).__name__,
                 )
-                raise MerakiRateLimitError(f"API retries exhausted: {err}") from err
+                raise MerakiRateLimitError("API retries exhausted") from None
 
-            _LOGGER.error("Meraki API error: %s", err)
+            # API error bodies can reflect a submitted Wi-Fi passphrase or token.
+            _LOGGER.error("Meraki API call %s failed", func.__name__)
             if _is_auth_error(err):
                 raise MerakiAuthenticationError(
-                    f"Authentication failed: {err}"
-                ) from err
+                    "Authentication failed; reconnect the Meraki integration"
+                ) from None
             elif _is_device_error(err):
-                raise MerakiDeviceError(f"Device error: {err}") from err
+                raise MerakiDeviceError("Device error") from None
             elif _is_network_error(err):
-                raise MerakiNetworkError(f"Network error: {err}") from err
+                raise MerakiNetworkError("Network error") from None
             else:
-                raise MerakiConnectionError(f"API error: {err}") from err
+                raise MerakiConnectionError("API error") from None
         except ClientError as err:
-            _LOGGER.error("Connection error: %s", err)
-            raise MerakiConnectionError(f"Connection error: {err}") from err
+            _LOGGER.error(
+                "Connection error during %s (%s)", func.__name__, type(err).__name__
+            )
+            raise MerakiConnectionError("Connection error") from None
         except MerakiInformationalError:
             # Allow informational errors (traffic analysis disabled, VLANs disabled,
             # etc.) to propagate without logging as errors - they are handled
             # gracefully upstream.
             raise
         except Exception as err:
-            _LOGGER.error("Unexpected error: %s", err)
-            raise MerakiConnectionError(f"Unexpected error: {err}") from err
+            _LOGGER.error(
+                "Unexpected error during %s (%s)", func.__name__, type(err).__name__
+            )
+            raise MerakiConnectionError("Unexpected error") from None
 
     return cast(Callable[..., Awaitable[T]], wrapper)
 
@@ -203,11 +210,11 @@ def _raise_if_informational_error(err: APIError | AsyncAPIError) -> None:
     """
     error_str = str(err).lower()
     if "vlans are not enabled" in error_str:
-        raise MerakiVlansDisabledError(str(err)) from err
+        raise MerakiVlansDisabledError("VLANs are not enabled") from None
     if "traffic analysis" in error_str:
-        raise MerakiTrafficAnalysisError(str(err)) from err
+        raise MerakiTrafficAnalysisError("Traffic analysis is not enabled") from None
     if "historical viewing is not supported" in error_str:
-        raise MerakiInformationalError(str(err)) from err
+        raise MerakiInformationalError("Historical viewing is not supported") from None
 
 
 def validate_response(response: Any) -> dict[str, Any] | list[Any]:

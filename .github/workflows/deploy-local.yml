@@ -1,240 +1,50 @@
 name: Deploy via HACS
 
-# NOTE: This workflow does NOT auto-trigger when releases are created by other
-# workflows using GITHUB_TOKEN (GitHub limitation to prevent infinite loops).
-# The HACS deploy logic is now embedded directly in beta-version-update.yaml
-# and production-version-update.yaml for automatic deployment.
-#
-# Use this workflow manually via workflow_dispatch if needed.
-
 on:
-  release:
-    types: [published] # Only triggers for manual/external releases
-  workflow_dispatch: # Allow manual trigger
+  push:
+    branches: [codex/meraki-sdk-secrets]
+    paths:
+      [scripts/deploy_homeassistant.py, .github/workflows/deploy-local.yml]
+  workflow_dispatch:
+    inputs:
+      inspect:
+        description: Inspect deployed versions without changing them
+        type: boolean
+        default: true
+      meraki_version:
+        description: Exact published Meraki version to deploy (blank skips it)
+        type: string
+        default: ''
+      step_ca_version:
+        description: Exact Step CA version to deploy (blank skips it)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: home-assistant-deployment
+  cancel-in-progress: false
 
 jobs:
   deploy-via-hacs:
     runs-on: ubuntu-latest
-    # Only run if HACS deploy is enabled via repository variable
-    if: ${{ vars.ENABLE_HACS_DEPLOY == 'true' }}
-
+    timeout-minutes: 45
+    if: vars.ENABLE_HACS_DEPLOY == 'true'
     steps:
-      - name: Release info
-        run: |
-          echo "Release tag: ${{ github.event.release.tag_name }}"
-          echo "Prerelease: ${{ github.event.release.prerelease }}"
-          echo "Waiting 10 seconds for release to propagate..."
-          sleep 10
-
-      - name: Refresh HACS repositories
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Inspect or deploy exact versions
         env:
           HA_URL: ${{ secrets.HA_URL }}
           HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          INSPECT: ${{ inputs.inspect || github.event_name == 'push' }}
+          MERAKI_VERSION: ${{ inputs.meraki_version }}
+          STEP_CA_VERSION: ${{ inputs.step_ca_version }}
         run: |
-          echo "Refreshing HACS repository data..."
-          CLEAN_TOKEN=$(echo -n "$HA_TOKEN" | tr -d '\n\r')
-
-          # Call hacs.reload to refresh all repositories
-          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST \
-            -H "Authorization: Bearer $CLEAN_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{}' \
-            "$HA_URL/api/services/hacs/reload")
-
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
-            echo "HACS repositories refreshed successfully."
-          else
-            echo "Warning: HACS reload returned HTTP $HTTP_CODE (may not be critical)"
-          fi
-
-          # Wait for HACS to process
-          sleep 10
-
-      - name: Discover and trigger HACS update
-        env:
-          HA_URL: ${{ secrets.HA_URL }}
-          HA_TOKEN: ${{ secrets.HA_TOKEN }}
-        run: |
-          echo "Discovering Meraki update entity..."
-          CLEAN_TOKEN=$(echo -n "$HA_TOKEN" | tr -d '\n\r')
-
-          # Auto-discover the update entity ID by querying HA API
-          ENTITY_ID=$(curl -sS -H "Authorization: Bearer $CLEAN_TOKEN" \
-            "$HA_URL/api/states" | \
-            jq -r '.[] | select(.entity_id | startswith("update.") and (contains("meraki") or contains("Meraki"))) | .entity_id' | head -1)
-
-          if [[ -z "$ENTITY_ID" ]]; then
-            echo "⚠ Could not auto-discover Meraki update entity. Trying known patterns..."
-            # Fallback to known patterns
-            for TRY_ENTITY in "update.meraki_home_assistant_integration_update" "update.meraki_for_home_assistant_update" "update.meraki_ha_update"; do
-              CHECK=$(curl -sS -o /dev/null -w "%{http_code}" \
-                -H "Authorization: Bearer $CLEAN_TOKEN" \
-                "$HA_URL/api/states/$TRY_ENTITY")
-              if [[ "$CHECK" == "200" ]]; then
-                ENTITY_ID="$TRY_ENTITY"
-                echo "Found entity: $ENTITY_ID"
-                break
-              fi
-            done
-          fi
-
-          if [[ -z "$ENTITY_ID" ]]; then
-            echo "❌ Could not find Meraki update entity!"
-            exit 1
-          fi
-
-          echo "✓ Found update entity: $ENTITY_ID"
-
-          # Get current state
-          STATE=$(curl -sS -H "Authorization: Bearer $CLEAN_TOKEN" \
-            "$HA_URL/api/states/$ENTITY_ID" | jq -r '.')
-          echo "Current state:"
-          echo "$STATE" | jq '{installed_version, latest_version, in_progress}'
-
-          # Trigger the update
-          echo "Triggering update..."
-          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST \
-            -H "Authorization: Bearer $CLEAN_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"entity_id\": \"$ENTITY_ID\"}" \
-            "$HA_URL/api/services/update/install")
-
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
-            echo "✅ Update triggered successfully!"
-          else
-            echo "⚠ Update service returned HTTP $HTTP_CODE"
-            echo "Response: $(echo "$RESPONSE" | head -n -1)"
-          fi
-
-      - name: Clear Home Assistant Frontend Cache
-        shell: bash
-        env:
-          HA_URL: ${{ secrets.HA_URL }}
-          HA_TOKEN: ${{ secrets.HA_TOKEN }}
-        run: |
-          echo "Clearing Home Assistant frontend cache..."
-          CLEAN_HA_TOKEN=$(echo -n "$HA_TOKEN" | tr -d '\n\r')
-          API_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
-              -H "Authorization: Bearer $CLEAN_HA_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "{}" \
-              "$HA_URL/api/services/frontend/reload_themes")
-          if [[ "$API_STATUS" -ne 200 ]]; then
-              echo "Warning: Failed to clear frontend cache. HTTP status code: $API_STATUS."
-          else
-              echo "Home Assistant frontend cache cleared."
-          fi
-      - name: Restart Home Assistant
-        shell: bash
-        env:
-          HA_URL: ${{ secrets.HA_URL }}
-          HA_TOKEN: ${{ secrets.HA_TOKEN }}
-        run: |
-          echo "Attempting to restart Home Assistant..."
-
-          # Sanitize the Home Assistant token to remove any trailing newlines or whitespace.
-          CLEAN_HA_TOKEN=$(echo -n "$HA_TOKEN" | tr -d '\n\r')
-
-          # Step 1a: Basic Connectivity Test
-          echo "Testing basic connectivity to Home Assistant..."
-          API_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -X GET \
-              -H "Authorization: Bearer $CLEAN_HA_TOKEN" \
-              -H "Content-Type: application/json" \
-              "$HA_URL/api/")
-
-          if [[ "$API_STATUS" -ne 200 ]]; then
-              echo "Error: Could not connect to the Home Assistant API. HTTP status code: $API_STATUS."
-              echo "Please verify that the HA_URL secret is set correctly and that your Home Assistant instance is running."
-              echo "Attempted URL: $HA_URL/api/"
-              exit 1
-          else
-              echo "Connectivity test passed."
-          fi
-
-          # Step 1b: Check Configuration
-          echo "Checking Home Assistant configuration..."
-          BODY_FILE=$(mktemp) # Create a temporary file to store the response body.
-
-          # Make the API call and capture the HTTP status code.
-          HTTP_STATUS=$(curl -sS -o "$BODY_FILE" -w "%{http_code}" -X POST \
-              -H "Authorization: Bearer $CLEAN_HA_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "{}" \
-              "$HA_URL/api/config/core/check_config")
-
-          CHECK_RESULT=$(cat "$BODY_FILE")
-          rm "$BODY_FILE" # Clean up the temporary file.
-
-          # Check for non-2xx status codes (e.g., 404 Not Found, 401 Unauthorized).
-          if [[ "$HTTP_STATUS" -lt 200 || "$HTTP_STATUS" -ge 300 ]]; then
-              echo "Error: API call to check config failed with HTTP status code $HTTP_STATUS."
-              if [[ "$HTTP_STATUS" -eq 404 ]]; then
-                  echo "A 404 error here often means the 'config' integration is not enabled in your Home Assistant's configuration.yaml."
-              fi
-              echo "Please check that the HA_URL secret is correct and the server is reachable."
-              echo "URL: $HA_URL/api/config/core/check_config"
-              echo "Response: $CHECK_RESULT"
-              exit 1
-          fi
-
-          # Verify that the successful response is valid JSON before trying to parse it.
-          if ! echo "$CHECK_RESULT" | grep -q '^{'; then
-            echo "Error: API response with status $HTTP_STATUS does not appear to be valid JSON."
-            echo "Received response:"
-            echo "$CHECK_RESULT"
-            exit 1
-          fi
-
-          ERRORS=$(echo "$CHECK_RESULT" | jq -r '.errors')
-
-          if [ "$ERRORS" != "null" ] && [ "$ERRORS" != "" ]; then
-            echo "Config check failed! Errors:"
-            echo "$CHECK_RESULT" | jq
-            exit 1 # Stop the pipeline
-          else
-            echo "Config check passed."
-          fi
-
-          # Step 2: Trigger Restart
-          echo "Triggering Home Assistant restart..."
-          RESTART_RESPONSE_FILE=$(mktemp)
-          # Use timeout to prevent hanging - HA may not respond during restart
-          RESTART_STATUS=$(curl -sS --max-time 30 -o "$RESTART_RESPONSE_FILE" -w "%{http_code}" -X POST \
-              -H "Authorization: Bearer $CLEAN_HA_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "{}" \
-              "$HA_URL/api/services/homeassistant/restart" 2>/dev/null || echo "000")
-          RESTART_RESPONSE=$(cat "$RESTART_RESPONSE_FILE" 2>/dev/null || echo "")
-          rm -f "$RESTART_RESPONSE_FILE"
-
-          # 504 Gateway Timeout or connection reset (000) is EXPECTED during restart
-          # HA shuts down before it can send a response
-          if [[ "$RESTART_STATUS" -eq 504 || "$RESTART_STATUS" -eq 000 ]]; then
-              echo "✓ Restart initiated (connection closed as expected during shutdown)"
-          elif [[ "$RESTART_STATUS" -ge 200 && "$RESTART_STATUS" -lt 300 ]]; then
-              echo "✓ Restart command accepted (HTTP $RESTART_STATUS)"
-          else
-              echo "⚠ Unexpected response during restart: HTTP $RESTART_STATUS"
-              echo "Response: $RESTART_RESPONSE"
-              echo "Continuing anyway - restart may still be in progress..."
-          fi
-
-          echo "Waiting 90 seconds for Home Assistant to restart..."
-          sleep 90
-
-          # Step 3: Verify HA is back online
-          echo "Checking if Home Assistant is back online..."
-          for i in {1..6}; do
-              ONLINE_STATUS=$(curl -sS --max-time 10 -o /dev/null -w "%{http_code}" -X GET \
-                  -H "Authorization: Bearer $CLEAN_HA_TOKEN" \
-                  "$HA_URL/api/" 2>/dev/null || echo "000")
-              if [[ "$ONLINE_STATUS" -eq 200 ]]; then
-                  echo "✅ Home Assistant is back online!"
-                  exit 0
-              fi
-              echo "  Attempt $i/6: HA not ready yet (HTTP $ONLINE_STATUS), waiting 15s..."
-              sleep 15
-          done
-          echo "⚠ Home Assistant may still be starting up. Deployment complete."
+          args=()
+          if [[ "$INSPECT" == 'true' ]]; then args+=(--inspect); fi
+          if [[ -n "$MERAKI_VERSION" ]]; then args+=(--meraki-version "$MERAKI_VERSION"); fi
+          if [[ -n "$STEP_CA_VERSION" ]]; then args+=(--step-ca-version "$STEP_CA_VERSION"); fi
+          uv run --no-project --with aiohttp==3.14.3 scripts/deploy_homeassistant.py "${args[@]}"

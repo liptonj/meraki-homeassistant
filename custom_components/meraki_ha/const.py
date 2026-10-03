@@ -9,6 +9,32 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+# Credential fields returned by Dashboard, OAuth, RADIUS and MQTT. Reuse at
+# bulk export boundaries; deliberate password reveals require an administrator.
+SECRET_REDACTION_KEYS: Final = frozenset(
+    {
+        "access_token",
+        "refresh_token",
+        "meraki_api_key",
+        "client_secret",
+        "client_id",
+        "api_key",
+        "apiKey",
+        "authorization",
+        "Authorization",
+        "password",
+        "secret",
+        "sharedSecret",
+        "shared_secret",
+        "psk",
+        "passphrase",
+        "radiusSecret",
+        "radiusAccountingSecret",
+        "webhook_shared_secret",
+        "mqtt_password",
+    }
+)
+
 # UI Mode Configuration
 CONF_UI_MODE: Final = "ui_mode"
 """Configuration key for UI mode selection (DEPRECATED - use individual toggles)."""

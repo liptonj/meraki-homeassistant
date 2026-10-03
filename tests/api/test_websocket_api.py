@@ -25,6 +25,7 @@ def mock_coordinator():
     """Mock the MerakiDataCoordinator."""
     coordinator = AsyncMock()
     coordinator.last_update_success = True
+    coordinator.async_add_listener = MagicMock(return_value=MagicMock())
     coordinator.data = {
         "devices": [
             {
@@ -41,7 +42,14 @@ def mock_coordinator():
                 "networkId": "N_123",
             }
         ],
-        "ssids": [{"number": 0, "name": "Test SSID"}],
+        "ssids": [
+            {
+                "number": 0,
+                "name": "Test SSID",
+                "psk": "fixture-wifi-key",
+                "radiusServers": [{"secret": "fixture-radius-key"}],
+            }
+        ],
         "networks": [{"id": "N_123", "name": "Test Network"}],
     }
     return coordinator
@@ -84,6 +92,7 @@ async def test_ws_get_overview(hass_ws_client, mock_hass):
     msg = await client.receive_json()
     assert msg["success"]
     assert msg["result"]["devices"][0]["serial"] == "123"
+    assert msg["result"]["ssids"][0]["psk"] == "**REDACTED**"
 
 
 async def test_ws_get_device(hass_ws_client, mock_hass):
@@ -138,6 +147,12 @@ async def test_ws_get_ssids(hass_ws_client, mock_hass):
     msg = await client.receive_json()
     assert msg["success"]
     assert msg["result"][0]["name"] == "Test SSID"
+    assert msg["result"][0]["psk"] == "**REDACTED**"
+    assert msg["result"][0]["radiusServers"][0]["secret"] == "**REDACTED**"
+    assert (
+        mock_hass.data[DOMAIN][CONFIG_ENTRY_ID]["coordinator"].data["ssids"][0]["psk"]
+        == "fixture-wifi-key"
+    )
 
 
 async def test_ws_get_switch_ports(hass_ws_client, mock_hass):
@@ -168,6 +183,12 @@ async def test_ws_subscribe_updates(hass_ws_client, mock_hass):
     mock_hass.data[DOMAIN][CONFIG_ENTRY_ID][
         "coordinator"
     ].async_add_listener.assert_called_once()
+    coordinator = mock_hass.data[DOMAIN][CONFIG_ENTRY_ID]["coordinator"]
+    coordinator.async_add_listener.call_args.args[0]()
+    event = await client.receive_json()
+    assert event["type"] == "event"
+    assert event["event"]["ssids"][0]["psk"] == "**REDACTED**"
+    assert event["event"]["ssids"][0]["radiusServers"][0]["secret"] == "**REDACTED**"
 
 
 async def test_ws_block_client(hass_ws_client, mock_hass):

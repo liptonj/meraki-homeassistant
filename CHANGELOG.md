@@ -11,6 +11,9 @@
   - Switch port and SSID firewall data come from the main poll, without their own polling
   - A reload keeps the webhook and Push API registrations; they are deleted when the feature is switched off or the integration is removed
   - Reconfiguring reloads the integration once instead of twice
+- **sdk:** Upgrade to Meraki SDK 4.5.0b4, retaining required Push API operations; verify refreshed OAuth credentials reach the persistent connection and fail closed on an incompatible transport.
+- **security:** Redact Wi-Fi/RADIUS/relay secrets in diagnostic downloads and dashboard data; restrict key creation to administrators and omit provider error bodies and authentication headers from logs and visible API errors.
+
 - **auth:** Match Cisco's token POST exactly (HTTP Basic, form body, registered redirect URI) and log Hydra `error_hint` on `invalid_client`
 
 - **auth:** Send RFC 6749 HTTP Basic on the Meraki token request so `invalid_client` / 401 Unauthorized no longer fails Add hub

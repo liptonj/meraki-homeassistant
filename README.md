@@ -183,6 +183,22 @@ See [Webhook Documentation](docs/architecture/webhooks.md) for complete details.
 
 Meraki does not appear in that list until this OAuth version of the integration is installed.
 
+### SDK and credential storage
+
+The integration pins Meraki Python SDK **4.5.0b4**, the latest beta release
+checked on October 2, 2026. The beta is required for the integration's Push API
+operations, which stable 4.5.0 does not expose. Access tokens
+refresh through Home Assistant's OAuth session and update the SDK connection.
+SDK request logs are disabled; diagnostic exports and dashboard data redact
+credentials and Wi-Fi and RADIUS secrets. Key creation and its password response
+require a Home Assistant administrator.
+
+Home Assistant stores the Cisco client secret in **Application credentials** and
+access and refresh tokens in the integration's **config entry**. Step CA uses
+this authenticated connection without saving another copy of these credentials
+in its options or MariaDB. Home Assistant's storage is not an encrypted vault;
+restrict access to its configuration directory and protect backups containing it.
+
 ### Setting up the Integration
 
 1. Go to **Settings** → **Devices & services**
