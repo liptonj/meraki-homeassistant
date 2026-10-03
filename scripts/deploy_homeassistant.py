@@ -78,6 +78,7 @@ class HomeAssistant:
 
     async def supervisor(self, endpoint: str, method: str = "get", data: Any = None,
                          timeout: int = 120) -> Any:
+        print("Supervisor operation:", method.upper(), endpoint, flush=True)
         return await self.websocket({"type": "supervisor/api", "endpoint": endpoint,
                                      "method": method, "data": data or {}, "timeout": timeout}, timeout)
 
@@ -96,7 +97,14 @@ class HomeAssistant:
                         result = await socket.receive_json()
                         if result.get("id") == 1:
                             if not result.get("success"):
-                                raise DeploymentError("Home Assistant operation failed; check its local logs")
+                                error = result.get("error", {})
+                                code = error.get("code", "unknown")
+                                if code not in ("unknown_error", "unauthorized", "invalid_format", "not_found"):
+                                    code = "unknown"
+                                message = str(error.get("message", "")).lower()
+                                clues = [word for word in ("404", "403", "405", "unhealthy", "blocked", "not found", "not ready", "not supported")
+                                         if word in message]
+                                raise DeploymentError(f"Home Assistant operation failed ({code}; {', '.join(clues) or 'details withheld'}); check its local logs")
                             return result.get("result", {})
                     raise DeploymentError("Home Assistant returned no matching result")
         except (aiohttp.ClientError, TimeoutError, ValueError):
