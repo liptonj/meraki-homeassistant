@@ -80,7 +80,11 @@ class MerakiAnalyticsSensor(CoordinatorEntity, SensorEntity):  # type: ignore[ty
         """Fetch analytics in the background if the last fetch is stale."""
         if self._analytics_fetch_pending:
             return
-        if time.monotonic() - self._last_analytics_fetch < ANALYTICS_REFRESH_INTERVAL:
+        if (
+            self._last_analytics_fetch
+            and time.monotonic() - self._last_analytics_fetch
+            < ANALYTICS_REFRESH_INTERVAL
+        ):
             return
         self._analytics_fetch_pending = True
         self.hass.async_create_background_task(

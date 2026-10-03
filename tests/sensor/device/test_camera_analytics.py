@@ -1,6 +1,6 @@
 """Tests for the Meraki camera analytics sensors."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -78,11 +78,15 @@ async def test_coordinator_update_refreshes_only_when_stale(
         side_effect=lambda coro, name: scheduled.append(coro)
     )
 
-    sensor._handle_coordinator_update()
-    assert len(scheduled) == 1
-    await scheduled.pop()
-    assert sensor.native_value == 5
-
-    sensor._handle_coordinator_update()
+    # A new process can have a monotonic clock below the 300-second interval.
+    with patch(
+        "custom_components.meraki_ha.sensor.device.camera_analytics.time.monotonic",
+        return_value=50,
+    ):
+        sensor._handle_coordinator_update()
+        assert len(scheduled) == 1
+        await scheduled.pop()
+        assert sensor.native_value == 5
+        sensor._handle_coordinator_update()
     assert scheduled == []
     assert mock_camera_service.get_analytics_data.await_count == 1
