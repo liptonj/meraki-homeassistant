@@ -219,8 +219,9 @@ class HomeAssistant:
         if str(addon.get("version_latest") or addon.get("version")) != expected:
             raise DeploymentError("Step CA store version differs from the requested version")
         installed = next((row for row in (await self.supervisor("/addons")).get("addons", []) if row.get("slug") == slug), None)
-        mysql = await self.supervisor("/services/mysql")
-        if not mysql.get("host"):
+        services = await self.supervisor("/services")
+        mysql = next((row for row in services.get("services", []) if row.get("slug") == "mysql"), {})
+        if not mysql.get("available"):
             raise DeploymentError("MariaDB service must be configured and running before Step CA deployment")
         if installed:
             info = await self.supervisor("/addons/" + slug + "/info")

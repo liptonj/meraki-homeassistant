@@ -156,3 +156,25 @@ async def test_companion_verification_rejects_broken_entry_and_user_flow() -> No
         ):
             await client.verify_step_ca_companion()
         assert all(len(call.args) == 1 for call in client.rest.call_args_list)
+
+
+@pytest.mark.asyncio
+async def test_step_ca_checks_service_availability_without_reading_credentials() -> (
+    None
+):
+    """The Core proxy can inspect service availability but cannot read its secrets."""
+    client = HomeAssistant("https://ha.example.org", "fixture", MagicMock())
+    addon = {
+        "slug": "abcd1234_step-ca-scep",
+        "url": "https://github.com/liptonj/hassio-addons/tree/master/step-ca",
+        "version": "0.30.2.47",
+    }
+    client.supervisor = AsyncMock(
+        side_effect=[{}, {"addons": [addon]}, {"addons": [addon]}, {"services": []}]
+    )
+    with pytest.raises(DeploymentError, match="MariaDB"):
+        await client.deploy_step_ca("0.30.2.47")
+    client.supervisor.assert_any_await("/services")
+    assert not any(
+        call.args[0] == "/services/mysql" for call in client.supervisor.call_args_list
+    )
